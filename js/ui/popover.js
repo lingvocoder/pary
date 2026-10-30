@@ -19,15 +19,15 @@ export function closePopover() {
 export function openPopover(o, card) {
   closePopover();
   const hex = userHex(o), sl = slotOf(o.slot);
-  const catcher = document.createElement('div'); catcher.className = 'pop-catch';   // ловит тап мимо подсказки
+  const catcher = document.createElement('div'); catcher.className = 'popover-catcher';   // ловит тап мимо подсказки
   const el = document.createElement('section');
   el.className = 'popover'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', `Группа ${o.group}`);
-  el.innerHTML = `<span class="tip"></span>
-    <div class="head"><span class="chip ${courseClass(o.course)}${hex ? ' chip--custom-color' : ''}"${hex ? ` style="--cc:${hex}"` : ''}>${esc(o.group)}</span><span>${o.course} курс, ${esc(o.lessonType)}</span></div>
-    <div><div class="when">${DAY_NAME[weekday(o.date)].replace(/^./, c => c.toUpperCase())}, ${humanDate(o.date)}, ${sl.start}–${sl.end}</div>
-      <div class="subj">${esc(o.subject)}</div>
-      ${o.cancelled ? '<div class="flag">Отменена</div>' : ''}${o.moved ? `<div class="subj" style="font-size:13px;color:var(--mute)">↪ перенесена разово</div>` : ''}</div>
-    <div class="room" id="pRoom"></div>
+  el.innerHTML = `<span class="popover__tip"></span>
+    <div class="popover__head"><span class="chip popover__chip ${courseClass(o.course)}${hex ? ' chip--custom-color' : ''}"${hex ? ` style="--cc:${hex}"` : ''}>${esc(o.group)}</span><span class="popover__meta">${o.course} курс, ${esc(o.lessonType)}</span></div>
+    <div><div class="popover__when">${DAY_NAME[weekday(o.date)].replace(/^./, c => c.toUpperCase())}, ${humanDate(o.date)}, ${sl.start}–${sl.end}</div>
+      <div class="popover__subject">${esc(o.subject)}</div>
+      ${o.cancelled ? '<div class="popover__flag">Отменена</div>' : ''}${o.moved ? `<div class="popover__subject" style="font-size:13px;color:var(--mute)">↪ перенесена разово</div>` : ''}</div>
+    <div class="popover__room" id="pRoom"></div>
     <button class="btn btn--primary btn--compact" id="pEdit">Изменить</button>
     <div class="button-pair"><button class="btn btn--compact btn--danger-outline" id="pCancel">${o.cancelled ? 'Вернуть пару' : 'Отменить пару'}</button><button class="btn btn--compact btn--outline" id="pCal">В календарь</button></div>`;
   document.body.append(catcher, el);
@@ -37,11 +37,11 @@ export function openPopover(o, card) {
   // строка аудитории: показ ↔ ввод
   const roomRow = el.querySelector('#pRoom');
   const showRoom = () => {
-    roomRow.innerHTML = `<span>${o.room ? 'Аудитория ' + esc(o.room) : 'Аудитория не указана'}</span><button>${o.room ? 'Изменить' : 'Указать'}</button>`;
+    roomRow.innerHTML = `<span class="popover__room-label">${o.room ? 'Аудитория ' + esc(o.room) : 'Аудитория не указана'}</span><button class="popover__room-button">${o.room ? 'Изменить' : 'Указать'}</button>`;
     roomRow.querySelector('button').onclick = editRoom;
   };
   const editRoom = () => {
-    roomRow.innerHTML = `<input type="text" aria-label="Аудитория" placeholder="например, 301" value="${esc(o.room)}" autocomplete="off"><button>Готово</button>`;
+    roomRow.innerHTML = `<input class="popover__room-input" type="text" aria-label="Аудитория" placeholder="например, 301" value="${esc(o.room)}" autocomplete="off"><button class="popover__room-button">Готово</button>`;
     const input = roomRow.querySelector('input');
     const done = () => {
       const room = input.value.trim();
@@ -73,7 +73,7 @@ export function openPopover(o, card) {
   const below = r.bottom + gap + hgt <= window.innerHeight - 8;
   el.style.left = left + 'px';
   el.style.top = (below ? r.bottom + gap : Math.max(8, r.top - gap - hgt)) + 'px';
-  const tip = el.querySelector('.tip');
-  tip.classList.add(below ? 'up' : 'down');
+  const tip = el.querySelector('.popover__tip');
+  tip.classList.add(below ? 'popover__tip--up' : 'popover__tip--down');
   tip.style.left = Math.min(Math.max(16, r.left + r.width / 2 - left - 7), w - 30) + 'px';
 }

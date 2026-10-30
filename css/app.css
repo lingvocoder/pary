@@ -165,6 +165,13 @@ button {
   cursor: pointer;
 }
 
+/* Рамка фокуса с клавиатуры. Стоит в основе, до блоков: если блок задаёт
+   свой outline (как поле аудитории), он перебивает эту рамку. */
+:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
 /* ---------- страница ---------- */
 .page {
   max-width: 560px;
@@ -544,7 +551,8 @@ button {
 }
 
 /* ---------- подсказка по тапу ---------- */
-.pop-catch {
+/* прозрачный слой под подсказкой: ловит тап мимо, чтобы закрыть её */
+.popover-catcher {
   position: fixed;
   inset: 0;
   z-index: 40;
@@ -564,7 +572,8 @@ button {
   gap: 10px;
 }
 
-.popover .tip {
+/* уголок-стрелка к карточке: сверху или снизу подсказки */
+.popover__tip {
   position: absolute;
   width: 14px;
   height: 14px;
@@ -574,49 +583,51 @@ button {
   transform: rotate(45deg);
 }
 
-.popover .tip.up {
+.popover__tip--up {
   top: -8px;
 }
 
-.popover .tip.down {
+.popover__tip--down {
   bottom: -8px;
   transform: rotate(225deg);
 }
 
-.popover .head {
+.popover__head {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.popover .head .chip {
+.popover__chip {
   font-size: 16px;
   padding: 2px 9px;
   border-radius: 7px;
 }
 
-.popover .head span:last-child {
+/* «3 курс, ЛР» рядом с бейджем */
+.popover__meta {
   font-size: 13px;
   color: var(--ink2);
 }
 
-.popover .when {
+.popover__when {
   font-size: 16px;
   font-weight: 700;
 }
 
-.popover .subj {
+.popover__subject {
   font-size: 15px;
   margin-top: 3px;
 }
 
-.popover .flag {
+.popover__flag {
   font-size: 13px;
   font-weight: 700;
   color: var(--danger);
 }
 
-.room {
+/* строка аудитории: текст + кнопка или поле + «Готово» */
+.popover__room {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -627,12 +638,13 @@ button {
   min-height: 44px;
 }
 
-.room span {
+.popover__room-label {
   font-size: 14px;
   color: var(--ink2);
 }
 
-.room input {
+/* рамку фокуса не рисуем: поле и так выделено фоном строки */
+.popover__room-input {
   flex: 1;
   min-width: 0;
   border: 0;
@@ -642,7 +654,7 @@ button {
   outline: none;
 }
 
-.room button {
+.popover__room-button {
   height: 36px;
   padding: 0 12px;
   border: 0;
@@ -983,11 +995,6 @@ button {
 .toast--visible {
   opacity: 1;
   transform: translate(-50%,0);
-}
-
-:focus-visible {
-  outline: 2px solid var(--ink);
-  outline-offset: 2px;
 }
 
 @media (prefers-reduced-motion:reduce) {
