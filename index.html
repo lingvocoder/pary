@@ -1,0 +1,1015 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#18212F">
+<meta name="color-scheme" content="light dark">
+<title>Мои пары</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon-192.png">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<style>
+/* ---------- шрифт Golos Text (лицензия OFL, файлы в ./fonts) ---------- */
+@font-face{font-family:'Golos Text';font-weight:400;font-display:swap;src:url(./fonts/golos-text-cyrillic-400-normal.woff2) format('woff2');unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
+@font-face{font-family:'Golos Text';font-weight:600;font-display:swap;src:url(./fonts/golos-text-cyrillic-600-normal.woff2) format('woff2');unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
+@font-face{font-family:'Golos Text';font-weight:700;font-display:swap;src:url(./fonts/golos-text-cyrillic-700-normal.woff2) format('woff2');unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
+@font-face{font-family:'Golos Text';font-weight:800;font-display:swap;src:url(./fonts/golos-text-cyrillic-800-normal.woff2) format('woff2');unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
+@font-face{font-family:'Golos Text';font-weight:400;font-display:swap;src:url(./fonts/golos-text-latin-400-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Golos Text';font-weight:600;font-display:swap;src:url(./fonts/golos-text-latin-600-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Golos Text';font-weight:700;font-display:swap;src:url(./fonts/golos-text-latin-700-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Golos Text';font-weight:800;font-display:swap;src:url(./fonts/golos-text-latin-800-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+
+/* ---------- цвета: светлая и тёмная тема ---------- */
+:root{
+  --paper:#EEF2F6; --sheet:#FFFFFF; --ink:#18212F; --ink2:#4B5768; --mute:#6B7789;
+  --line:#D6DDE6; --line2:#E6EBF1; --todaycol:#F3F6FA; --on-ink:#FFFFFF; --danger:#C62828;
+  --c1:#2563EB; --c2:#047857; --c3:#B45309; --c4:#6D28D9;
+  --t1:#E8EFFD; --t2:#E2F3EB; --t3:#FBEEDF; --t4:#F0E9FC;
+  --hatch:#FAF6F1; --chip-text:#FFFFFF; --scrim:rgba(16,21,29,.45);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --paper:#10151D; --sheet:#19202B; --ink:#E8EDF4; --ink2:#AEB8C6; --mute:#8A96A8;
+    --line:#2A3443; --line2:#222B38; --todaycol:#1C2533; --on-ink:#10151D; --danger:#F07070;
+    --c1:#8AB4FF; --c2:#4ADE9F; --c3:#F5B451; --c4:#B79CFA;
+    --t1:#1E2A44; --t2:#17332A; --t3:#3A2C18; --t4:#2C2442;
+    --hatch:#1F2530; --chip-text:#10151D; --scrim:rgba(0,0,0,.55);
+  }
+}
+.k1{--cc:var(--c1);--ct:var(--t1)} .k2{--cc:var(--c2);--ct:var(--t2)}
+.k3{--cc:var(--c3);--ct:var(--t3)} .k4{--cc:var(--c4);--ct:var(--t4)}
+
+/* ---------- основа ---------- */
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--paper);color:var(--ink);font-family:'Golos Text',system-ui,sans-serif;-webkit-tap-highlight-color:transparent}
+body{min-height:100dvh;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+.wrap{max-width:560px;margin:0 auto;padding:0 12px 28px}
+
+/* ---------- следующая пара ---------- */
+.hero{display:flex;justify-content:space-between;align-items:flex-start;padding:20px 4px 0}
+.hero .col{display:flex;flex-direction:column;gap:6px;min-width:0}
+.hero .lbl{font-size:13px;color:var(--ink2)}
+.hero .big{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.hero .time{font-size:56px;font-weight:800;letter-spacing:-2px;line-height:1;font-variant-numeric:tabular-nums}
+.hero .none{font-size:26px;font-weight:700;line-height:1.2}
+.chip{font-weight:700;color:var(--chip-text);background:var(--cc);border-radius:8px;font-variant-numeric:tabular-nums}
+.chip.user{color:#FFFFFF}
+.hero .chip{font-size:20px;padding:3px 10px}
+.hero .sub{font-size:14px;color:var(--ink2);line-height:1.45}
+.icon-btn{width:44px;height:44px;border:0;border-radius:50%;background:transparent;color:var(--ink2);display:grid;place-items:center;padding:0;flex:none}
+.icon-btn:active{background:var(--line2)}
+
+/* ---------- навигация по неделям ---------- */
+.nav{display:grid;grid-template-columns:44px 1fr 44px;align-items:center;gap:6px;padding:14px 0 10px;min-height:68px}
+.arr{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--sheet);font-size:18px}
+.arr:active{background:var(--line2)}
+.range{text-align:center;font-size:15px;font-weight:600;line-height:1.3}
+.tod{display:none;margin:0 auto;border:0;background:none;font-size:13px;font-weight:600;text-decoration:underline;padding:2px 6px}
+.tod.on{display:block}
+
+/* ---------- сетка недели ---------- */
+.grid{display:grid;grid-template-columns:38px repeat(6,minmax(0,1fr));background:var(--sheet);border:1px solid var(--line);border-radius:12px;overflow:hidden;user-select:none;-webkit-user-select:none}
+.dh{text-align:center;padding:6px 0 5px;border-left:1px solid var(--line2);border-bottom:1px solid var(--line)}
+.dh .w{display:block;font-size:12px;color:var(--ink2)}
+.dh .n{display:inline-block;margin-top:2px;min-width:28px;padding:1px 0;font-size:16px;font-weight:700;border-radius:999px}
+.dh.today,.cell.today{background:var(--todaycol)}
+.dh.today .n{background:var(--ink);color:var(--on-ink);font-size:15px}
+.corner{border-bottom:1px solid var(--line)}
+.tl{display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.15;border-bottom:1px solid var(--line2)}
+.tl b{font-size:13px;font-weight:600;color:var(--ink2)}
+.tl span{font-size:10.5px;color:var(--mute);font-variant-numeric:tabular-nums}
+.tl.now b{text-decoration:underline}
+.cell{height:54px;padding:2px;border-left:1px solid var(--line2);border-bottom:1px solid var(--line2);display:flex;flex-direction:column;gap:2px}
+.last{border-bottom:0}
+.cell.target{outline:2px dashed var(--ink);outline-offset:-3px}
+.cell.busy{outline-color:var(--danger)}
+
+/* ---------- карточка пары ---------- */
+.card{position:relative;flex:1;min-height:0;border-radius:7px;padding:4px 4px 3px 7px;overflow:hidden;background:var(--ct);border-left:3px solid var(--cc);display:flex;flex-direction:column;justify-content:center;touch-action:pan-y;cursor:pointer}
+.card b{display:block;font-size:15px;font-weight:700;line-height:1.1;color:var(--cc);font-variant-numeric:tabular-nums}
+.card span{display:block;font-size:10px;margin-top:1px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card.hl{background:var(--hl);border-left-color:var(--hl)}
+.card.hl b,.card.hl span{color:#FFFFFF}
+.card.off{background:repeating-linear-gradient(-45deg,transparent 0 5px,color-mix(in srgb,var(--mute) 18%,transparent) 5px 7px),var(--hatch);border-left-color:color-mix(in srgb,var(--cc) 40%,transparent)}
+.card.off .in{filter:blur(1.6px);opacity:.55}
+.card .x{position:absolute;right:4px;top:2px;font-style:normal;font-size:10px;font-weight:700;color:var(--danger)}
+.card .mv{position:absolute;right:4px;bottom:1px;font-style:normal;font-size:11px;color:var(--mute)}
+.card.hl .mv{color:#FFFFFF}
+.card.sel{box-shadow:0 0 0 2px var(--sheet),0 0 0 4px var(--ink)}
+.card.lift{opacity:.25}
+.ghost{position:fixed;z-index:50;pointer-events:none;width:62px;height:50px;transform:translate(-50%,-70%) rotate(-3deg) scale(1.08);box-shadow:0 12px 28px rgba(16,21,29,.28)}
+
+.hint{font-size:12px;color:var(--mute);text-align:center;margin:12px 8px 0;line-height:1.45}
+
+/* ---------- пустая неделя ---------- */
+.empty{display:flex;flex-direction:column;align-items:center;gap:12px;background:var(--sheet);border:1px dashed var(--line);border-radius:12px;padding:40px 24px;text-align:center}
+.empty h2{margin:0;font-size:18px}
+.empty p{margin:0;font-size:14px;line-height:1.5;color:var(--ink2);max-width:270px}
+
+/* ---------- подсказка по тапу ---------- */
+.pop-catch{position:fixed;inset:0;z-index:40}
+.popover{position:fixed;z-index:41;width:min(300px,calc(100vw - 24px));background:var(--sheet);border:1px solid var(--line);border-radius:14px;box-shadow:0 16px 36px rgba(16,21,29,.22);padding:14px 14px 12px;display:flex;flex-direction:column;gap:10px}
+.popover .tip{position:absolute;width:14px;height:14px;background:var(--sheet);border-left:1px solid var(--line);border-top:1px solid var(--line);transform:rotate(45deg)}
+.popover .tip.up{top:-8px}
+.popover .tip.down{bottom:-8px;transform:rotate(225deg)}
+.popover .head{display:flex;align-items:center;gap:8px}
+.popover .head .chip{font-size:16px;padding:2px 9px;border-radius:7px}
+.popover .head span:last-child{font-size:13px;color:var(--ink2)}
+.popover .when{font-size:16px;font-weight:700}
+.popover .subj{font-size:15px;margin-top:3px}
+.popover .flag{font-size:13px;font-weight:700;color:var(--danger)}
+.room{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--paper);border-radius:10px;padding:4px 4px 4px 12px;min-height:44px}
+.room span{font-size:14px;color:var(--ink2)}
+.room input{flex:1;min-width:0;border:0;background:transparent;font-size:16px;padding:6px 0;outline:none}
+.room button{height:36px;padding:0 12px;border:0;border-radius:8px;background:var(--sheet);font-size:13.5px;font-weight:600}
+.two-btn{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+/* ---------- шторки снизу ---------- */
+.scrim{position:fixed;inset:0;background:var(--scrim);z-index:60;display:flex;align-items:flex-end;justify-content:center;opacity:0;transition:opacity .18s}
+.scrim.open{opacity:1}
+.sheet{background:var(--sheet);width:100%;max-width:560px;border-radius:18px 18px 0 0;padding:8px 16px calc(20px + env(safe-area-inset-bottom));max-height:92dvh;overflow:auto;transform:translateY(24px);transition:transform .2s;display:flex;flex-direction:column;gap:12px}
+.scrim.open .sheet{transform:none}
+.grab{align-self:center;width:40px;height:4px;border-radius:2px;background:var(--line);margin:2px 0}
+.sheet h2{margin:0;font-size:19px}
+.sheet .note{margin:-4px 0 0;font-size:13.5px;color:var(--ink2)}
+.info{margin:0;font-size:13px;line-height:1.4;color:var(--ink2);background:var(--paper);border-radius:10px;padding:9px 12px}
+.f{display:flex;flex-direction:column;gap:5px;min-width:0}
+.f label,.f .lab{font-size:12.5px;color:var(--ink2)}
+.f input,.f select{width:100%;height:44px;font-size:16px;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:0 12px}
+.row2{display:grid;grid-template-columns:1.6fr 1fr;gap:12px}
+.row2.gc{grid-template-columns:1fr auto;align-items:end}
+.row2.dt{grid-template-columns:1.2fr 1fr}
+.courses{display:flex;gap:6px}
+.courses button{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--paper);font-size:15px}
+.courses button[aria-pressed=true]{background:var(--ink);border-color:var(--ink);color:var(--on-ink)}
+.swatches{display:flex;flex-wrap:wrap;gap:10px}
+.sw{width:36px;height:36px;border-radius:50%;border:0;padding:0;background:var(--sw)}
+.sw.def{background:conic-gradient(var(--c1) 0 25%,var(--c2) 0 50%,var(--c3) 0 75%,var(--c4) 0)}
+.sw[aria-pressed=true]{outline:2px solid var(--ink);outline-offset:2px}
+.tog{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:10px;border-top:1px solid var(--line2)}
+.tog .t{display:block;font-size:15px}
+.tog .d{display:block;font-size:12px;color:var(--mute);margin-top:2px}
+.tog input{width:24px;height:24px;accent-color:var(--ink);flex:none}
+.btn{height:48px;border:0;border-radius:12px;font-size:16px;font-weight:600}
+.btn.pri{background:var(--ink);color:var(--on-ink)}
+.btn.sec{background:var(--paper);border:1px solid var(--line);font-size:14.5px;height:46px}
+.btn.ghost-dan{background:transparent;color:var(--danger);font-size:14.5px;height:46px}
+.btn.plain{background:transparent;color:var(--ink2)}
+.popover .btn{height:44px;font-size:15px;border-radius:11px}
+.popover .btn.sec{background:var(--sheet);font-size:14px}
+.popover .btn.dan{background:var(--sheet);border:1px solid var(--line);color:var(--danger);font-size:14px}
+.opt{text-align:left;border:1px solid var(--line);background:var(--paper);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:3px}
+.opt b{font-size:16px;font-weight:600}
+.opt small{font-size:13px;color:var(--mute)}
+.mi{text-align:left;display:flex;align-items:center;gap:14px;border:1px solid var(--line);background:var(--paper);border-radius:12px;padding:13px 14px}
+.mi b{display:block;font-size:15.5px;font-weight:600}
+.mi small{display:block;font-size:12.5px;color:var(--mute);margin-top:2px}
+.mi.dan{background:var(--sheet);color:var(--danger)}
+.mi:disabled{opacity:.5}
+.ver{font-size:12px;color:var(--mute);text-align:center;margin:4px 0 0}
+
+/* ---------- уведомление ---------- */
+.toast{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top));transform:translate(-50%,-16px);z-index:80;background:var(--ink);color:var(--on-ink);padding:10px 16px;border-radius:10px;font-size:14px;max-width:92vw;opacity:0;transition:.2s;pointer-events:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hero" id="hero"></header>
+  <nav class="nav">
+    <button class="arr" id="prev" aria-label="Предыдущая неделя">‹</button>
+    <div class="range"><span id="range"></span><button class="tod" id="tod">К текущей неделе</button></div>
+    <button class="arr" id="next" aria-label="Следующая неделя">›</button>
+  </nav>
+  <main id="week"></main>
+  <p class="hint" id="hint">Нажми на пару, чтобы увидеть подробности. Удерживай, чтобы перенести.<br>Нажми на пустую клетку, чтобы добавить пару.</p>
+</div>
+<div class="toast" id="toast" role="status"></div>
+<input type="file" id="file" accept="application/json,.json" hidden>
+
+<script>
+'use strict';
+
+/* =====================================================================
+   1. НАСТРОЙКИ
+   Всё, что зависит от вуза и факультета, живёт здесь, а не в коде.
+   ===================================================================== */
+const APP_VERSION = '0.2';
+const STORAGE_KEY = 'pary';          // текущее хранилище
+const LEGACY_KEY = 'pary.v1';        // хранилище прототипа 0.1
+const SCHEMA = 2;                    // версия формы данных
+
+const CONFIG = {
+  /** Сетка звонков. У другого факультета — своя. */
+  slots: [
+    {start: '08:00', end: '09:20'}, {start: '09:30', end: '10:50'}, {start: '11:10', end: '12:30'},
+    {start: '12:40', end: '14:00'}, {start: '14:10', end: '15:30'}, {start: '15:40', end: '17:00'},
+    {start: '17:10', end: '18:30'}, {start: '18:40', end: '20:00'}, {start: '20:10', end: '21:30'}
+  ],
+  /** Цвета для важных пар. id хранится в данных, hex — только здесь. */
+  palette: [
+    {id: '', name: 'Как у курса'},
+    {id: 'red', name: 'Красный', hex: '#C62828'},
+    {id: 'amber', name: 'Жёлтый', hex: '#A16207'},
+    {id: 'green', name: 'Зелёный', hex: '#15803D'},
+    {id: 'blue', name: 'Синий', hex: '#1D4ED8'},
+    {id: 'violet', name: 'Фиолетовый', hex: '#6D28D9'},
+    {id: 'slate', name: 'Серый', hex: '#475569'}
+  ],
+  subjects: ['ПК первого ин. яз.', 'ИКТ в лингвистике'],
+  timezone: 'Europe/Moscow'
+};
+
+const DAY_SHORT = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+const DAY_NAME = ['понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота', 'воскресенье'];
+const DAY_TO = ['на понедельник', 'на вторник', 'на среду', 'на четверг', 'на пятницу', 'на субботу', 'на воскресенье'];
+const DAY_IN = ['в понедельник', 'во вторник', 'в среду', 'в четверг', 'в пятницу', 'в субботу', 'в воскресенье'];
+const MONTH_GEN = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+const MONTH_SHORT = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+
+/* =====================================================================
+   2. МОДЕЛЬ
+   Чистые функции: получают данные, возвращают данные.
+   Ни одна не трогает страницу (document) и не сохраняет сама —
+   поэтому их можно перенести в TypeScript и React без изменений.
+   ===================================================================== */
+
+/**
+ * Повторяющаяся пара: «каждую среду, 5-я пара».
+ * @typedef {Object} Rule
+ * @property {string} id
+ * @property {string} group         номер группы, '326'
+ * @property {number} course        1…4
+ * @property {string} subject
+ * @property {string} lessonType    'ЛР' | 'ПР' | 'ЛК'
+ * @property {string} color         id из CONFIG.palette; '' — цвет курса
+ * @property {string} room          аудитория; '' — не указана
+ * @property {number} weekday       0 = понедельник … 5 = суббота
+ * @property {number} slot          номер пары, 1…9
+ * @property {string} from          действует с 'YYYY-MM-DD'
+ * @property {string|null} until    действует по 'YYYY-MM-DD'; null — без конца
+ * @property {string} teacher       '' — это я; для v2 с коллегами
+ * @property {'pdf'|'manual'} source
+ * @property {string|null} importKey  как узнать эту пару в новом PDF
+ */
+/**
+ * Исключение для одной даты правила. Ключ: `${ruleId}|${date}`.
+ * @typedef {Object} Exception
+ * @property {boolean} [cancelled]
+ * @property {boolean} [deleted]
+ * @property {{date:string, slot:number}} [moveTo]
+ * @property {Object} [patch]       изменённые поля только на эту дату
+ */
+/**
+ * Разовая пара: замена, консультация.
+ * @typedef {Object} OneOff
+ * @property {string} id
+ * @property {string} date
+ * @property {number} slot
+ * @property {string} group
+ * @property {number} course
+ * @property {string} subject
+ * @property {string} lessonType
+ * @property {string} color
+ * @property {string} room
+ * @property {boolean} cancelled
+ * @property {string} teacher
+ * @property {'manual'} source
+ */
+/**
+ * @typedef {Object} State
+ * @property {number} schema
+ * @property {Rule[]} rules
+ * @property {Object<string, Exception>} exceptions
+ * @property {OneOff[]} oneOffs
+ */
+/**
+ * Конкретное занятие в конкретный день — то, что видно в сетке.
+ * @typedef {Object} Occurrence
+ * @property {'rule'|'once'} type
+ * @property {string} id            уникален в пределах недели
+ * @property {string} [ruleId]
+ * @property {string} orig          дата по правилу (до переноса)
+ * @property {string} date
+ * @property {number} slot
+ * @property {string} group
+ * @property {number} course
+ * @property {string} subject
+ * @property {string} lessonType
+ * @property {string} color
+ * @property {string} room
+ * @property {boolean} cancelled
+ * @property {boolean} moved
+ * @property {'pdf'|'manual'} source
+ */
+
+/* ---------- даты (строки 'YYYY-MM-DD', без часовых поясов) ---------- */
+const pad = n => String(n).padStart(2, '0');
+const toIso = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const fromIso = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+const addDays = (s, n) => { const d = fromIso(s); d.setDate(d.getDate() + n); return toIso(d); };
+const weekday = s => (fromIso(s).getDay() + 6) % 7;          // 0 = понедельник
+const weekStart = s => addDays(s, -weekday(s));
+const atTime = (date, hm) => { const d = fromIso(date); const [h, m] = hm.split(':').map(Number); d.setHours(h, m, 0, 0); return d; };
+const humanDate = s => { const d = fromIso(s); return `${d.getDate()} ${MONTH_GEN[d.getMonth()]}`; };
+const newId = () => (crypto.randomUUID ? crypto.randomUUID() : 'id-' + Date.now().toString(36) + Math.random().toString(36).slice(2));
+
+const EDITABLE = ['group', 'course', 'subject', 'lessonType', 'color', 'room'];
+
+/** Исходное расписание на 29 октября 2026. */
+function seed() {
+  const P = 'ПК первого ин. яз.';
+  const rule = (id, group, course, wd, slot, from, source) => ({
+    id, group, course, subject: P, lessonType: 'ЛР', color: '', room: '', weekday: wd, slot, from, until: null,
+    teacher: '', source, importKey: source === 'pdf' ? `${course}|${group}|${wd}|${slot}|${P}` : null
+  });
+  return {
+    schema: SCHEMA,
+    rules: [
+      rule('seed-221-tu-1', '221', 2, 1, 1, '2026-09-22', 'pdf'),
+      rule('seed-124-tu-2', '124', 1, 1, 2, '2026-09-22', 'pdf'),
+      rule('seed-326-we-5', '326', 3, 2, 5, '2026-10-28', 'manual'),
+      rule('seed-323-we-6', '323', 3, 2, 6, '2026-09-23', 'pdf'),
+      rule('seed-323-we-7', '323', 3, 2, 7, '2026-09-23', 'pdf'),
+      rule('seed-326-sa-1', '326', 3, 5, 1, '2026-09-26', 'pdf')
+    ],
+    exceptions: {},
+    oneOffs: []
+  };
+}
+
+/**
+ * Приводит сохранённые данные любой версии к текущей схеме.
+ * Сюда добавляется новый шаг каждый раз, когда меняется форма данных.
+ * @returns {State}
+ */
+function migrate(raw) {
+  if (!raw || typeof raw !== 'object') throw new Error('Пустые данные');
+  let s = raw;
+  // v1 (прототип 0.1): tpl / ex / one, без аудитории и источника
+  if (!s.schema && Array.isArray(s.tpl)) {
+    const fromPdf = ['t1', 't2', 't4', 't5', 't6'];
+    s = {
+      schema: 2,
+      rules: s.tpl.map(t => ({
+        id: t.id, group: t.group, course: +t.course, subject: t.subject, lessonType: 'ЛР', color: t.color || '',
+        room: '', weekday: t.weekday, slot: t.slot, from: t.from, until: t.until || null, teacher: '',
+        source: fromPdf.includes(t.id) ? 'pdf' : 'manual', importKey: null
+      })),
+      exceptions: s.ex || {},
+      oneOffs: (s.one || []).map(o => ({
+        id: o.id, date: o.date, slot: o.slot, group: o.group, course: +o.course, subject: o.subject, lessonType: 'ЛР',
+        color: o.color || '', room: '', cancelled: !!o.cancelled, teacher: '', source: 'manual'
+      }))
+    };
+  }
+  if (s.schema !== SCHEMA || !Array.isArray(s.rules) || !Array.isArray(s.oneOffs) || typeof s.exceptions !== 'object') {
+    throw new Error('Неизвестный формат данных');
+  }
+  return s;
+}
+
+const exKey = (ruleId, date) => `${ruleId}|${date}`;
+const splitKey = k => { const i = k.indexOf('|'); return [k.slice(0, i), k.slice(i + 1)]; };
+const ruleActiveOn = (r, date) => date >= r.from && (!r.until || date <= r.until) && weekday(date) === r.weekday;
+
+/** @returns {Occurrence} */
+function occFromRule(r, date, e) {
+  const p = e.patch || {};
+  const pick = f => (f in p ? p[f] : r[f]);
+  return {
+    type: 'rule', id: exKey(r.id, date), ruleId: r.id, orig: date,
+    group: pick('group'), course: pick('course'), subject: pick('subject'), lessonType: pick('lessonType'),
+    color: pick('color'), room: pick('room'),
+    date: e.moveTo ? e.moveTo.date : date, slot: e.moveTo ? e.moveTo.slot : r.slot,
+    cancelled: !!e.cancelled, moved: !!e.moveTo, source: r.source
+  };
+}
+
+/**
+ * Все занятия недели, с учётом переносов в неё и из неё.
+ * @param {State} s
+ * @param {string} ws  понедельник недели
+ * @returns {Occurrence[]}
+ */
+function weekOccurrences(s, ws) {
+  const we = addDays(ws, 6), inWeek = d => d >= ws && d <= we, out = [];
+  for (const r of s.rules) {
+    const date = addDays(ws, r.weekday);
+    if (!ruleActiveOn(r, date)) continue;
+    const e = s.exceptions[exKey(r.id, date)] || {};
+    if (!e.deleted && !e.moveTo) out.push(occFromRule(r, date, e));
+  }
+  for (const k in s.exceptions) {                       // перенесённые сюда с других дат
+    const e = s.exceptions[k];
+    if (!e.moveTo || e.deleted || !inWeek(e.moveTo.date)) continue;
+    const [id, date] = splitKey(k), r = s.rules.find(x => x.id === id);
+    if (r && ruleActiveOn(r, date)) out.push(occFromRule(r, date, e));
+  }
+  for (const o of s.oneOffs) if (inWeek(o.date)) out.push({...o, type: 'once', orig: o.date, moved: false});
+  return out;
+}
+
+/** Ближайшая неотменённая пара, которая ещё не закончилась. */
+function nextPair(s, now) {
+  const today = toIso(now);
+  for (let w = 0; w < 4; w++) {
+    const list = weekOccurrences(s, addDays(weekStart(today), 7 * w))
+      .filter(o => !o.cancelled)
+      .map(o => ({...o, start: atTime(o.date, CONFIG.slots[o.slot - 1].start), end: atTime(o.date, CONFIG.slots[o.slot - 1].end)}))
+      .filter(o => o.end > now)
+      .sort((a, b) => a.start - b.start);
+    if (list.length) return list[0];
+  }
+  return null;
+}
+
+/** Кто уже занимает слот (отменённые не считаются). */
+function busyAt(s, date, slot, exceptId) {
+  return weekOccurrences(s, weekStart(date)).find(o => o.date === date && o.slot === slot && !o.cancelled && o.id !== exceptId) || null;
+}
+
+function findAt(s, date, slot) {
+  return weekOccurrences(s, weekStart(date)).find(o => o.date === date && o.slot === slot && !o.cancelled)
+      || weekOccurrences(s, weekStart(date)).find(o => o.date === date && o.slot === slot) || null;
+}
+
+function cleanException(s, k) {
+  const e = s.exceptions[k];
+  if (!e) return;
+  if (e.patch && !Object.keys(e.patch).length) delete e.patch;
+  if (!e.cancelled) delete e.cancelled;
+  if (!e.deleted) delete e.deleted;
+  if (!Object.keys(e).length) delete s.exceptions[k];
+}
+
+/* Ниже — изменения. Они меняют переданную копию s; снаружи их вызывает только reduce(). */
+
+function applyChange(s, o, changes, scope) {
+  if (o.type === 'once') { Object.assign(s.oneOffs.find(x => x.id === o.id), changes); return; }
+  const r = s.rules.find(x => x.id === o.ruleId);
+  if (scope === 'one') {                                // только эта дата: исключение
+    const k = exKey(r.id, o.orig), e = s.exceptions[k] || (s.exceptions[k] = {}), p = {...(e.patch || {})};
+    for (const f of EDITABLE) if (f in changes) { if (changes[f] === r[f]) delete p[f]; else p[f] = changes[f]; }
+    e.patch = p;
+    if ('date' in changes || 'slot' in changes) {
+      const nd = changes.date ?? o.date, ns = changes.slot ?? o.slot;
+      if (nd === o.orig && ns === r.slot) delete e.moveTo; else e.moveTo = {date: nd, slot: ns};
+    }
+    cleanException(s, k);
+    return;
+  }
+  // эта и все следующие: правило делится на «до» и «после»
+  const nd = changes.date ?? o.orig, ns = changes.slot ?? r.slot, fields = {};
+  for (const f of EDITABLE) if (f in changes) fields[f] = changes[f];
+  const nwd = weekday(nd);
+  if (r.from >= o.orig) {                               // правило начинается с этой даты — меняем его целиком
+    const k = exKey(r.id, o.orig), keepCancel = s.exceptions[k] && s.exceptions[k].cancelled;
+    delete s.exceptions[k];
+    if (nwd !== r.weekday) for (const kk of Object.keys(s.exceptions)) if (kk.startsWith(r.id + '|')) delete s.exceptions[kk];
+    Object.assign(r, fields, {weekday: nwd, slot: ns, from: nd});
+    if (keepCancel) s.exceptions[exKey(r.id, nd)] = {cancelled: true};
+  } else {
+    const nr = {...r, ...fields, id: newId(), weekday: nwd, slot: ns, from: nd, until: r.until, source: 'manual'};
+    for (const k of Object.keys(s.exceptions)) {
+      const [id, d] = splitKey(k);
+      if (id !== r.id || d < o.orig) continue;
+      if (nwd === r.weekday && d !== o.orig) s.exceptions[exKey(nr.id, d)] = s.exceptions[k];
+      delete s.exceptions[k];
+    }
+    r.until = addDays(o.orig, -1);
+    s.rules.push(nr);
+  }
+}
+
+function removeOccurrence(s, o, scope) {
+  if (o.type === 'once') { s.oneOffs = s.oneOffs.filter(x => x.id !== o.id); return; }
+  const r = s.rules.find(x => x.id === o.ruleId);
+  if (scope === 'one') { (s.exceptions[exKey(r.id, o.orig)] ||= {}).deleted = true; return; }
+  if (r.from >= o.orig) {
+    s.rules = s.rules.filter(x => x !== r);
+    for (const k of Object.keys(s.exceptions)) if (k.startsWith(r.id + '|')) delete s.exceptions[k];
+  } else {
+    r.until = addDays(o.orig, -1);
+    for (const k of Object.keys(s.exceptions)) { const [id, d] = splitKey(k); if (id === r.id && d >= o.orig) delete s.exceptions[k]; }
+  }
+}
+
+function setCancelled(s, o, value) {
+  if (o.type === 'once') { s.oneOffs.find(x => x.id === o.id).cancelled = value; return; }
+  const k = exKey(o.ruleId, o.orig);
+  (s.exceptions[k] ||= {}).cancelled = value;
+  cleanException(s, k);
+}
+
+function addPair(s, f) {
+  const base = {group: f.group, course: f.course, subject: f.subject, lessonType: 'ЛР', color: f.color, room: f.room || '', teacher: ''};
+  if (f.repeat) s.rules.push({id: newId(), ...base, weekday: weekday(f.date), slot: f.slot, from: f.date, until: null, source: 'manual', importKey: null});
+  else s.oneOffs.push({id: newId(), ...base, date: f.date, slot: f.slot, cancelled: false, source: 'manual'});
+}
+
+/**
+ * Единственная точка изменения данных. Возвращает НОВОЕ состояние.
+ * Каждое действие — обычный объект, его можно сохранить в очередь
+ * и потом отправить на сервер (v2).
+ * @param {State} state
+ * @param {{type:string}} action
+ * @returns {State}
+ */
+function reduce(state, action) {
+  const s = structuredClone(state);
+  switch (action.type) {
+    case 'add':          addPair(s, action.pair); break;
+    case 'edit':         applyChange(s, action.occ, action.changes, action.scope); break;
+    case 'delete':       removeOccurrence(s, action.occ, action.scope); break;
+    case 'setCancelled': setCancelled(s, action.occ, action.value); break;
+    case 'reset':        return seed();
+    case 'load':         return migrate(action.data);
+    default: throw new Error('Неизвестное действие: ' + action.type);
+  }
+  return s;
+}
+
+/* =====================================================================
+   3. ХРАНИЛИЩЕ
+   Состояние живёт в одной переменной. Меняется только через dispatch.
+   ===================================================================== */
+let storageOk = true;
+
+function loadState() {
+  for (const key of [STORAGE_KEY, LEGACY_KEY]) {
+    try {
+      const raw = localStorage.getItem(key);
+      if (raw) return migrate(JSON.parse(raw));
+    } catch (e) { if (e instanceof DOMException) storageOk = false; }
+  }
+  return seed();
+}
+
+function saveState(s) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); }
+  catch (e) { if (storageOk) { storageOk = false; toast('Не получается сохранить: правки пропадут после закрытия'); } }
+}
+
+let state = loadState();
+if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+
+function dispatch(action) {
+  state = reduce(state, action);
+  saveState(state);
+  render();
+}
+
+/* =====================================================================
+   4. ИНТЕРФЕЙС
+   Рисует состояние и превращает касания в действия.
+   ===================================================================== */
+const $ = sel => document.querySelector(sel);
+const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+const abbr = s => { const w = String(s || '').trim().split(/\s+/)[0] || ''; return w.length <= 5 ? w : w.slice(0, 4) + '.'; };
+const userHex = o => (CONFIG.palette.find(p => p.id === o.color) || {}).hex || null;
+const courseClass = c => 'k' + ([1, 2, 3, 4].includes(+c) ? +c : 3);
+const slotOf = n => CONFIG.slots[n - 1];
+const thisWeek = () => { const t = toIso(new Date()); return weekday(t) === 6 ? addDays(weekStart(t), 7) : weekStart(t); };
+
+const ui = {week: thisWeek(), occ: []};
+
+function render() {
+  closePopover();
+  ui.occ = weekOccurrences(state, ui.week);
+  renderHero();
+  renderRange();
+  if (ui.occ.length) renderGrid(); else renderEmpty();
+  $('#hint').hidden = !ui.occ.length;
+}
+
+function renderHero() {
+  const n = nextPair(state, new Date());
+  const menu = `<button class="icon-btn" id="menu" aria-label="Меню"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>`;
+  if (!n) {
+    $('#hero').innerHTML = `<div class="col"><span class="lbl">Следующая пара</span><span class="none">В ближайшие 4 недели пар нет</span></div>${menu}`;
+  } else {
+    const now = new Date(), going = n.start <= now, hex = userHex(n);
+    let when;
+    if (going) when = `идёт сейчас, до ${slotOf(n.slot).end}`;
+    else {
+      const mins = Math.round((n.start - now) / 60000), today = toIso(now);
+      if (n.date === today) when = mins < 60 ? `сегодня, через ${mins} мин` : `сегодня, через ${Math.floor(mins / 60)} ч ${mins % 60} мин`;
+      else if (n.date === addDays(today, 1)) when = `завтра, ${humanDate(n.date)}`;
+      else when = `${DAY_IN[weekday(n.date)]}, ${humanDate(n.date)}`;
+    }
+    const room = n.room ? `ауд. ${esc(n.room)}` : 'ауд. не указана';
+    $('#hero').innerHTML = `<div class="col"><span class="lbl">${going ? 'Сейчас' : 'Следующая пара'}</span>
+      <div class="big"><span class="time">${slotOf(n.slot).start}</span><span class="chip ${courseClass(n.course)}${hex ? ' user' : ''}"${hex ? ` style="--cc:${hex}"` : ''}>${esc(n.group)}</span></div>
+      <span class="sub">${esc(when)}, ${room}<br>${esc(n.subject)}, ${n.course} курс, ${n.slot}-я пара</span></div>${menu}`;
+  }
+  $('#menu').onclick = openMenu;
+}
+
+function renderRange() {
+  const a = fromIso(ui.week), b = fromIso(addDays(ui.week, 5));
+  $('#range').textContent = a.getMonth() === b.getMonth()
+    ? `${a.getDate()}–${b.getDate()} ${MONTH_GEN[a.getMonth()]}`
+    : `${a.getDate()} ${MONTH_SHORT[a.getMonth()]} – ${b.getDate()} ${MONTH_SHORT[b.getMonth()]}`;
+  $('#tod').classList.toggle('on', ui.week !== thisWeek());
+}
+
+function cardHtml(o) {
+  const hex = userHex(o);
+  const cls = ['card', courseClass(o.course), hex ? 'hl' : '', o.cancelled ? 'off' : ''].join(' ');
+  return `<div class="${cls}" data-id="${esc(o.id)}"${hex ? ` style="--hl:${hex}"` : ''} role="button" tabindex="0"
+    aria-label="Группа ${esc(o.group)}, ${esc(o.subject)}${o.cancelled ? ', отменена' : ''}">
+    <div class="in"><b>${esc(o.group)}</b><span>${esc(abbr(o.subject))}</span></div>
+    ${o.cancelled ? '<i class="x" aria-hidden="true">✕</i>' : ''}${o.moved ? '<i class="mv" aria-hidden="true">↪</i>' : ''}</div>`;
+}
+
+function renderGrid() {
+  const today = toIso(new Date()), now = new Date();
+  let h = '<div class="corner"></div>';
+  for (let i = 0; i < 6; i++) {
+    const d = addDays(ui.week, i);
+    h += `<div class="dh${d === today ? ' today' : ''}"><span class="w">${DAY_SHORT[i]}</span><span class="n">${fromIso(d).getDate()}</span></div>`;
+  }
+  CONFIG.slots.forEach((sl, si) => {
+    const n = si + 1, last = n === CONFIG.slots.length ? ' last' : '';
+    const nowSlot = ui.week === weekStart(today) && now >= atTime(today, sl.start) && now < atTime(today, sl.end);
+    h += `<div class="tl${last}${nowSlot ? ' now' : ''}"><b>${n}</b><span>${sl.start}</span></div>`;
+    for (let i = 0; i < 6; i++) {
+      const d = addDays(ui.week, i);
+      const here = ui.occ.filter(o => o.date === d && o.slot === n).sort((a, b) => a.cancelled - b.cancelled);
+      h += `<div class="cell${d === today ? ' today' : ''}${last}" data-date="${d}" data-slot="${n}">${here.map(cardHtml).join('')}</div>`;
+    }
+  });
+  $('#week').innerHTML = `<div class="grid" id="grid">${h}</div>`;
+}
+
+function renderEmpty() {
+  $('#week').innerHTML = `<div class="empty"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color:var(--mute)"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>
+    <h2>На этой неделе пар нет</h2><p>Добавь пару вручную или открой соседнюю неделю.</p>
+    <button class="btn pri" id="emptyAdd" style="padding:0 20px">Добавить пару</button></div>`;
+  $('#emptyAdd').onclick = () => {
+    const t = toIso(new Date());
+    const date = t >= ui.week && t <= addDays(ui.week, 5) ? t : ui.week;
+    openEditor(null, {date, slot: 1});
+  };
+}
+
+/* ---------- уведомление ---------- */
+let toastTimer;
+function toast(msg, sticky) {
+  const t = $('#toast');
+  t.textContent = msg; t.classList.add('on'); clearTimeout(toastTimer);
+  if (!sticky) toastTimer = setTimeout(() => t.classList.remove('on'), 2600);
+}
+const hideToast = () => $('#toast').classList.remove('on');
+
+/* ---------- подсказка по тапу ---------- */
+let pop = null;
+function closePopover() {
+  if (!pop) return;
+  pop.catcher.remove(); pop.el.remove();
+  document.querySelectorAll('.card.sel').forEach(c => c.classList.remove('sel'));
+  pop = null;
+}
+
+function openPopover(o, card) {
+  closePopover();
+  const hex = userHex(o), sl = slotOf(o.slot);
+  const catcher = document.createElement('div'); catcher.className = 'pop-catch';
+  const el = document.createElement('section');
+  el.className = 'popover'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', `Группа ${o.group}`);
+  el.innerHTML = `<span class="tip"></span>
+    <div class="head"><span class="chip ${courseClass(o.course)}${hex ? ' user' : ''}"${hex ? ` style="--cc:${hex}"` : ''}>${esc(o.group)}</span><span>${o.course} курс, ${esc(o.lessonType)}</span></div>
+    <div><div class="when">${DAY_NAME[weekday(o.date)].replace(/^./, c => c.toUpperCase())}, ${humanDate(o.date)}, ${sl.start}–${sl.end}</div>
+      <div class="subj">${esc(o.subject)}</div>
+      ${o.cancelled ? '<div class="flag">Отменена</div>' : ''}${o.moved ? `<div class="subj" style="font-size:13px;color:var(--mute)">↪ перенесена разово</div>` : ''}</div>
+    <div class="room" id="pRoom"></div>
+    <button class="btn pri" id="pEdit">Изменить</button>
+    <div class="two-btn"><button class="btn dan" id="pCancel">${o.cancelled ? 'Вернуть пару' : 'Отменить пару'}</button><button class="btn sec" id="pCal">В календарь</button></div>`;
+  document.body.append(catcher, el);
+  card.classList.add('sel');
+  pop = {el, catcher, o};
+
+  const roomRow = el.querySelector('#pRoom');
+  const showRoom = () => {
+    roomRow.innerHTML = `<span>${o.room ? 'Аудитория ' + esc(o.room) : 'Аудитория не указана'}</span><button>${o.room ? 'Изменить' : 'Указать'}</button>`;
+    roomRow.querySelector('button').onclick = editRoom;
+  };
+  const editRoom = () => {
+    roomRow.innerHTML = `<input type="text" aria-label="Аудитория" placeholder="например, 301" value="${esc(o.room)}" autocomplete="off"><button>Готово</button>`;
+    const input = roomRow.querySelector('input');
+    const done = () => {
+      const room = input.value.trim();
+      if (room === o.room) { showRoom(); return; }
+      dispatch({type: 'edit', occ: o, changes: {room}, scope: o.type === 'rule' ? 'future' : 'one'});
+      toast(!room ? 'Аудитория убрана' : o.type === 'rule' ? `Аудитория ${room}: с ${humanDate(o.orig)} и дальше` : `Аудитория ${room}`);
+      const again = findAt(state, o.date, o.slot), c = again && document.querySelector(`.card[data-id="${CSS.escape(again.id)}"]`);
+      if (c) openPopover(again, c);
+    };
+    roomRow.querySelector('button').onclick = done;
+    input.onkeydown = e => { if (e.key === 'Enter') done(); };
+    input.focus();
+  };
+  showRoom();
+
+  el.querySelector('#pEdit').onclick = () => { closePopover(); openEditor(o); };
+  el.querySelector('#pCancel').onclick = () => {
+    closePopover();
+    dispatch({type: 'setCancelled', occ: o, value: !o.cancelled});
+    toast(o.cancelled ? 'Пара возвращена' : `Отменена: ${humanDate(o.orig)}`);
+  };
+  el.querySelector('#pCal').onclick = () => window.open(gcalUrl(o), '_blank', 'noopener');
+  catcher.addEventListener('click', closePopover);
+  catcher.addEventListener('touchstart', e => { e.preventDefault(); closePopover(); }, {passive: false});
+
+  // положение: под карточкой, а если не помещается — над ней
+  const r = card.getBoundingClientRect(), w = el.offsetWidth, hgt = el.offsetHeight, gap = 10;
+  const left = Math.min(Math.max(12, r.left + r.width / 2 - w / 2), window.innerWidth - w - 12);
+  const below = r.bottom + gap + hgt <= window.innerHeight - 8;
+  el.style.left = left + 'px';
+  el.style.top = (below ? r.bottom + gap : Math.max(8, r.top - gap - hgt)) + 'px';
+  const tip = el.querySelector('.tip');
+  tip.classList.add(below ? 'up' : 'down');
+  tip.style.left = Math.min(Math.max(16, r.left + r.width / 2 - left - 7), w - 30) + 'px';
+}
+
+/* ---------- шторки ---------- */
+function openSheet(html, label) {
+  closePopover();
+  const scrim = document.createElement('div'); scrim.className = 'scrim';
+  scrim.innerHTML = `<section class="sheet" role="dialog" aria-modal="true" aria-label="${esc(label)}"><span class="grab"></span>${html}</section>`;
+  document.body.appendChild(scrim);
+  hideToast();
+  requestAnimationFrame(() => scrim.classList.add('open'));
+  const close = () => { scrim.classList.remove('open'); setTimeout(() => scrim.remove(), 180); };
+  scrim.addEventListener('click', e => { if (e.target === scrim) close(); });
+  return {root: scrim.querySelector('.sheet'), scrim, close};
+}
+
+/** Спрашивает «только эта дата или дальше». Возвращает 'one' | 'future' | null. */
+function askScope(o, title, note) {
+  if (o.type === 'once') return Promise.resolve('one');
+  return new Promise(resolve => {
+    const {root, scrim, close} = openSheet(`<h2>${esc(title)}</h2>${note ? `<p class="note">${esc(note)}</p>` : ''}
+      <button class="opt" data-v="one"><b>Только ${humanDate(o.orig)}</b><small>Остальные недели не меняются</small></button>
+      <button class="opt" data-v="future"><b>${humanDate(o.orig)} и все следующие недели</b><small>Прошлые недели останутся как были</small></button>
+      <button class="btn plain" data-v="">Отмена</button>`, title);
+    let done = false;
+    const finish = v => { if (done) return; done = true; close(); resolve(v || null); };
+    root.addEventListener('click', e => { const b = e.target.closest('[data-v]'); if (b) finish(b.dataset.v); });
+    scrim.addEventListener('click', e => { if (e.target === scrim) finish(''); });
+  });
+}
+
+function openEditor(o, preset) {
+  const isNew = !o;
+  const v = isNew ? {group: '', course: 3, subject: CONFIG.subjects[0], room: '', color: '', date: preset.date, slot: preset.slot, cancelled: false} : {...o};
+  const rule = !isNew && o.type === 'rule' ? state.rules.find(r => r.id === o.ruleId) : null;
+  let info = '';
+  if (rule) {
+    info = `Повторяется каждую неделю. ${rule.source === 'pdf' ? 'Из PDF факультета.' : 'Добавлена вручную.'}`;
+    if (o.moved) info += ` На этой неделе перенесена, обычно ${DAY_NAME[rule.weekday]}, ${slotOf(rule.slot).start}.`;
+  } else if (!isNew) info = 'Разовая пара.';
+  const slots = CONFIG.slots.map((s, i) => `<option value="${i + 1}"${v.slot === i + 1 ? ' selected' : ''}>${i + 1}-я, ${s.start}</option>`).join('');
+  const {root, close} = openSheet(`
+    <h2>${isNew ? 'Новая пара' : 'Группа ' + esc(v.group)}</h2>
+    ${info ? `<p class="info">${esc(info)}</p>` : ''}
+    <div class="row2 gc">
+      <div class="f"><label for="eg">Группа</label><input type="text" id="eg" inputmode="numeric" autocomplete="off" value="${esc(v.group)}" placeholder="326"></div>
+      <div class="f"><span class="lab">Курс</span><div class="courses" id="ec">${[1, 2, 3, 4].map(c => `<button data-c="${c}" aria-pressed="${+v.course === c}">${c}</button>`).join('')}</div></div>
+    </div>
+    <div class="row2">
+      <div class="f"><label for="es">Предмет</label><input type="text" id="es" list="subjects" value="${esc(v.subject)}"><datalist id="subjects">${CONFIG.subjects.map(s => `<option value="${esc(s)}">`).join('')}</datalist></div>
+      <div class="f"><label for="er">Аудитория</label><input type="text" id="er" autocomplete="off" value="${esc(v.room)}" placeholder="например, 301"></div>
+    </div>
+    <div class="row2 dt">
+      <div class="f"><label for="ed">Дата</label><input type="date" id="ed" value="${v.date}"></div>
+      <div class="f"><label for="ep">Пара</label><select id="ep">${slots}</select></div>
+    </div>
+    <div class="f"><span class="lab">Цвет</span><div class="swatches" id="ecol">${CONFIG.palette.map(p => `<button class="sw${p.id ? '' : ' def'}" data-col="${p.id}" style="--sw:${p.hex || 'transparent'}" aria-label="${p.name}" aria-pressed="${(v.color || '') === p.id}"></button>`).join('')}</div></div>
+    ${isNew
+      ? `<label class="tog"><span><span class="t">Каждую неделю</span><span class="d">Иначе пара будет только в эту дату</span></span><input type="checkbox" id="erep" checked></label>`
+      : `<label class="tog"><span><span class="t">Отменена</span><span class="d">${rule ? `Только ${humanDate(o.orig)}. ` : ''}Пара останется в сетке размытой.</span></span><input type="checkbox" id="eoff"${v.cancelled ? ' checked' : ''}></label>`}
+    <button class="btn pri" id="esave">${isNew ? 'Добавить' : 'Сохранить'}</button>
+    ${isNew ? '' : '<div class="two-btn"><button class="btn sec" id="ecal">В Google Календарь</button><button class="btn ghost-dan" id="edel">Удалить пару</button></div>'}`,
+    isNew ? 'Новая пара' : 'Группа ' + v.group);
+
+  let course = +v.course, color = v.color || '';
+  root.querySelector('#ec').onclick = e => {
+    const b = e.target.closest('[data-c]'); if (!b) return;
+    course = +b.dataset.c; root.querySelectorAll('#ec button').forEach(x => x.setAttribute('aria-pressed', x === b));
+  };
+  root.querySelector('#ecol').onclick = e => {
+    const b = e.target.closest('[data-col]'); if (!b) return;
+    color = b.dataset.col; root.querySelectorAll('#ecol .sw').forEach(x => x.setAttribute('aria-pressed', x === b));
+  };
+  const read = () => ({
+    group: root.querySelector('#eg').value.trim(), course, subject: root.querySelector('#es').value.trim(),
+    room: root.querySelector('#er').value.trim(), color, date: root.querySelector('#ed').value, slot: +root.querySelector('#ep').value
+  });
+
+  root.querySelector('#esave').onclick = async () => {
+    const f = read();
+    if (!f.group) { toast('Укажи номер группы'); root.querySelector('#eg').focus(); return; }
+    if (!f.date) { toast('Выбери дату'); return; }
+    if (weekday(f.date) === 6) { toast('В воскресенье пар нет, выбери другой день'); return; }
+    if (isNew) {
+      const b = busyAt(state, f.date, f.slot);
+      if (b) { toast(`В этом слоте уже группа ${b.group}`); return; }
+      f.repeat = root.querySelector('#erep').checked;
+      close(); dispatch({type: 'add', pair: f});
+      toast(f.repeat ? `Добавлено: ${DAY_IN[weekday(f.date)]}, ${slotOf(f.slot).start}, каждую неделю` : `Добавлено: ${humanDate(f.date)}, ${slotOf(f.slot).start}`);
+      return;
+    }
+    const changes = {};
+    for (const k of ['group', 'course', 'subject', 'room', 'color']) if (String(f[k]) !== String(o[k] ?? '')) changes[k] = f[k];
+    if (f.date !== o.date) changes.date = f.date;
+    if (f.slot !== o.slot) changes.slot = f.slot;
+    if ('date' in changes || 'slot' in changes) {
+      const b = busyAt(state, f.date, f.slot, o.id);
+      if (b) { toast(`В этом слоте уже группа ${b.group}`); return; }
+    }
+    const off = root.querySelector('#eoff').checked;
+    if (Object.keys(changes).length) {
+      const scope = await askScope(o, 'Сохранить изменения?');
+      if (!scope) return;
+      close();
+      dispatch({type: 'edit', occ: o, changes, scope});
+      if (off !== o.cancelled) { const after = findAt(state, f.date, f.slot); if (after) dispatch({type: 'setCancelled', occ: after, value: off}); }
+    } else {
+      close();
+      if (off !== o.cancelled) dispatch({type: 'setCancelled', occ: o, value: off});
+    }
+    toast('Сохранено');
+  };
+  if (!isNew) {
+    root.querySelector('#edel').onclick = async () => {
+      const scope = await askScope(o, `Удалить группу ${o.group}?`);
+      if (!scope) return;
+      close(); dispatch({type: 'delete', occ: o, scope}); toast('Пара удалена');
+    };
+    root.querySelector('#ecal').onclick = () => window.open(gcalUrl(o), '_blank', 'noopener');
+  }
+}
+
+function gcalUrl(o) {
+  const sl = slotOf(o.slot), d = o.date.replace(/-/g, '');
+  const p = new URLSearchParams({
+    action: 'TEMPLATE', text: `Гр. ${o.group}, ${o.subject}`,
+    dates: `${d}T${sl.start.replace(':', '')}00/${d}T${sl.end.replace(':', '')}00`, ctz: CONFIG.timezone,
+    details: `${o.course} курс, ${o.slot}-я пара`
+  });
+  if (o.room) p.set('location', `ауд. ${o.room}`);
+  if (o.type === 'rule' && !o.moved) {
+    const r = state.rules.find(x => x.id === o.ruleId);
+    p.set('recur', 'RRULE:FREQ=WEEKLY' + (r.until ? `;UNTIL=${r.until.replace(/-/g, '')}T205959Z` : ''));
+  }
+  return 'https://calendar.google.com/calendar/render?' + p.toString();
+}
+
+function openMenu() {
+  const ico = d => `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+  const {root, close} = openSheet(`<h2>Меню</h2>
+    <button class="mi" disabled>${ico('<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 12v6M9 15l3 3 3-3"/>')}<span><b>Импорт расписания из PDF</b><small>Появится в следующей версии</small></span></button>
+    <button class="mi" data-a="export">${ico('<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>')}<span><b>Скачать резервную копию</b><small>Файл со всем расписанием и правками</small></span></button>
+    <button class="mi" data-a="import">${ico('<path d="M12 21V9M7 14l5-5 5 5M5 3h14"/>')}<span><b>Загрузить из копии</b><small>Заменит текущее расписание</small></span></button>
+    <button class="mi dan" data-a="reset">${ico('<path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/>')}<span><b>Вернуть исходное расписание</b><small>Шесть пар на 29 октября, все правки пропадут</small></span></button>
+    <p class="ver">Версия ${APP_VERSION}${storageOk ? '' : '. Сохранение недоступно в этом режиме браузера'}</p>`, 'Меню');
+  root.onclick = async e => {
+    const b = e.target.closest('[data-a]'); if (!b) return;
+    const a = b.dataset.a;
+    if (a === 'export') {
+      const blob = new Blob([JSON.stringify(state, null, 1)], {type: 'application/json'});
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob); link.download = `pary-${toIso(new Date())}.json`;
+      document.body.appendChild(link); link.click(); link.remove();
+      setTimeout(() => URL.revokeObjectURL(link.href), 2000);
+      close(); toast('Копия скачана');
+    } else if (a === 'import') { close(); $('#file').click(); }
+    else if (a === 'reset') {
+      close();
+      const ok = await new Promise(res => {
+        const s = openSheet(`<h2>Вернуть исходное расписание?</h2><p class="note">Все правки пропадут. Сначала можно скачать резервную копию.</p>
+          <button class="btn pri" data-v="1" style="background:var(--danger)">Да, сбросить правки</button><button class="btn plain" data-v="">Отмена</button>`, 'Сброс');
+        s.root.onclick = ev => { const x = ev.target.closest('[data-v]'); if (x) { s.close(); res(!!x.dataset.v); } };
+      });
+      if (ok) { dispatch({type: 'reset'}); toast('Расписание сброшено'); }
+    }
+  };
+}
+$('#file').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = '';
+  if (!f) return;
+  try { dispatch({type: 'load', data: JSON.parse(await f.text())}); toast('Расписание загружено'); }
+  catch (_) { toast('Это не файл резервной копии расписания'); }
+};
+
+/* ---------- перетаскивание: удержание 280 мс, потом ведём пальцем ---------- */
+const LONG_PRESS = 280, SLOP = 10;
+let drag = null, press = null, lastTouch = 0;
+const occById = id => ui.occ.find(o => o.id === id);
+const cellAt = (x, y) => { const el = document.elementFromPoint(x, y); return el && el.closest('.cell'); };
+
+function startDrag(card, x, y) {
+  const o = occById(card.dataset.id); if (!o) return;
+  closePopover();
+  const g = card.cloneNode(true); g.classList.add('ghost'); g.classList.remove('sel');
+  document.body.appendChild(g); card.classList.add('lift');
+  drag = {card, o, ghost: g, target: null};
+  moveDrag(x, y);
+  if (navigator.vibrate) navigator.vibrate(12);
+}
+function moveDrag(x, y) {
+  drag.ghost.style.left = x + 'px'; drag.ghost.style.top = y + 'px';
+  const c = cellAt(x, y);
+  if (c === drag.target) return;
+  if (drag.target) drag.target.classList.remove('target', 'busy');
+  drag.target = c;
+  if (!c) { toast('Веди к нужной клетке', true); return; }
+  const date = c.dataset.date, slot = +c.dataset.slot, b = busyAt(state, date, slot, drag.o.id);
+  c.classList.add('target');
+  if (b) { c.classList.add('busy'); toast(`Слот занят группой ${b.group}`, true); }
+  else if (date === drag.o.date && slot === drag.o.slot) toast('Отпусти здесь, чтобы ничего не менять', true);
+  else toast(`Отпусти, чтобы перенести ${DAY_TO[weekday(date)]}, ${slotOf(slot).start}`, true);
+}
+async function endDrag() {
+  const {o, ghost, card, target} = drag; drag = null;
+  ghost.remove(); card.classList.remove('lift'); hideToast();
+  if (!target) return;
+  target.classList.remove('target', 'busy');
+  const date = target.dataset.date, slot = +target.dataset.slot;
+  if (date === o.date && slot === o.slot) return;
+  const b = busyAt(state, date, slot, o.id);
+  if (b) { toast(`Слот занят группой ${b.group}`); return; }
+  const rule = o.type === 'rule' && state.rules.find(r => r.id === o.ruleId);
+  const scope = await askScope(o, `Перенести ${DAY_TO[weekday(date)]}, ${slotOf(slot).start}?`,
+    rule ? `Группа ${o.group}, обычно ${DAY_NAME[rule.weekday]}, ${slotOf(rule.slot).start}` : `Группа ${o.group}`);
+  if (!scope) return;
+  dispatch({type: 'edit', occ: o, changes: {date, slot}, scope});
+  toast(`Перенесено: ${DAY_SHORT[weekday(date)]} ${humanDate(date)}, ${slotOf(slot).start}`);
+}
+const cancelPress = () => { if (press) { clearTimeout(press.timer); press = null; } };
+const openCard = card => { const o = occById(card.dataset.id); if (o) openPopover(o, card); };
+
+const week = $('#week');
+week.addEventListener('touchstart', e => {
+  lastTouch = Date.now();
+  const card = e.target.closest('.card'); if (!card || e.touches.length > 1) return;
+  const t = e.touches[0];
+  press = {card, x: t.clientX, y: t.clientY, timer: setTimeout(() => { if (press) { const p = press; press = null; startDrag(p.card, p.x, p.y); } }, LONG_PRESS)};
+}, {passive: true});
+document.addEventListener('touchmove', e => {
+  lastTouch = Date.now();
+  if (drag) { e.preventDefault(); const t = e.touches[0]; moveDrag(t.clientX, t.clientY); return; }
+  if (press) { const t = e.touches[0]; if (Math.hypot(t.clientX - press.x, t.clientY - press.y) > SLOP) cancelPress(); }
+}, {passive: false});
+document.addEventListener('touchend', e => {
+  lastTouch = Date.now();
+  if (drag) { e.preventDefault(); endDrag(); return; }
+  if (press) { const card = press.card; cancelPress(); e.preventDefault(); openCard(card); }
+}, {passive: false});
+document.addEventListener('touchcancel', () => { cancelPress(); if (drag) { drag.target = null; endDrag(); } });
+week.addEventListener('contextmenu', e => { if (e.target.closest('.card')) e.preventDefault(); });
+
+// мышь — чтобы проверять на компьютере
+week.addEventListener('mousedown', e => {
+  if (Date.now() - lastTouch < 800 || e.button !== 0) return;
+  const card = e.target.closest('.card'); if (!card) return;
+  press = {card, x: e.clientX, y: e.clientY, mouse: true, timer: setTimeout(() => { if (press) { const p = press; press = null; startDrag(p.card, p.x, p.y); } }, LONG_PRESS)};
+});
+document.addEventListener('mousemove', e => {
+  if (Date.now() - lastTouch < 800) return;
+  if (drag) { moveDrag(e.clientX, e.clientY); return; }
+  if (press && press.mouse && Math.hypot(e.clientX - press.x, e.clientY - press.y) > 6) { const p = press; cancelPress(); startDrag(p.card, e.clientX, e.clientY); }
+});
+document.addEventListener('mouseup', () => {
+  if (Date.now() - lastTouch < 800) return;
+  if (drag) { endDrag(); return; }
+  if (press && press.mouse) { const card = press.card; cancelPress(); openCard(card); }
+});
+week.addEventListener('click', e => {
+  if (e.target.closest('.card')) return;
+  const c = e.target.closest('.cell'); if (!c) return;
+  openEditor(null, {date: c.dataset.date, slot: +c.dataset.slot});
+});
+week.addEventListener('keydown', e => {
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('card')) { e.preventDefault(); openCard(e.target); }
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closePopover(); });
+
+$('#prev').onclick = () => { ui.week = addDays(ui.week, -7); render(); };
+$('#next').onclick = () => { ui.week = addDays(ui.week, 7); render(); };
+$('#tod').onclick = () => { ui.week = thisWeek(); render(); };
+document.addEventListener('visibilitychange', () => { if (!document.hidden) renderHero(); });
+setInterval(renderHero, 30000);
+
+render();
+if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js').catch(() => {});
+</script>
+</body>
+</html>
