@@ -537,6 +537,10 @@ button {
   text-align: center;
 }
 
+.empty-week__icon {
+  color: var(--mute);
+}
+
 .empty-week__title {
   margin: 0;
   font-size: 18px;
@@ -548,6 +552,10 @@ button {
   line-height: 1.5;
   color: var(--ink2);
   max-width: 270px;
+}
+
+.empty-week__button {
+  padding: 0 20px;
 }
 
 /* ---------- подсказка по тапу ---------- */
@@ -618,6 +626,13 @@ button {
 .popover__subject {
   font-size: 15px;
   margin-top: 3px;
+}
+
+/* «↪ перенесена разово» под предметом */
+.popover__moved {
+  font-size: 13px;
+  margin-top: 3px;
+  color: var(--mute);
 }
 
 .popover__flag {
@@ -857,6 +872,12 @@ button {
 
 .btn--primary {
   background: var(--ink);
+  color: var(--on-ink);
+}
+
+/* красная заливка — для необратимых действий («Да, сбросить правки») */
+.btn--danger {
+  background: var(--danger);
   color: var(--on-ink);
 }
 

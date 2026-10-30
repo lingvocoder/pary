@@ -29,7 +29,7 @@ export function openMenu() {
       close();
       const ok = await new Promise(res => {
         const s = openSheet(`<h2 class="sheet__title">Вернуть исходное расписание?</h2><p class="sheet__note">Все правки пропадут. Сначала можно скачать резервную копию.</p>
-          <button class="btn btn--primary" data-v="1" style="background:var(--danger)">Да, сбросить правки</button><button class="btn btn--plain" data-v="">Отмена</button>`, 'Сброс');
+          <button class="btn btn--danger" data-v="1">Да, сбросить правки</button><button class="btn btn--plain" data-v="">Отмена</button>`, 'Сброс');
         s.root.onclick = ev => { const x = ev.target.closest('[data-v]'); if (x) { s.close(); res(!!x.dataset.v); } };
       });
       if (ok) { dispatch({type: 'reset'}); toast('Расписание сброшено'); }

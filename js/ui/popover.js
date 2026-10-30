@@ -26,7 +26,7 @@ export function openPopover(o, card) {
     <div class="popover__head"><span class="chip popover__chip ${courseClass(o.course)}${hex ? ' chip--custom-color' : ''}"${hex ? ` style="--cc:${hex}"` : ''}>${esc(o.group)}</span><span class="popover__meta">${o.course} курс, ${esc(o.lessonType)}</span></div>
     <div><div class="popover__when">${DAY_NAME[weekday(o.date)].replace(/^./, c => c.toUpperCase())}, ${humanDate(o.date)}, ${sl.start}–${sl.end}</div>
       <div class="popover__subject">${esc(o.subject)}</div>
-      ${o.cancelled ? '<div class="popover__flag">Отменена</div>' : ''}${o.moved ? `<div class="popover__subject" style="font-size:13px;color:var(--mute)">↪ перенесена разово</div>` : ''}</div>
+      ${o.cancelled ? '<div class="popover__flag">Отменена</div>' : ''}${o.moved ? '<div class="popover__moved">↪ перенесена разово</div>' : ''}</div>
     <div class="popover__room" id="pRoom"></div>
     <button class="btn btn--primary btn--compact" id="pEdit">Изменить</button>
     <div class="button-pair"><button class="btn btn--compact btn--danger-outline" id="pCancel">${o.cancelled ? 'Вернуть пару' : 'Отменить пару'}</button><button class="btn btn--compact btn--outline" id="pCal">В календарь</button></div>`;
