@@ -23,7 +23,7 @@ export function openPopover(o, card) {
   const el = document.createElement('section');
   el.className = 'popover'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', `Группа ${o.group}`);
   el.innerHTML = `<span class="tip"></span>
-    <div class="head"><span class="chip ${courseClass(o.course)}${hex ? ' user' : ''}"${hex ? ` style="--cc:${hex}"` : ''}>${esc(o.group)}</span><span>${o.course} курс, ${esc(o.lessonType)}</span></div>
+    <div class="head"><span class="chip ${courseClass(o.course)}${hex ? ' chip--custom-color' : ''}"${hex ? ` style="--cc:${hex}"` : ''}>${esc(o.group)}</span><span>${o.course} курс, ${esc(o.lessonType)}</span></div>
     <div><div class="when">${DAY_NAME[weekday(o.date)].replace(/^./, c => c.toUpperCase())}, ${humanDate(o.date)}, ${sl.start}–${sl.end}</div>
       <div class="subj">${esc(o.subject)}</div>
       ${o.cancelled ? '<div class="flag">Отменена</div>' : ''}${o.moved ? `<div class="subj" style="font-size:13px;color:var(--mute)">↪ перенесена разово</div>` : ''}</div>

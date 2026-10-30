@@ -12,15 +12,15 @@
 <link rel="stylesheet" href="./css/app.css">
 </head>
 <body>
-<div class="wrap">
+<div class="page">
   <header class="hero" id="hero"></header>
-  <nav class="nav">
-    <button class="arr" id="prev" aria-label="Предыдущая неделя">‹</button>
-    <div class="range"><span id="range"></span><button class="tod" id="tod">К текущей неделе</button></div>
-    <button class="arr" id="next" aria-label="Следующая неделя">›</button>
+  <nav class="week-nav">
+    <button class="week-nav__arrow" id="prev" aria-label="Предыдущая неделя">‹</button>
+    <div class="week-nav__range"><span id="range"></span><button class="week-nav__today" id="tod">К текущей неделе</button></div>
+    <button class="week-nav__arrow" id="next" aria-label="Следующая неделя">›</button>
   </nav>
   <main id="week"></main>
-  <p class="hint" id="hint">Нажми на пару, чтобы увидеть подробности. Удерживай, чтобы перенести.<br>Нажми на пустую клетку, чтобы добавить пару.</p>
+  <p class="page__hint" id="hint">Нажми на пару, чтобы увидеть подробности. Удерживай, чтобы перенести.<br>Нажми на пустую клетку, чтобы добавить пару.</p>
 </div>
 <div class="toast" id="toast" role="status"></div>
 <input type="file" id="file" accept="application/json,.json" hidden>

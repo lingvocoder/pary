@@ -23,7 +23,7 @@ export function renderHero() {
   const n = nextPair(getState(), new Date());
   const menu = `<button class="icon-btn" id="menu" aria-label="Меню"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>`;
   if (!n) {
-    $('#hero').innerHTML = `<div class="col"><span class="lbl">Следующая пара</span><span class="none">В ближайшие 4 недели пар нет</span></div>${menu}`;
+    $('#hero').innerHTML = `<div class="hero__info"><span class="hero__label">Следующая пара</span><span class="hero__empty">В ближайшие 4 недели пар нет</span></div>${menu}`;
   } else {
     const now = new Date(), going = n.start <= now, hex = userHex(n);
     let when;
@@ -35,9 +35,9 @@ export function renderHero() {
       else when = `${DAY_IN[weekday(n.date)]}, ${humanDate(n.date)}`;
     }
     const room = n.room ? `ауд. ${esc(n.room)}` : 'ауд. не указана';
-    $('#hero').innerHTML = `<div class="col"><span class="lbl">${going ? 'Сейчас' : 'Следующая пара'}</span>
-      <div class="big"><span class="time">${slotOf(n.slot).start}</span><span class="chip ${courseClass(n.course)}${hex ? ' user' : ''}"${hex ? ` style="--cc:${hex}"` : ''}>${esc(n.group)}</span></div>
-      <span class="sub">${esc(when)}, ${room}<br>${esc(n.subject)}, ${n.course} курс, ${n.slot}-я пара</span></div>${menu}`;
+    $('#hero').innerHTML = `<div class="hero__info"><span class="hero__label">${going ? 'Сейчас' : 'Следующая пара'}</span>
+      <div class="hero__main"><span class="hero__time">${slotOf(n.slot).start}</span><span class="chip hero__chip ${courseClass(n.course)}${hex ? ' chip--custom-color' : ''}"${hex ? ` style="--cc:${hex}"` : ''}>${esc(n.group)}</span></div>
+      <span class="hero__details">${esc(when)}, ${room}<br>${esc(n.subject)}, ${n.course} курс, ${n.slot}-я пара</span></div>${menu}`;
   }
   $('#menu').onclick = openMenu;
 }
@@ -47,7 +47,7 @@ function renderRange() {
   $('#range').textContent = a.getMonth() === b.getMonth()
     ? `${a.getDate()}–${b.getDate()} ${MONTH_GEN[a.getMonth()]}`
     : `${a.getDate()} ${MONTH_SHORT[a.getMonth()]} – ${b.getDate()} ${MONTH_SHORT[b.getMonth()]}`;
-  $('#tod').classList.toggle('on', ui.week !== thisWeek());
+  $('#tod').classList.toggle('week-nav__today--visible', ui.week !== thisWeek());
 }
 
 function cardHtml(o) {

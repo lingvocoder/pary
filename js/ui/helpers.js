@@ -16,7 +16,7 @@ let toastTimer;
 /** Короткое уведомление сверху. sticky — не прятать само (для перетаскивания). */
 export function toast(msg, sticky) {
   const t = $('#toast');
-  t.textContent = msg; t.classList.add('on'); clearTimeout(toastTimer);
-  if (!sticky) toastTimer = setTimeout(() => t.classList.remove('on'), 2600);
+  t.textContent = msg; t.classList.add('toast--visible'); clearTimeout(toastTimer);
+  if (!sticky) toastTimer = setTimeout(() => t.classList.remove('toast--visible'), 2600);
 }
-export const hideToast = () => $('#toast').classList.remove('on');
+export const hideToast = () => $('#toast').classList.remove('toast--visible');

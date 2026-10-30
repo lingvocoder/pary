@@ -165,10 +165,32 @@ button {
   cursor: pointer;
 }
 
-.wrap {
+/* ---------- страница ---------- */
+.page {
   max-width: 560px;
   margin: 0 auto;
   padding: 0 12px 28px;
+}
+
+.page__hint {
+  font-size: 12px;
+  color: var(--mute);
+  text-align: center;
+  margin: 12px 8px 0;
+  line-height: 1.45;
+}
+
+/* ---------- бейдж группы: номер на фоне цвета курса ---------- */
+.chip {
+  font-weight: 700;
+  color: var(--chip-text);
+  background: var(--cc);
+  border-radius: 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+.chip--custom-color {
+  color: #FFFFFF;
 }
 
 /* ---------- следующая пара ---------- */
@@ -179,26 +201,26 @@ button {
   padding: 20px 4px 0;
 }
 
-.hero .col {
+.hero__info {
   display: flex;
   flex-direction: column;
   gap: 6px;
   min-width: 0;
 }
 
-.hero .lbl {
+.hero__label {
   font-size: 13px;
   color: var(--ink2);
 }
 
-.hero .big {
+.hero__main {
   display: flex;
   align-items: baseline;
   gap: 12px;
   flex-wrap: wrap;
 }
 
-.hero .time {
+.hero__time {
   font-size: 56px;
   font-weight: 800;
   letter-spacing: -2px;
@@ -206,30 +228,18 @@ button {
   font-variant-numeric: tabular-nums;
 }
 
-.hero .none {
+.hero__empty {
   font-size: 26px;
   font-weight: 700;
   line-height: 1.2;
 }
 
-.chip {
-  font-weight: 700;
-  color: var(--chip-text);
-  background: var(--cc);
-  border-radius: 8px;
-  font-variant-numeric: tabular-nums;
-}
-
-.chip.user {
-  color: #FFFFFF;
-}
-
-.hero .chip {
+.hero__chip {
   font-size: 20px;
   padding: 3px 10px;
 }
 
-.hero .sub {
+.hero__details {
   font-size: 14px;
   color: var(--ink2);
   line-height: 1.45;
@@ -253,7 +263,7 @@ button {
 }
 
 /* ---------- навигация по неделям ---------- */
-.nav {
+.week-nav {
   display: grid;
   grid-template-columns: 44px 1fr 44px;
   align-items: center;
@@ -262,7 +272,7 @@ button {
   min-height: 68px;
 }
 
-.arr {
+.week-nav__arrow {
   width: 44px;
   height: 44px;
   border-radius: 50%;
@@ -271,18 +281,19 @@ button {
   font-size: 18px;
 }
 
-.arr:active {
+.week-nav__arrow:active {
   background: var(--line2);
 }
 
-.range {
+.week-nav__range {
   text-align: center;
   font-size: 15px;
   font-weight: 600;
   line-height: 1.3;
 }
 
-.tod {
+/* «К текущей неделе» — видна, только когда открыта другая неделя */
+.week-nav__today {
   display: none;
   margin: 0 auto;
   border: 0;
@@ -293,7 +304,7 @@ button {
   padding: 2px 6px;
 }
 
-.tod.on {
+.week-nav__today--visible {
   display: block;
 }
 
@@ -504,14 +515,6 @@ button {
   height: 50px;
   transform: translate(-50%,-70%) rotate(-3deg) scale(1.08);
   box-shadow: 0 12px 28px rgba(16,21,29,.28);
-}
-
-.hint {
-  font-size: 12px;
-  color: var(--mute);
-  text-align: center;
-  margin: 12px 8px 0;
-  line-height: 1.45;
 }
 
 /* ---------- пустая неделя ---------- */
@@ -964,7 +967,7 @@ button {
   text-overflow: ellipsis;
 }
 
-.toast.on {
+.toast--visible {
   opacity: 1;
   transform: translate(-50%,0);
 }
