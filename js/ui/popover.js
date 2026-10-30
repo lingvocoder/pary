@@ -28,8 +28,8 @@ export function openPopover(o, card) {
       <div class="subj">${esc(o.subject)}</div>
       ${o.cancelled ? '<div class="flag">Отменена</div>' : ''}${o.moved ? `<div class="subj" style="font-size:13px;color:var(--mute)">↪ перенесена разово</div>` : ''}</div>
     <div class="room" id="pRoom"></div>
-    <button class="btn pri" id="pEdit">Изменить</button>
-    <div class="two-btn"><button class="btn dan" id="pCancel">${o.cancelled ? 'Вернуть пару' : 'Отменить пару'}</button><button class="btn sec" id="pCal">В календарь</button></div>`;
+    <button class="btn btn--primary btn--compact" id="pEdit">Изменить</button>
+    <div class="button-pair"><button class="btn btn--compact btn--danger-outline" id="pCancel">${o.cancelled ? 'Вернуть пару' : 'Отменить пару'}</button><button class="btn btn--compact btn--outline" id="pCal">В календарь</button></div>`;
   document.body.append(catcher, el);
   card.classList.add('card--selected');
   pop = {el, catcher, o};

@@ -82,7 +82,7 @@ function renderGrid() {
 function renderEmpty() {
   $('#week').innerHTML = `<div class="empty-week"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color:var(--mute)"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>
     <h2 class="empty-week__title">На этой неделе пар нет</h2><p class="empty-week__text">Добавь пару вручную или открой соседнюю неделю.</p>
-    <button class="btn pri" id="emptyAdd" style="padding:0 20px">Добавить пару</button></div>`;
+    <button class="btn btn--primary" id="emptyAdd" style="padding:0 20px">Добавить пару</button></div>`;
   $('#emptyAdd').onclick = () => {
     const t = toIso(new Date());
     const date = t >= ui.week && t <= addDays(ui.week, 5) ? t : ui.week;

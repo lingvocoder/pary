@@ -23,36 +23,36 @@ export function openEditor(o, preset) {
   } else if (!isNew) info = 'Разовая пара.';
   const slots = CONFIG.slots.map((s, i) => `<option value="${i + 1}"${v.slot === i + 1 ? ' selected' : ''}>${i + 1}-я, ${s.start}</option>`).join('');
   const {root, close} = openSheet(`
-    <h2>${isNew ? 'Новая пара' : 'Группа ' + esc(v.group)}</h2>
-    ${info ? `<p class="info">${esc(info)}</p>` : ''}
-    <div class="row2 gc">
-      <div class="f"><label for="eg">Группа</label><input type="text" id="eg" inputmode="numeric" autocomplete="off" value="${esc(v.group)}" placeholder="326"></div>
-      <div class="f"><span class="lab">Курс</span><div class="courses" id="ec">${[1, 2, 3, 4].map(c => `<button data-c="${c}" aria-pressed="${+v.course === c}">${c}</button>`).join('')}</div></div>
+    <h2 class="sheet__title">${isNew ? 'Новая пара' : 'Группа ' + esc(v.group)}</h2>
+    ${info ? `<p class="sheet__info">${esc(info)}</p>` : ''}
+    <div class="form-row form-row--group-course">
+      <div class="field"><label class="field__label" for="eg">Группа</label><input class="field__input" type="text" id="eg" inputmode="numeric" autocomplete="off" value="${esc(v.group)}" placeholder="326"></div>
+      <div class="field"><span class="field__label">Курс</span><div class="course-picker" id="ec">${[1, 2, 3, 4].map(c => `<button class="course-picker__button" data-c="${c}" aria-pressed="${+v.course === c}">${c}</button>`).join('')}</div></div>
     </div>
-    <div class="row2">
-      <div class="f"><label for="es">Предмет</label><input type="text" id="es" list="subjects" value="${esc(v.subject)}"><datalist id="subjects">${CONFIG.subjects.map(s => `<option value="${esc(s)}">`).join('')}</datalist></div>
-      <div class="f"><label for="er">Аудитория</label><input type="text" id="er" autocomplete="off" value="${esc(v.room)}" placeholder="например, 301"></div>
+    <div class="form-row">
+      <div class="field"><label class="field__label" for="es">Предмет</label><input class="field__input" type="text" id="es" list="subjects" value="${esc(v.subject)}"><datalist id="subjects">${CONFIG.subjects.map(s => `<option value="${esc(s)}">`).join('')}</datalist></div>
+      <div class="field"><label class="field__label" for="er">Аудитория</label><input class="field__input" type="text" id="er" autocomplete="off" value="${esc(v.room)}" placeholder="например, 301"></div>
     </div>
-    <div class="row2 dt">
-      <div class="f"><label for="ed">Дата</label><input type="date" id="ed" value="${v.date}"></div>
-      <div class="f"><label for="ep">Пара</label><select id="ep">${slots}</select></div>
+    <div class="form-row form-row--date-slot">
+      <div class="field"><label class="field__label" for="ed">Дата</label><input class="field__input" type="date" id="ed" value="${v.date}"></div>
+      <div class="field"><label class="field__label" for="ep">Пара</label><select class="field__input" id="ep">${slots}</select></div>
     </div>
-    <div class="f"><span class="lab">Цвет</span><div class="swatches" id="ecol">${CONFIG.palette.map(p => `<button class="sw${p.id ? '' : ' def'}" data-col="${p.id}" style="--sw:${p.hex || 'transparent'}" aria-label="${p.name}" aria-pressed="${(v.color || '') === p.id}"></button>`).join('')}</div></div>
+    <div class="field"><span class="field__label">Цвет</span><div class="color-picker" id="ecol">${CONFIG.palette.map(p => `<button class="color-picker__swatch${p.id ? '' : ' color-picker__swatch--default'}" data-col="${p.id}" style="--sw:${p.hex || 'transparent'}" aria-label="${p.name}" aria-pressed="${(v.color || '') === p.id}"></button>`).join('')}</div></div>
     ${isNew
-      ? `<label class="tog"><span><span class="t">Каждую неделю</span><span class="d">Иначе пара будет только в эту дату</span></span><input type="checkbox" id="erep" checked></label>`
-      : `<label class="tog"><span><span class="t">Отменена</span><span class="d">${rule ? `Только ${humanDate(o.orig)}. ` : ''}Пара останется в сетке размытой.</span></span><input type="checkbox" id="eoff"${v.cancelled ? ' checked' : ''}></label>`}
-    <button class="btn pri" id="esave">${isNew ? 'Добавить' : 'Сохранить'}</button>
-    ${isNew ? '' : '<div class="two-btn"><button class="btn sec" id="ecal">В Google Календарь</button><button class="btn ghost-dan" id="edel">Удалить пару</button></div>'}`,
+      ? `<label class="toggle"><span><span class="toggle__title">Каждую неделю</span><span class="toggle__description">Иначе пара будет только в эту дату</span></span><input class="toggle__input" type="checkbox" id="erep" checked></label>`
+      : `<label class="toggle"><span><span class="toggle__title">Отменена</span><span class="toggle__description">${rule ? `Только ${humanDate(o.orig)}. ` : ''}Пара останется в сетке размытой.</span></span><input class="toggle__input" type="checkbox" id="eoff"${v.cancelled ? ' checked' : ''}></label>`}
+    <button class="btn btn--primary" id="esave">${isNew ? 'Добавить' : 'Сохранить'}</button>
+    ${isNew ? '' : '<div class="button-pair"><button class="btn btn--secondary" id="ecal">В Google Календарь</button><button class="btn btn--danger-text" id="edel">Удалить пару</button></div>'}`,
     isNew ? 'Новая пара' : 'Группа ' + v.group);
 
   let course = +v.course, color = v.color || '';
   root.querySelector('#ec').onclick = e => {
     const b = e.target.closest('[data-c]'); if (!b) return;
-    course = +b.dataset.c; root.querySelectorAll('#ec button').forEach(x => x.setAttribute('aria-pressed', x === b));
+    course = +b.dataset.c; root.querySelectorAll('.course-picker__button').forEach(x => x.setAttribute('aria-pressed', x === b));
   };
   root.querySelector('#ecol').onclick = e => {
     const b = e.target.closest('[data-col]'); if (!b) return;
-    color = b.dataset.col; root.querySelectorAll('#ecol .sw').forEach(x => x.setAttribute('aria-pressed', x === b));
+    color = b.dataset.col; root.querySelectorAll('.color-picker__swatch').forEach(x => x.setAttribute('aria-pressed', x === b));
   };
   const read = () => ({
     group: root.querySelector('#eg').value.trim(), course, subject: root.querySelector('#es').value.trim(),

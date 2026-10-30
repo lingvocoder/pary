@@ -652,14 +652,8 @@ button {
   font-weight: 600;
 }
 
-.two-btn {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-
-/* ---------- шторки снизу ---------- */
-.scrim {
+/* ---------- шторка снизу: затемнение + панель ---------- */
+.sheet {
   position: fixed;
   inset: 0;
   background: var(--scrim);
@@ -671,11 +665,11 @@ button {
   transition: opacity .18s;
 }
 
-.scrim.open {
+.sheet--open {
   opacity: 1;
 }
 
-.sheet {
+.sheet__panel {
   background: var(--sheet);
   width: 100%;
   max-width: 560px;
@@ -690,11 +684,12 @@ button {
   gap: 12px;
 }
 
-.scrim.open .sheet {
+.sheet--open .sheet__panel {
   transform: none;
 }
 
-.grab {
+/* полоска-ручка сверху панели */
+.sheet__grab {
   align-self: center;
   width: 40px;
   height: 4px;
@@ -703,18 +698,18 @@ button {
   margin: 2px 0;
 }
 
-.sheet h2 {
+.sheet__title {
   margin: 0;
   font-size: 19px;
 }
 
-.sheet .note {
+.sheet__note {
   margin: -4px 0 0;
   font-size: 13.5px;
   color: var(--ink2);
 }
 
-.info {
+.sheet__info {
   margin: 0;
   font-size: 13px;
   line-height: 1.4;
@@ -724,21 +719,20 @@ button {
   padding: 9px 12px;
 }
 
-.f {
+/* ---------- поле формы: подпись + ввод ---------- */
+.field {
   display: flex;
   flex-direction: column;
   gap: 5px;
   min-width: 0;
 }
 
-.f label,
-.f .lab {
+.field__label {
   font-size: 12.5px;
   color: var(--ink2);
 }
 
-.f input,
-.f select {
+.field__input {
   width: 100%;
   height: 44px;
   font-size: 16px;
@@ -748,27 +742,29 @@ button {
   padding: 0 12px;
 }
 
-.row2 {
+/* ---------- два поля в строку ---------- */
+.form-row {
   display: grid;
   grid-template-columns: 1.6fr 1fr;
   gap: 12px;
 }
 
-.row2.gc {
+.form-row--group-course {
   grid-template-columns: 1fr auto;
   align-items: end;
 }
 
-.row2.dt {
+.form-row--date-slot {
   grid-template-columns: 1.2fr 1fr;
 }
 
-.courses {
+/* ---------- выбор курса: 1–4 ---------- */
+.course-picker {
   display: flex;
   gap: 6px;
 }
 
-.courses button {
+.course-picker__button {
   width: 44px;
   height: 44px;
   border-radius: 50%;
@@ -777,19 +773,20 @@ button {
   font-size: 15px;
 }
 
-.courses button[aria-pressed=true] {
+.course-picker__button[aria-pressed="true"] {
   background: var(--ink);
   border-color: var(--ink);
   color: var(--on-ink);
 }
 
-.swatches {
+/* ---------- выбор цвета пары ---------- */
+.color-picker {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
 }
 
-.sw {
+.color-picker__swatch {
   width: 36px;
   height: 36px;
   border-radius: 50%;
@@ -798,16 +795,18 @@ button {
   background: var(--sw);
 }
 
-.sw.def {
+/* «Как у курса» — круг из всех четырёх цветов */
+.color-picker__swatch--default {
   background: conic-gradient(var(--c1) 0 25%,var(--c2) 0 50%,var(--c3) 0 75%,var(--c4) 0);
 }
 
-.sw[aria-pressed=true] {
+.color-picker__swatch[aria-pressed="true"] {
   outline: 2px solid var(--ink);
   outline-offset: 2px;
 }
 
-.tog {
+/* ---------- переключатель: текст слева, галочка справа ---------- */
+.toggle {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -816,25 +815,26 @@ button {
   border-top: 1px solid var(--line2);
 }
 
-.tog .t {
+.toggle__title {
   display: block;
   font-size: 15px;
 }
 
-.tog .d {
+.toggle__description {
   display: block;
   font-size: 12px;
   color: var(--mute);
   margin-top: 2px;
 }
 
-.tog input {
+.toggle__input {
   width: 24px;
   height: 24px;
   accent-color: var(--ink);
   flex: none;
 }
 
+/* ---------- кнопка ---------- */
 .btn {
   height: 48px;
   border: 0;
@@ -843,49 +843,61 @@ button {
   font-weight: 600;
 }
 
-.btn.pri {
+.btn--primary {
   background: var(--ink);
   color: var(--on-ink);
 }
 
-.btn.sec {
+.btn--secondary {
   background: var(--paper);
   border: 1px solid var(--line);
   font-size: 14.5px;
   height: 46px;
 }
 
-.btn.ghost-dan {
+/* красный текст без фона и рамки */
+.btn--danger-text {
   background: transparent;
   color: var(--danger);
   font-size: 14.5px;
   height: 46px;
 }
 
-.btn.plain {
+.btn--plain {
   background: transparent;
   color: var(--ink2);
 }
 
-.popover .btn {
+/* размер поменьше — для подсказки по тапу */
+.btn--compact {
   height: 44px;
   font-size: 15px;
   border-radius: 11px;
 }
 
-.popover .btn.sec {
+/* обводка на фоне панели; идут после --compact, чтобы их шрифт 14px победил */
+.btn--outline {
   background: var(--sheet);
+  border: 1px solid var(--line);
   font-size: 14px;
 }
 
-.popover .btn.dan {
+.btn--danger-outline {
   background: var(--sheet);
   border: 1px solid var(--line);
   color: var(--danger);
   font-size: 14px;
 }
 
-.opt {
+/* две кнопки рядом поровну */
+.button-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+/* ---------- вариант в вопросе «только эта дата или дальше» ---------- */
+.scope-option {
   text-align: left;
   border: 1px solid var(--line);
   background: var(--paper);
@@ -896,17 +908,18 @@ button {
   gap: 3px;
 }
 
-.opt b {
+.scope-option__title {
   font-size: 16px;
   font-weight: 600;
 }
 
-.opt small {
+.scope-option__hint {
   font-size: 13px;
   color: var(--mute);
 }
 
-.mi {
+/* ---------- пункт меню ---------- */
+.menu-item {
   text-align: left;
   display: flex;
   align-items: center;
@@ -917,29 +930,29 @@ button {
   padding: 13px 14px;
 }
 
-.mi b {
+.menu-item__title {
   display: block;
   font-size: 15.5px;
   font-weight: 600;
 }
 
-.mi small {
+.menu-item__hint {
   display: block;
   font-size: 12.5px;
   color: var(--mute);
   margin-top: 2px;
 }
 
-.mi.dan {
+.menu-item--danger {
   background: var(--sheet);
   color: var(--danger);
 }
 
-.mi:disabled {
+.menu-item:disabled {
   opacity: .5;
 }
 
-.ver {
+.app-version {
   font-size: 12px;
   color: var(--mute);
   text-align: center;
