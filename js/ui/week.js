@@ -52,36 +52,36 @@ function renderRange() {
 
 function cardHtml(o) {
   const hex = userHex(o);
-  const cls = ['card', courseClass(o.course), hex ? 'hl' : '', o.cancelled ? 'off' : ''].join(' ');
+  const cls = ['card', courseClass(o.course), hex ? 'card--custom-color' : '', o.cancelled ? 'card--cancelled' : ''].join(' ');
   return `<div class="${cls}" data-id="${esc(o.id)}"${hex ? ` style="--hl:${hex}"` : ''} role="button" tabindex="0"
     aria-label="Группа ${esc(o.group)}, ${esc(o.subject)}${o.cancelled ? ', отменена' : ''}">
-    <div class="in"><b>${esc(o.group)}</b><span>${esc(abbr(o.subject))}</span></div>
-    ${o.cancelled ? '<i class="x" aria-hidden="true">✕</i>' : ''}${o.moved ? '<i class="mv" aria-hidden="true">↪</i>' : ''}</div>`;
+    <div class="card__body"><b class="card__group">${esc(o.group)}</b><span class="card__subject">${esc(abbr(o.subject))}</span></div>
+    ${o.cancelled ? '<i class="card__mark card__mark--cancelled" aria-hidden="true">✕</i>' : ''}${o.moved ? '<i class="card__mark card__mark--moved" aria-hidden="true">↪</i>' : ''}</div>`;
 }
 
 function renderGrid() {
   const today = toIso(new Date()), now = new Date();
-  let h = '<div class="corner"></div>';
+  let h = '<div class="week-grid__corner"></div>';
   for (let i = 0; i < 6; i++) {
     const d = addDays(ui.week, i);
-    h += `<div class="dh${d === today ? ' today' : ''}"><span class="w">${DAY_SHORT[i]}</span><span class="n">${fromIso(d).getDate()}</span></div>`;
+    h += `<div class="week-grid__day${d === today ? ' week-grid__day--today' : ''}"><span class="week-grid__day-name">${DAY_SHORT[i]}</span><span class="week-grid__day-num">${fromIso(d).getDate()}</span></div>`;
   }
   CONFIG.slots.forEach((sl, si) => {
-    const n = si + 1, last = n === CONFIG.slots.length ? ' last' : '';
+    const n = si + 1, isLast = n === CONFIG.slots.length;
     const nowSlot = ui.week === weekStart(today) && now >= atTime(today, sl.start) && now < atTime(today, sl.end);
-    h += `<div class="tl${last}${nowSlot ? ' now' : ''}"><b>${n}</b><span>${sl.start}</span></div>`;
+    h += `<div class="week-grid__time${isLast ? ' week-grid__time--last' : ''}${nowSlot ? ' week-grid__time--now' : ''}"><b class="week-grid__slot-num">${n}</b><span class="week-grid__slot-start">${sl.start}</span></div>`;
     for (let i = 0; i < 6; i++) {
       const d = addDays(ui.week, i);
       const here = ui.occ.filter(o => o.date === d && o.slot === n).sort((a, b) => a.cancelled - b.cancelled);
-      h += `<div class="cell${d === today ? ' today' : ''}${last}" data-date="${d}" data-slot="${n}">${here.map(cardHtml).join('')}</div>`;
+      h += `<div class="week-grid__cell${d === today ? ' week-grid__cell--today' : ''}${isLast ? ' week-grid__cell--last' : ''}" data-date="${d}" data-slot="${n}">${here.map(cardHtml).join('')}</div>`;
     }
   });
-  $('#week').innerHTML = `<div class="grid" id="grid">${h}</div>`;
+  $('#week').innerHTML = `<div class="week-grid" id="grid">${h}</div>`;
 }
 
 function renderEmpty() {
-  $('#week').innerHTML = `<div class="empty"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color:var(--mute)"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>
-    <h2>На этой неделе пар нет</h2><p>Добавь пару вручную или открой соседнюю неделю.</p>
+  $('#week').innerHTML = `<div class="empty-week"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color:var(--mute)"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>
+    <h2 class="empty-week__title">На этой неделе пар нет</h2><p class="empty-week__text">Добавь пару вручную или открой соседнюю неделю.</p>
     <button class="btn pri" id="emptyAdd" style="padding:0 20px">Добавить пару</button></div>`;
   $('#emptyAdd').onclick = () => {
     const t = toIso(new Date());

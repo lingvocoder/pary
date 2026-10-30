@@ -298,7 +298,7 @@ button {
 }
 
 /* ---------- сетка недели ---------- */
-.grid {
+.week-grid {
   display: grid;
   grid-template-columns: 38px repeat(6,minmax(0,1fr));
   background: var(--sheet);
@@ -309,20 +309,25 @@ button {
   -webkit-user-select: none;
 }
 
-.dh {
+.week-grid__corner {
+  border-bottom: 1px solid var(--line);
+}
+
+/* шапка дня: «Ср» и число */
+.week-grid__day {
   text-align: center;
   padding: 6px 0 5px;
   border-left: 1px solid var(--line2);
   border-bottom: 1px solid var(--line);
 }
 
-.dh .w {
+.week-grid__day-name {
   display: block;
   font-size: 12px;
   color: var(--ink2);
 }
 
-.dh .n {
+.week-grid__day-num {
   display: inline-block;
   margin-top: 2px;
   min-width: 28px;
@@ -332,22 +337,18 @@ button {
   border-radius: 999px;
 }
 
-.dh.today,
-.cell.today {
+.week-grid__day--today {
   background: var(--todaycol);
 }
 
-.dh.today .n {
+.week-grid__day--today .week-grid__day-num {
   background: var(--ink);
   color: var(--on-ink);
   font-size: 15px;
 }
 
-.corner {
-  border-bottom: 1px solid var(--line);
-}
-
-.tl {
+/* левая колонка: номер пары и время начала */
+.week-grid__time {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -356,23 +357,28 @@ button {
   border-bottom: 1px solid var(--line2);
 }
 
-.tl b {
+.week-grid__time--last {
+  border-bottom: 0;
+}
+
+.week-grid__slot-num {
   font-size: 13px;
   font-weight: 600;
   color: var(--ink2);
 }
 
-.tl span {
+.week-grid__time--now .week-grid__slot-num {
+  text-decoration: underline;
+}
+
+.week-grid__slot-start {
   font-size: 10.5px;
   color: var(--mute);
   font-variant-numeric: tabular-nums;
 }
 
-.tl.now b {
-  text-decoration: underline;
-}
-
-.cell {
+/* клетка «день × пара» */
+.week-grid__cell {
   height: 54px;
   padding: 2px;
   border-left: 1px solid var(--line2);
@@ -382,16 +388,21 @@ button {
   gap: 2px;
 }
 
-.last {
+.week-grid__cell--today {
+  background: var(--todaycol);
+}
+
+.week-grid__cell--last {
   border-bottom: 0;
 }
 
-.cell.target {
+/* клетка под пальцем при переносе; занятая — красной рамкой */
+.week-grid__cell--target {
   outline: 2px dashed var(--ink);
   outline-offset: -3px;
 }
 
-.cell.busy {
+.week-grid__cell--busy {
   outline-color: var(--danger);
 }
 
@@ -412,7 +423,7 @@ button {
   cursor: pointer;
 }
 
-.card b {
+.card__group {
   display: block;
   font-size: 15px;
   font-weight: 700;
@@ -421,7 +432,7 @@ button {
   font-variant-numeric: tabular-nums;
 }
 
-.card span {
+.card__subject {
   display: block;
   font-size: 10px;
   margin-top: 1px;
@@ -431,58 +442,61 @@ button {
   text-overflow: ellipsis;
 }
 
-.card.hl {
-  background: var(--hl);
-  border-left-color: var(--hl);
-}
-
-.card.hl b,
-.card.hl span {
-  color: #FFFFFF;
-}
-
-.card.off {
-  background: repeating-linear-gradient(-45deg,transparent 0 5px,color-mix(in srgb,var(--mute) 18%,transparent) 5px 7px),var(--hatch);
-  border-left-color: color-mix(in srgb,var(--cc) 40%,transparent);
-}
-
-.card.off .in {
-  filter: blur(1.6px);
-  opacity: .55;
-}
-
-.card .x {
+/* значок в углу: ✕ — отменена, ↪ — перенесена */
+.card__mark {
   position: absolute;
   right: 4px;
-  top: 2px;
   font-style: normal;
+}
+
+.card__mark--cancelled {
+  top: 2px;
   font-size: 10px;
   font-weight: 700;
   color: var(--danger);
 }
 
-.card .mv {
-  position: absolute;
-  right: 4px;
+.card__mark--moved {
   bottom: 1px;
-  font-style: normal;
   font-size: 11px;
   color: var(--mute);
 }
 
-.card.hl .mv {
+/* пара, для которой выбран свой цвет */
+.card--custom-color {
+  background: var(--hl);
+  border-left-color: var(--hl);
+}
+
+.card--custom-color .card__group,
+.card--custom-color .card__subject,
+.card--custom-color .card__mark--moved {
   color: #FFFFFF;
 }
 
-.card.sel {
+/* отменённая: штриховка и размытый текст */
+.card--cancelled {
+  background: repeating-linear-gradient(-45deg,transparent 0 5px,color-mix(in srgb,var(--mute) 18%,transparent) 5px 7px),var(--hatch);
+  border-left-color: color-mix(in srgb,var(--cc) 40%,transparent);
+}
+
+.card--cancelled .card__body {
+  filter: blur(1.6px);
+  opacity: .55;
+}
+
+/* карточка, для которой открыта подсказка */
+.card--selected {
   box-shadow: 0 0 0 2px var(--sheet),0 0 0 4px var(--ink);
 }
 
-.card.lift {
+/* карточка на старом месте, пока её копия едет за пальцем */
+.card--lifted {
   opacity: .25;
 }
 
-.ghost {
+/* копия карточки под пальцем при переносе */
+.card--ghost {
   position: fixed;
   z-index: 50;
   pointer-events: none;
@@ -501,7 +515,7 @@ button {
 }
 
 /* ---------- пустая неделя ---------- */
-.empty {
+.empty-week {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -513,12 +527,12 @@ button {
   text-align: center;
 }
 
-.empty h2 {
+.empty-week__title {
   margin: 0;
   font-size: 18px;
 }
 
-.empty p {
+.empty-week__text {
   margin: 0;
   font-size: 14px;
   line-height: 1.5;

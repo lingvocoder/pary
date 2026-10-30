@@ -12,7 +12,7 @@ let pop = null;
 export function closePopover() {
   if (!pop) return;
   pop.catcher.remove(); pop.el.remove();
-  document.querySelectorAll('.card.sel').forEach(c => c.classList.remove('sel'));
+  document.querySelectorAll('.card--selected').forEach(c => c.classList.remove('card--selected'));
   pop = null;
 }
 
@@ -31,7 +31,7 @@ export function openPopover(o, card) {
     <button class="btn pri" id="pEdit">Изменить</button>
     <div class="two-btn"><button class="btn dan" id="pCancel">${o.cancelled ? 'Вернуть пару' : 'Отменить пару'}</button><button class="btn sec" id="pCal">В календарь</button></div>`;
   document.body.append(catcher, el);
-  card.classList.add('sel');
+  card.classList.add('card--selected');
   pop = {el, catcher, o};
 
   // строка аудитории: показ ↔ ввод

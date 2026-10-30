@@ -13,17 +13,22 @@ import {openEditor} from './editor.js';
 const LONG_PRESS = 280;   // мс удержания до начала переноса
 const SLOP = 10;          // px: если палец сдвинулся раньше — это прокрутка, а не перенос
 
+// классы, которые читает и переключает перенос
+const CELL = '.week-grid__cell';
+const CELL_TARGET = 'week-grid__cell--target';
+const CELL_BUSY = 'week-grid__cell--busy';
+
 let drag = null, press = null, lastTouch = 0;
 const occById = id => ui.occ.find(o => o.id === id);
-const cellAt = (x, y) => { const el = document.elementFromPoint(x, y); return el && el.closest('.cell'); };
+const cellAt = (x, y) => { const el = document.elementFromPoint(x, y); return el && el.closest(CELL); };
 const openCard = card => { const o = occById(card.dataset.id); if (o) openPopover(o, card); };
 const cancelPress = () => { if (press) { clearTimeout(press.timer); press = null; } };
 
 function startDrag(card, x, y) {
   const o = occById(card.dataset.id); if (!o) return;
   closePopover();
-  const g = card.cloneNode(true); g.classList.add('ghost'); g.classList.remove('sel');
-  document.body.appendChild(g); card.classList.add('lift');
+  const g = card.cloneNode(true); g.classList.add('card--ghost'); g.classList.remove('card--selected');
+  document.body.appendChild(g); card.classList.add('card--lifted');
   drag = {card, o, ghost: g, target: null};
   moveDrag(x, y);
   if (navigator.vibrate) navigator.vibrate(12);
@@ -33,21 +38,21 @@ function moveDrag(x, y) {
   drag.ghost.style.left = x + 'px'; drag.ghost.style.top = y + 'px';
   const c = cellAt(x, y);
   if (c === drag.target) return;
-  if (drag.target) drag.target.classList.remove('target', 'busy');
+  if (drag.target) drag.target.classList.remove(CELL_TARGET, CELL_BUSY);
   drag.target = c;
   if (!c) { toast('Веди к нужной клетке', true); return; }
   const date = c.dataset.date, slot = +c.dataset.slot, b = busyAt(getState(), date, slot, drag.o.id);
-  c.classList.add('target');
-  if (b) { c.classList.add('busy'); toast(`Слот занят группой ${b.group}`, true); }
+  c.classList.add(CELL_TARGET);
+  if (b) { c.classList.add(CELL_BUSY); toast(`Слот занят группой ${b.group}`, true); }
   else if (date === drag.o.date && slot === drag.o.slot) toast('Отпусти здесь, чтобы ничего не менять', true);
   else toast(`Отпусти, чтобы перенести ${DAY_TO[weekday(date)]}, ${slotOf(slot).start}`, true);
 }
 
 async function endDrag() {
   const {o, ghost, card, target} = drag; drag = null;
-  ghost.remove(); card.classList.remove('lift'); hideToast();
+  ghost.remove(); card.classList.remove('card--lifted'); hideToast();
   if (!target) return;
-  target.classList.remove('target', 'busy');
+  target.classList.remove(CELL_TARGET, CELL_BUSY);
   const date = target.dataset.date, slot = +target.dataset.slot;
   if (date === o.date && slot === o.slot) return;
   const b = busyAt(getState(), date, slot, o.id);
@@ -99,7 +104,7 @@ export function initGestures(week) {
   });
   week.addEventListener('click', e => {
     if (e.target.closest('.card')) return;
-    const c = e.target.closest('.cell'); if (!c) return;
+    const c = e.target.closest(CELL); if (!c) return;
     openEditor(null, {date: c.dataset.date, slot: +c.dataset.slot});
   });
   week.addEventListener('keydown', e => {
