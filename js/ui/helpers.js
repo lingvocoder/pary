@@ -8,8 +8,8 @@ export const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;',
 export const abbr = s => { const w = String(s || '').trim().split(/\s+/)[0] || ''; return w.length <= 5 ? w : w.slice(0, 4) + '.'; };
 /** Цвет «важной» пары или null, если цвет — как у курса. */
 export const userHex = o => (CONFIG.palette.find(p => p.id === o.color) || {}).hex || null;
-/** CSS-класс цвета курса: k1…k4. */
-export const courseClass = c => 'k' + ([1, 2, 3, 4].includes(+c) ? +c : 3);
+/** CSS-класс цвета курса: course-1…course-4. */
+export const courseClass = c => 'course-' + ([1, 2, 3, 4].includes(+c) ? +c : 3);
 export const slotOf = n => CONFIG.slots[n - 1];
 
 let toastTimer;
