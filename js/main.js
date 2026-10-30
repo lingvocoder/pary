@@ -21,4 +21,17 @@ setInterval(renderHero, 30000);          // «через 1 ч 10 мин» обн
 
 render();
 
-if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js').catch(() => {});
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  // Первый запуск после обновления обслуживает ещё старый service worker: HTML приходит
+  // из сети новый, а CSS и JS — из старого кэша. Когда новый worker берёт страницу
+  // под контроль, перезагружаем её один раз, чтобы все файлы были из одной версии.
+  // При первой установке контроллера ещё не было — тогда перезагружать незачем.
+  const hadController = Boolean(navigator.serviceWorker.controller);
+  let reloaded = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!hadController || reloaded) return;
+    reloaded = true;
+    location.reload();
+  });
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
