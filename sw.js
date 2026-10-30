@@ -14,7 +14,10 @@ const FILES = [
   './fonts/golos-text-latin-700-normal.woff2', './fonts/golos-text-latin-800-normal.woff2'
 ];
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));
+  // cache: 'reload' — брать файлы с сервера мимо HTTP-кэша браузера. Иначе в новый кэш
+  // может попасть старая копия файла, и приложение застрянет на ней до следующей версии.
+  const fresh = FILES.map(f => new Request(f, {cache: 'reload'}));
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(fresh)).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys()
