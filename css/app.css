@@ -547,6 +547,18 @@ button {
   padding: var(--space-6) 0 var(--space-4);
 }
 
+.week-nav__heading {
+  min-width: 0;
+}
+
+/* «6 пар · 12 ак. ч» под датами */
+.week-nav__summary {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: var(--text-sm--line-height);
+  color: var(--text-muted);
+}
+
 .week-nav__title {
   margin: 0;
   font-size: var(--text-base);
@@ -1095,6 +1107,20 @@ button {
   color: var(--text-muted);
 }
 
+/* заголовок с иконкой слева: «Часы за семестр» */
+.sheet__title--with-icon {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.sheet__title-icon {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  color: var(--icon);
+}
+
 /* главная кнопка и ряд второстепенных под ней */
 .sheet__actions {
   display: flex;
@@ -1389,6 +1415,64 @@ button {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--space-3);
+}
+
+/* ---------- таблица часов за семестр ---------- */
+.hours-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.hours-table__head {
+  padding: 0 0 var(--space-3);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm--line-height);
+  font-weight: 600;
+  color: var(--text-muted);
+  text-align: left;
+}
+
+.hours-table__cell {
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--divider);
+  text-align: left;
+  vertical-align: middle;
+  font-weight: 400;
+}
+
+/* числа — по правому краю; правило ниже .hours-table__cell, чтобы перебить его left */
+.hours-table__head--num,
+.hours-table__cell--num {
+  text-align: right;
+}
+
+/* «Итого» — рамка сверху заметнее, чем линии между группами */
+.hours-table__cell--total {
+  border-top-color: var(--field-border);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm--line-height);
+  font-weight: 600;
+}
+
+.hours-table__chip {
+  padding: 2px var(--space-2);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm--line-height);
+}
+
+.hours-table__value {
+  display: block;
+  font-size: var(--text-sm);
+  line-height: var(--text-sm--line-height);
+  font-weight: 600;
+}
+
+.hours-table__count {
+  display: block;
+  font-size: var(--text-xs);
+  line-height: var(--text-xs--line-height);
+  color: var(--text-muted);
 }
 
 /* ---------- вариант в вопросе «только эта дата или дальше» ---------- */

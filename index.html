@@ -28,7 +28,11 @@
     <div class="page">
       <header class="hero" id="hero"></header>
       <nav class="week-nav" aria-label="Неделя">
-        <h2 class="week-nav__title" id="range"></h2>
+        <div class="week-nav__heading">
+          <h2 class="week-nav__title" id="range"></h2>
+          <!-- «6 пар · 12 ак. ч» за открытую неделю; при 0 пар скрыта -->
+          <p class="week-nav__summary" id="weekSummary" hidden></p>
+        </div>
         <!-- группа ‹ Сегодня ›; иконки — Heroicons chevron-left/right, solid 20 -->
         <div class="week-nav__controls">
           <button

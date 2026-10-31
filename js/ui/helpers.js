@@ -20,6 +20,19 @@ export const colorClass = (o) => {
 };
 export const slotOf = (n) => CONFIG.slots[n - 1];
 
+/**
+ * Склонение после числа: plural(1, 'пара', 'пары', 'пар') → 'пара'.
+ * 1, 21, 31… — one; 2–4, 22–24… — few; остальное и 11–14 — many.
+ */
+export function plural(n, one, few, many) {
+  const last = n % 10,
+    lastTwo = n % 100;
+  if (lastTwo >= 11 && lastTwo <= 14) return many;
+  if (last === 1) return one;
+  if (last >= 2 && last <= 4) return few;
+  return many;
+}
+
 let toastTimer;
 
 /** Показывает уведомление; иконка — только если вид указан явно. */

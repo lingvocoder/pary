@@ -4,7 +4,13 @@ import { toIso } from '../dates.js';
 import { getState, dispatch, isStorageOk } from '../store.js';
 import { $, toast } from './helpers.js';
 import { openSheet } from './sheets.js';
-import { iconArrowDownTray, iconArrowUpTray, iconArrowPath } from './icons.js';
+import {
+  iconArrowDownTray,
+  iconArrowUpTray,
+  iconArrowPath,
+  iconClock,
+} from './icons.js';
+import { openHours } from './hours.js';
 
 /** Пункт меню: иконка, название и пояснение. */
 const item = (action, icon, title, hint) =>
@@ -14,6 +20,7 @@ export function openMenu() {
   const { root, close } = openSheet(
     `<div class="sheet__header"><h2 class="sheet__title">Меню</h2></div>
     <div class="menu-list">
+      ${item('hours', iconClock('menu-item__icon'), 'Часы за семестр', 'Проведено и по расписанию, по группам')}
       ${item('export', iconArrowDownTray('menu-item__icon'), 'Скачать резервную копию', 'Файл со всем расписанием и правками')}
       ${item('import', iconArrowUpTray('menu-item__icon'), 'Загрузить из копии', 'Заменит текущее расписание')}
       ${item('reset', iconArrowPath('menu-item__icon'), 'Вернуть исходное расписание', 'Шесть пар на 29 октября, все правки пропадут')}
@@ -25,7 +32,10 @@ export function openMenu() {
     const b = e.target.closest('[data-a]');
     if (!b) return;
     const a = b.dataset.a;
-    if (a === 'export') {
+    if (a === 'hours') {
+      close();
+      openHours();
+    } else if (a === 'export') {
       const blob = new Blob([JSON.stringify(getState(), null, 1)], {
         type: 'application/json',
       });

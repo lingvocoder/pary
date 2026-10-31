@@ -15,9 +15,9 @@ import {
   atTime,
   humanDate,
 } from '../dates.js';
-import { weekOccurrences, nextPair, isOngoing } from '../model.js';
+import { weekOccurrences, nextPair, isOngoing, countPairs } from '../model.js';
 import { getState, getPref, setPref } from '../store.js';
-import { $, esc, colorClass, slotOf } from './helpers.js';
+import { $, esc, colorClass, slotOf, plural } from './helpers.js';
 import {
   iconEllipsis,
   iconXMark,
@@ -99,6 +99,17 @@ function renderRange() {
     a.getMonth() === b.getMonth()
       ? `${a.getDate()}–${b.getDate()} ${MONTH_GEN[a.getMonth()]}`
       : `${a.getDate()} ${MONTH_SHORT[a.getMonth()]} – ${b.getDate()} ${MONTH_SHORT[b.getMonth()]}`;
+  // пар за неделю — по тем же правилам, что часы за семестр: без отменённых и праздников
+  const { total } = countPairs(
+    getState(),
+    ui.week,
+    addDays(ui.week, 5),
+    new Date(),
+    CONFIG.holidays,
+  );
+  const summary = $('#weekSummary');
+  summary.hidden = !total;
+  summary.textContent = `${total} ${plural(total, 'пара', 'пары', 'пар')} · ${total * CONFIG.hoursPerPair} ак. ч`;
   // «Сегодня» видна всегда, чтобы группа кнопок не прыгала; на текущей неделе — неактивна
   $('#tod').disabled = ui.week === thisWeek();
 }
