@@ -9,6 +9,7 @@ import { askScope } from './sheets.js';
 import { ui } from './state.js';
 import { openPopover, closePopover } from './popover.js';
 import { openEditor } from './editor.js';
+import { markHintLearned } from './week.js';
 
 const LONG_PRESS = 280; // мс удержания до начала переноса
 const SLOP = 10; // px: если палец сдвинулся раньше — это прокрутка, а не перенос
@@ -30,7 +31,9 @@ const cellAt = (x, y) => {
 };
 const openCard = (card) => {
   const o = occById(card.dataset.id);
-  if (o) openPopover(o, card);
+  if (!o) return;
+  openPopover(o, card);
+  markHintLearned('tap');
 };
 const cancelPress = () => {
   if (press) {
@@ -43,6 +46,7 @@ function startDrag(card, x, y) {
   const o = occById(card.dataset.id);
   if (!o) return;
   closePopover();
+  markHintLearned('hold');
   const g = card.cloneNode(true);
   g.classList.add('card--ghost');
   g.classList.remove('card--selected');

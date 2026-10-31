@@ -16,7 +16,7 @@ import {
   humanDate,
 } from '../dates.js';
 import { weekOccurrences, nextPair } from '../model.js';
-import { getState } from '../store.js';
+import { getState, getPref, setPref } from '../store.js';
 import { $, esc, colorClass, slotOf } from './helpers.js';
 import {
   iconEllipsis,
@@ -30,6 +30,23 @@ import { closePopover } from './popover.js';
 import { openEditor } from './editor.js';
 import { openMenu } from './menu.js';
 
+// Подсказка внизу экрана — пока пользователь не сделал оба жеста: тап по паре и удержание.
+// Признаки хранятся в настройках (pary.prefs), поэтому подсказка не вернётся после перезапуска.
+const HINT_PREFS = { tap: 'hintTapLearned', hold: 'hintHoldLearned' };
+
+function renderHint() {
+  const learned =
+    getPref(HINT_PREFS.tap, false) && getPref(HINT_PREFS.hold, false);
+  $('#hint').hidden = !ui.occ.length || learned;
+}
+
+/** Отмечает, что жест освоен ('tap' или 'hold'); когда освоены оба — подсказка прячется. */
+export function markHintLearned(gesture) {
+  if (getPref(HINT_PREFS[gesture], false)) return;
+  setPref(HINT_PREFS[gesture], true);
+  renderHint();
+}
+
 /** Перерисовать весь экран из текущего состояния. */
 export function render() {
   closePopover();
@@ -38,7 +55,7 @@ export function render() {
   renderRange();
   if (ui.occ.length) renderGrid();
   else renderEmpty();
-  $('#hint').hidden = !ui.occ.length;
+  renderHint();
 }
 
 export function renderHero() {
