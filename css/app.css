@@ -4,7 +4,7 @@
   font-weight: 400;
   font-display: swap;
   src: url(../fonts/golos-text-cyrillic-400-normal.woff2) format('woff2');
-  unicode-range: U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116;
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
 }
 
 @font-face {
@@ -12,7 +12,7 @@
   font-weight: 600;
   font-display: swap;
   src: url(../fonts/golos-text-cyrillic-600-normal.woff2) format('woff2');
-  unicode-range: U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116;
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
 }
 
 @font-face {
@@ -20,7 +20,7 @@
   font-weight: 700;
   font-display: swap;
   src: url(../fonts/golos-text-cyrillic-700-normal.woff2) format('woff2');
-  unicode-range: U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116;
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
 }
 
 @font-face {
@@ -28,7 +28,7 @@
   font-weight: 800;
   font-display: swap;
   src: url(../fonts/golos-text-cyrillic-800-normal.woff2) format('woff2');
-  unicode-range: U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116;
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
 }
 
 @font-face {
@@ -36,7 +36,10 @@
   font-weight: 400;
   font-display: swap;
   src: url(../fonts/golos-text-latin-400-normal.woff2) format('woff2');
-  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+    U+2215, U+FEFF, U+FFFD;
 }
 
 @font-face {
@@ -44,7 +47,10 @@
   font-weight: 600;
   font-display: swap;
   src: url(../fonts/golos-text-latin-600-normal.woff2) format('woff2');
-  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+    U+2215, U+FEFF, U+FFFD;
 }
 
 @font-face {
@@ -52,7 +58,10 @@
   font-weight: 700;
   font-display: swap;
   src: url(../fonts/golos-text-latin-700-normal.woff2) format('woff2');
-  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+    U+2215, U+FEFF, U+FFFD;
 }
 
 @font-face {
@@ -60,57 +69,60 @@
   font-weight: 800;
   font-display: swap;
   src: url(../fonts/golos-text-latin-800-normal.woff2) format('woff2');
-  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+    U+2215, U+FEFF, U+FFFD;
 }
 
 /* ---------- цвета: светлая и тёмная тема ---------- */
 :root {
-  --paper: #EEF2F6;
-  --sheet: #FFFFFF;
-  --ink: #18212F;
-  --ink2: #4B5768;
-  --mute: #6B7789;
-  --line: #D6DDE6;
-  --line2: #E6EBF1;
-  --todaycol: #F3F6FA;
-  --on-ink: #FFFFFF;
-  --danger: #C62828;
-  --c1: #2563EB;
+  --paper: #eef2f6;
+  --sheet: #ffffff;
+  --ink: #18212f;
+  --ink2: #4b5768;
+  --mute: #6b7789;
+  --line: #d6dde6;
+  --line2: #e6ebf1;
+  --todaycol: #f3f6fa;
+  --on-ink: #ffffff;
+  --danger: #c62828;
+  --c1: #2563eb;
   --c2: #047857;
-  --c3: #B45309;
-  --c4: #6D28D9;
-  --t1: #E8EFFD;
-  --t2: #E2F3EB;
-  --t3: #FBEEDF;
-  --t4: #F0E9FC;
-  --hatch: #FAF6F1;
-  --chip-text: #FFFFFF;
-  --scrim: rgba(16,21,29,.45);
+  --c3: #b45309;
+  --c4: #6d28d9;
+  --t1: #e8effd;
+  --t2: #e2f3eb;
+  --t3: #fbeedf;
+  --t4: #f0e9fc;
+  --hatch: #faf6f1;
+  --chip-text: #ffffff;
+  --scrim: rgba(16, 21, 29, 0.45);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --paper: #10151D;
-    --sheet: #19202B;
-    --ink: #E8EDF4;
-    --ink2: #AEB8C6;
-    --mute: #8A96A8;
-    --line: #2A3443;
-    --line2: #222B38;
-    --todaycol: #1C2533;
-    --on-ink: #10151D;
-    --danger: #F07070;
-    --c1: #8AB4FF;
-    --c2: #4ADE9F;
-    --c3: #F5B451;
-    --c4: #B79CFA;
-    --t1: #1E2A44;
-    --t2: #17332A;
-    --t3: #3A2C18;
-    --t4: #2C2442;
-    --hatch: #1F2530;
-    --chip-text: #10151D;
-    --scrim: rgba(0,0,0,.55);
+    --paper: #10151d;
+    --sheet: #19202b;
+    --ink: #e8edf4;
+    --ink2: #aeb8c6;
+    --mute: #8a96a8;
+    --line: #2a3443;
+    --line2: #222b38;
+    --todaycol: #1c2533;
+    --on-ink: #10151d;
+    --danger: #f07070;
+    --c1: #8ab4ff;
+    --c2: #4ade9f;
+    --c3: #f5b451;
+    --c4: #b79cfa;
+    --t1: #1e2a44;
+    --t2: #17332a;
+    --t3: #3a2c18;
+    --t4: #2c2442;
+    --hatch: #1f2530;
+    --chip-text: #10151d;
+    --scrim: rgba(0, 0, 0, 0.55);
   }
 }
 
@@ -145,7 +157,7 @@ body {
   margin: 0;
   background: var(--paper);
   color: var(--ink);
-  font-family: 'Golos Text',system-ui,sans-serif;
+  font-family: 'Golos Text', system-ui, sans-serif;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -197,7 +209,7 @@ button {
 }
 
 .chip--custom-color {
-  color: #FFFFFF;
+  color: #ffffff;
 }
 
 /* ---------- следующая пара ---------- */
@@ -318,7 +330,7 @@ button {
 /* ---------- сетка недели ---------- */
 .week-grid {
   display: grid;
-  grid-template-columns: 38px repeat(6,minmax(0,1fr));
+  grid-template-columns: 38px repeat(6, minmax(0, 1fr));
   background: var(--sheet);
   border: 1px solid var(--line);
   border-radius: 12px;
@@ -489,28 +501,36 @@ button {
 .card--custom-color .card__group,
 .card--custom-color .card__subject,
 .card--custom-color .card__mark--moved {
-  color: #FFFFFF;
+  color: #ffffff;
 }
 
 /* отменённая: штриховка и размытый текст */
 .card--cancelled {
-  background: repeating-linear-gradient(-45deg,transparent 0 5px,color-mix(in srgb,var(--mute) 18%,transparent) 5px 7px),var(--hatch);
-  border-left-color: color-mix(in srgb,var(--cc) 40%,transparent);
+  background:
+    repeating-linear-gradient(
+      -45deg,
+      transparent 0 5px,
+      color-mix(in srgb, var(--mute) 18%, transparent) 5px 7px
+    ),
+    var(--hatch);
+  border-left-color: color-mix(in srgb, var(--cc) 40%, transparent);
 }
 
 .card--cancelled .card__body {
   filter: blur(1.6px);
-  opacity: .55;
+  opacity: 0.55;
 }
 
 /* карточка, для которой открыта подсказка */
 .card--selected {
-  box-shadow: 0 0 0 2px var(--sheet),0 0 0 4px var(--ink);
+  box-shadow:
+    0 0 0 2px var(--sheet),
+    0 0 0 4px var(--ink);
 }
 
 /* карточка на старом месте, пока её копия едет за пальцем */
 .card--lifted {
-  opacity: .25;
+  opacity: 0.25;
 }
 
 /* копия карточки под пальцем при переносе */
@@ -520,8 +540,8 @@ button {
   pointer-events: none;
   width: 62px;
   height: 50px;
-  transform: translate(-50%,-70%) rotate(-3deg) scale(1.08);
-  box-shadow: 0 12px 28px rgba(16,21,29,.28);
+  transform: translate(-50%, -70%) rotate(-3deg) scale(1.08);
+  box-shadow: 0 12px 28px rgba(16, 21, 29, 0.28);
 }
 
 /* ---------- пустая неделя ---------- */
@@ -569,11 +589,11 @@ button {
 .popover {
   position: fixed;
   z-index: 41;
-  width: min(300px,calc(100vw - 24px));
+  width: min(300px, calc(100vw - 24px));
   background: var(--sheet);
   border: 1px solid var(--line);
   border-radius: 14px;
-  box-shadow: 0 16px 36px rgba(16,21,29,.22);
+  box-shadow: 0 16px 36px rgba(16, 21, 29, 0.22);
   padding: 14px 14px 12px;
   display: flex;
   flex-direction: column;
@@ -689,7 +709,7 @@ button {
   align-items: flex-end;
   justify-content: center;
   opacity: 0;
-  transition: opacity .18s;
+  transition: opacity 0.18s;
 }
 
 .sheet--open {
@@ -705,7 +725,7 @@ button {
   max-height: 92dvh;
   overflow: auto;
   transform: translateY(24px);
-  transition: transform .2s;
+  transition: transform 0.2s;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -800,7 +820,7 @@ button {
   font-size: 15px;
 }
 
-.course-picker__button[aria-pressed="true"] {
+.course-picker__button[aria-pressed='true'] {
   background: var(--ink);
   border-color: var(--ink);
   color: var(--on-ink);
@@ -824,10 +844,15 @@ button {
 
 /* «Как у курса» — круг из всех четырёх цветов */
 .color-picker__swatch--default {
-  background: conic-gradient(var(--c1) 0 25%,var(--c2) 0 50%,var(--c3) 0 75%,var(--c4) 0);
+  background: conic-gradient(
+    var(--c1) 0 25%,
+    var(--c2) 0 50%,
+    var(--c3) 0 75%,
+    var(--c4) 0
+  );
 }
 
-.color-picker__swatch[aria-pressed="true"] {
+.color-picker__swatch[aria-pressed='true'] {
   outline: 2px solid var(--ink);
   outline-offset: 2px;
 }
@@ -982,7 +1007,7 @@ button {
 }
 
 .menu-item:disabled {
-  opacity: .5;
+  opacity: 0.5;
 }
 
 .app-version {
@@ -997,7 +1022,7 @@ button {
   position: fixed;
   left: 50%;
   top: calc(14px + env(safe-area-inset-top));
-  transform: translate(-50%,-16px);
+  transform: translate(-50%, -16px);
   z-index: 80;
   background: var(--ink);
   color: var(--on-ink);
@@ -1006,7 +1031,7 @@ button {
   font-size: 14px;
   max-width: 92vw;
   opacity: 0;
-  transition: .2s;
+  transition: 0.2s;
   pointer-events: none;
   white-space: nowrap;
   overflow: hidden;
@@ -1015,11 +1040,11 @@ button {
 
 .toast--visible {
   opacity: 1;
-  transform: translate(-50%,0);
+  transform: translate(-50%, 0);
 }
 
-@media (prefers-reduced-motion:reduce) {
+@media (prefers-reduced-motion: reduce) {
   * {
-    transition: none!important;
+    transition: none !important;
   }
 }

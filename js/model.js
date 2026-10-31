@@ -3,8 +3,8 @@
    Ни одна не трогает страницу (document) и не сохраняет сама —
    поэтому модель проверяется тестами без браузера (tests/model.test.js)
    и переедет в TypeScript и React без изменений. */
-import {CONFIG, SCHEMA} from './config.js';
-import {toIso, addDays, weekday, weekStart, atTime} from './dates.js';
+import { CONFIG, SCHEMA } from './config.js';
+import { toIso, addDays, weekday, weekStart, atTime } from './dates.js';
 
 /**
  * Повторяющаяся пара: «каждую среду, 5-я пара».
@@ -75,7 +75,10 @@ import {toIso, addDays, weekday, weekStart, atTime} from './dates.js';
  * @property {'pdf'|'manual'} source
  */
 
-const newId = () => (globalThis.crypto && crypto.randomUUID ? crypto.randomUUID() : 'id-' + Date.now().toString(36) + Math.random().toString(36).slice(2));
+const newId = () =>
+  globalThis.crypto && crypto.randomUUID
+    ? crypto.randomUUID()
+    : 'id-' + Date.now().toString(36) + Math.random().toString(36).slice(2);
 
 const EDITABLE = ['group', 'course', 'subject', 'lessonType', 'color', 'room'];
 
@@ -83,8 +86,21 @@ const EDITABLE = ['group', 'course', 'subject', 'lessonType', 'color', 'room'];
 export function seed() {
   const P = 'ПК первого ин. яз.';
   const rule = (id, group, course, wd, slot, from, source) => ({
-    id, group, course, subject: P, lessonType: 'ЛР', color: '', room: '', weekday: wd, slot, from, until: null,
-    teacher: '', source, importKey: source === 'pdf' ? `${course}|${group}|${wd}|${slot}|${P}` : null
+    id,
+    group,
+    course,
+    subject: P,
+    lessonType: 'ЛР',
+    color: '',
+    room: '',
+    weekday: wd,
+    slot,
+    from,
+    until: null,
+    teacher: '',
+    source,
+    importKey:
+      source === 'pdf' ? `${course}|${group}|${wd}|${slot}|${P}` : null,
   });
   return {
     schema: SCHEMA,
@@ -94,10 +110,10 @@ export function seed() {
       rule('seed-326-we-5', '326', 3, 2, 5, '2026-10-28', 'manual'),
       rule('seed-323-we-6', '323', 3, 2, 6, '2026-09-23', 'pdf'),
       rule('seed-323-we-7', '323', 3, 2, 7, '2026-09-23', 'pdf'),
-      rule('seed-326-sa-1', '326', 3, 5, 1, '2026-09-26', 'pdf')
+      rule('seed-326-sa-1', '326', 3, 5, 1, '2026-09-26', 'pdf'),
     ],
     exceptions: {},
-    oneOffs: []
+    oneOffs: [],
   };
 }
 
@@ -114,38 +130,80 @@ export function migrate(raw) {
     const fromPdf = ['t1', 't2', 't4', 't5', 't6'];
     s = {
       schema: 2,
-      rules: s.tpl.map(t => ({
-        id: t.id, group: t.group, course: +t.course, subject: t.subject, lessonType: 'ЛР', color: t.color || '',
-        room: '', weekday: t.weekday, slot: t.slot, from: t.from, until: t.until || null, teacher: '',
-        source: fromPdf.includes(t.id) ? 'pdf' : 'manual', importKey: null
+      rules: s.tpl.map((t) => ({
+        id: t.id,
+        group: t.group,
+        course: +t.course,
+        subject: t.subject,
+        lessonType: 'ЛР',
+        color: t.color || '',
+        room: '',
+        weekday: t.weekday,
+        slot: t.slot,
+        from: t.from,
+        until: t.until || null,
+        teacher: '',
+        source: fromPdf.includes(t.id) ? 'pdf' : 'manual',
+        importKey: null,
       })),
       exceptions: s.ex || {},
-      oneOffs: (s.one || []).map(o => ({
-        id: o.id, date: o.date, slot: o.slot, group: o.group, course: +o.course, subject: o.subject, lessonType: 'ЛР',
-        color: o.color || '', room: '', cancelled: !!o.cancelled, teacher: '', source: 'manual'
-      }))
+      oneOffs: (s.one || []).map((o) => ({
+        id: o.id,
+        date: o.date,
+        slot: o.slot,
+        group: o.group,
+        course: +o.course,
+        subject: o.subject,
+        lessonType: 'ЛР',
+        color: o.color || '',
+        room: '',
+        cancelled: !!o.cancelled,
+        teacher: '',
+        source: 'manual',
+      })),
     };
   }
-  if (s.schema !== SCHEMA || !Array.isArray(s.rules) || !Array.isArray(s.oneOffs) || typeof s.exceptions !== 'object') {
+  if (
+    s.schema !== SCHEMA ||
+    !Array.isArray(s.rules) ||
+    !Array.isArray(s.oneOffs) ||
+    typeof s.exceptions !== 'object'
+  ) {
     throw new Error('Неизвестный формат данных');
   }
   return s;
 }
 
 const exKey = (ruleId, date) => `${ruleId}|${date}`;
-const splitKey = k => { const i = k.indexOf('|'); return [k.slice(0, i), k.slice(i + 1)]; };
-const ruleActiveOn = (r, date) => date >= r.from && (!r.until || date <= r.until) && weekday(date) === r.weekday;
+const splitKey = (k) => {
+  const i = k.indexOf('|');
+  return [k.slice(0, i), k.slice(i + 1)];
+};
+const ruleActiveOn = (r, date) =>
+  date >= r.from &&
+  (!r.until || date <= r.until) &&
+  weekday(date) === r.weekday;
 
 /** @returns {Occurrence} */
 function occFromRule(r, date, e) {
   const p = e.patch || {};
-  const pick = f => (f in p ? p[f] : r[f]);
+  const pick = (f) => (f in p ? p[f] : r[f]);
   return {
-    type: 'rule', id: exKey(r.id, date), ruleId: r.id, orig: date,
-    group: pick('group'), course: pick('course'), subject: pick('subject'), lessonType: pick('lessonType'),
-    color: pick('color'), room: pick('room'),
-    date: e.moveTo ? e.moveTo.date : date, slot: e.moveTo ? e.moveTo.slot : r.slot,
-    cancelled: !!e.cancelled, moved: !!e.moveTo, source: r.source
+    type: 'rule',
+    id: exKey(r.id, date),
+    ruleId: r.id,
+    orig: date,
+    group: pick('group'),
+    course: pick('course'),
+    subject: pick('subject'),
+    lessonType: pick('lessonType'),
+    color: pick('color'),
+    room: pick('room'),
+    date: e.moveTo ? e.moveTo.date : date,
+    slot: e.moveTo ? e.moveTo.slot : r.slot,
+    cancelled: !!e.cancelled,
+    moved: !!e.moveTo,
+    source: r.source,
   };
 }
 
@@ -156,20 +214,26 @@ function occFromRule(r, date, e) {
  * @returns {Occurrence[]}
  */
 export function weekOccurrences(s, ws) {
-  const we = addDays(ws, 6), inWeek = d => d >= ws && d <= we, out = [];
+  const we = addDays(ws, 6),
+    inWeek = (d) => d >= ws && d <= we,
+    out = [];
   for (const r of s.rules) {
     const date = addDays(ws, r.weekday);
     if (!ruleActiveOn(r, date)) continue;
     const e = s.exceptions[exKey(r.id, date)] || {};
     if (!e.deleted && !e.moveTo) out.push(occFromRule(r, date, e));
   }
-  for (const k in s.exceptions) {                       // перенесённые сюда с других дат
+  for (const k in s.exceptions) {
+    // перенесённые сюда с других дат
     const e = s.exceptions[k];
     if (!e.moveTo || e.deleted || !inWeek(e.moveTo.date)) continue;
-    const [id, date] = splitKey(k), r = s.rules.find(x => x.id === id);
+    const [id, date] = splitKey(k),
+      r = s.rules.find((x) => x.id === id);
     if (r && ruleActiveOn(r, date)) out.push(occFromRule(r, date, e));
   }
-  for (const o of s.oneOffs) if (inWeek(o.date)) out.push({...o, type: 'once', orig: o.date, moved: false});
+  for (const o of s.oneOffs)
+    if (inWeek(o.date))
+      out.push({ ...o, type: 'once', orig: o.date, moved: false });
   return out;
 }
 
@@ -178,9 +242,13 @@ export function nextPair(s, now) {
   const today = toIso(now);
   for (let w = 0; w < 4; w++) {
     const list = weekOccurrences(s, addDays(weekStart(today), 7 * w))
-      .filter(o => !o.cancelled)
-      .map(o => ({...o, start: atTime(o.date, CONFIG.slots[o.slot - 1].start), end: atTime(o.date, CONFIG.slots[o.slot - 1].end)}))
-      .filter(o => o.end > now)
+      .filter((o) => !o.cancelled)
+      .map((o) => ({
+        ...o,
+        start: atTime(o.date, CONFIG.slots[o.slot - 1].start),
+        end: atTime(o.date, CONFIG.slots[o.slot - 1].end),
+      }))
+      .filter((o) => o.end > now)
       .sort((a, b) => a.start - b.start);
     if (list.length) return list[0];
   }
@@ -189,13 +257,20 @@ export function nextPair(s, now) {
 
 /** Кто уже занимает слот (отменённые не считаются). */
 export function busyAt(s, date, slot, exceptId) {
-  return weekOccurrences(s, weekStart(date)).find(o => o.date === date && o.slot === slot && !o.cancelled && o.id !== exceptId) || null;
+  return (
+    weekOccurrences(s, weekStart(date)).find(
+      (o) =>
+        o.date === date && o.slot === slot && !o.cancelled && o.id !== exceptId,
+    ) || null
+  );
 }
 
 /** Занятие в слоте: сначала неотменённое, иначе любое. */
 export function findAt(s, date, slot) {
-  const list = weekOccurrences(s, weekStart(date)).filter(o => o.date === date && o.slot === slot);
-  return list.find(o => !o.cancelled) || list[0] || null;
+  const list = weekOccurrences(s, weekStart(date)).filter(
+    (o) => o.date === date && o.slot === slot,
+  );
+  return list.find((o) => !o.cancelled) || list[0] || null;
 }
 
 function cleanException(s, k) {
@@ -210,35 +285,66 @@ function cleanException(s, k) {
 /* Ниже — изменения. Они меняют переданную копию s; снаружи их вызывает только reduce(). */
 
 function applyChange(s, o, changes, scope) {
-  if (o.type === 'once') { Object.assign(s.oneOffs.find(x => x.id === o.id), changes); return; }
-  const r = s.rules.find(x => x.id === o.ruleId);
-  if (scope === 'one') {                                // только эта дата: исключение
-    const k = exKey(r.id, o.orig), e = s.exceptions[k] || (s.exceptions[k] = {}), p = {...(e.patch || {})};
-    for (const f of EDITABLE) if (f in changes) { if (changes[f] === r[f]) delete p[f]; else p[f] = changes[f]; }
+  if (o.type === 'once') {
+    Object.assign(
+      s.oneOffs.find((x) => x.id === o.id),
+      changes,
+    );
+    return;
+  }
+  const r = s.rules.find((x) => x.id === o.ruleId);
+  if (scope === 'one') {
+    // только эта дата: исключение
+    const k = exKey(r.id, o.orig),
+      e = s.exceptions[k] || (s.exceptions[k] = {}),
+      p = { ...(e.patch || {}) };
+    for (const f of EDITABLE)
+      if (f in changes) {
+        if (changes[f] === r[f]) delete p[f];
+        else p[f] = changes[f];
+      }
     e.patch = p;
     if ('date' in changes || 'slot' in changes) {
-      const nd = changes.date ?? o.date, ns = changes.slot ?? o.slot;
-      if (nd === o.orig && ns === r.slot) delete e.moveTo; else e.moveTo = {date: nd, slot: ns};
+      const nd = changes.date ?? o.date,
+        ns = changes.slot ?? o.slot;
+      if (nd === o.orig && ns === r.slot) delete e.moveTo;
+      else e.moveTo = { date: nd, slot: ns };
     }
     cleanException(s, k);
     return;
   }
   // эта и все следующие: правило делится на «до» и «после»
-  const nd = changes.date ?? o.orig, ns = changes.slot ?? r.slot, fields = {};
+  const nd = changes.date ?? o.orig,
+    ns = changes.slot ?? r.slot,
+    fields = {};
   for (const f of EDITABLE) if (f in changes) fields[f] = changes[f];
   const nwd = weekday(nd);
-  if (r.from >= o.orig) {                               // правило начинается с этой даты — меняем его целиком
-    const k = exKey(r.id, o.orig), keepCancel = s.exceptions[k] && s.exceptions[k].cancelled;
+  if (r.from >= o.orig) {
+    // правило начинается с этой даты — меняем его целиком
+    const k = exKey(r.id, o.orig),
+      keepCancel = s.exceptions[k] && s.exceptions[k].cancelled;
     delete s.exceptions[k];
-    if (nwd !== r.weekday) for (const kk of Object.keys(s.exceptions)) if (kk.startsWith(r.id + '|')) delete s.exceptions[kk];
-    Object.assign(r, fields, {weekday: nwd, slot: ns, from: nd});
-    if (keepCancel) s.exceptions[exKey(r.id, nd)] = {cancelled: true};
+    if (nwd !== r.weekday)
+      for (const kk of Object.keys(s.exceptions))
+        if (kk.startsWith(r.id + '|')) delete s.exceptions[kk];
+    Object.assign(r, fields, { weekday: nwd, slot: ns, from: nd });
+    if (keepCancel) s.exceptions[exKey(r.id, nd)] = { cancelled: true };
   } else {
-    const nr = {...r, ...fields, id: newId(), weekday: nwd, slot: ns, from: nd, until: r.until, source: 'manual'};
+    const nr = {
+      ...r,
+      ...fields,
+      id: newId(),
+      weekday: nwd,
+      slot: ns,
+      from: nd,
+      until: r.until,
+      source: 'manual',
+    };
     for (const k of Object.keys(s.exceptions)) {
       const [id, d] = splitKey(k);
       if (id !== r.id || d < o.orig) continue;
-      if (nwd === r.weekday && d !== o.orig) s.exceptions[exKey(nr.id, d)] = s.exceptions[k];
+      if (nwd === r.weekday && d !== o.orig)
+        s.exceptions[exKey(nr.id, d)] = s.exceptions[k];
       delete s.exceptions[k];
     }
     r.until = addDays(o.orig, -1);
@@ -247,29 +353,68 @@ function applyChange(s, o, changes, scope) {
 }
 
 function removeOccurrence(s, o, scope) {
-  if (o.type === 'once') { s.oneOffs = s.oneOffs.filter(x => x.id !== o.id); return; }
-  const r = s.rules.find(x => x.id === o.ruleId);
-  if (scope === 'one') { (s.exceptions[exKey(r.id, o.orig)] ||= {}).deleted = true; return; }
+  if (o.type === 'once') {
+    s.oneOffs = s.oneOffs.filter((x) => x.id !== o.id);
+    return;
+  }
+  const r = s.rules.find((x) => x.id === o.ruleId);
+  if (scope === 'one') {
+    (s.exceptions[exKey(r.id, o.orig)] ||= {}).deleted = true;
+    return;
+  }
   if (r.from >= o.orig) {
-    s.rules = s.rules.filter(x => x !== r);
-    for (const k of Object.keys(s.exceptions)) if (k.startsWith(r.id + '|')) delete s.exceptions[k];
+    s.rules = s.rules.filter((x) => x !== r);
+    for (const k of Object.keys(s.exceptions))
+      if (k.startsWith(r.id + '|')) delete s.exceptions[k];
   } else {
     r.until = addDays(o.orig, -1);
-    for (const k of Object.keys(s.exceptions)) { const [id, d] = splitKey(k); if (id === r.id && d >= o.orig) delete s.exceptions[k]; }
+    for (const k of Object.keys(s.exceptions)) {
+      const [id, d] = splitKey(k);
+      if (id === r.id && d >= o.orig) delete s.exceptions[k];
+    }
   }
 }
 
 function setCancelled(s, o, value) {
-  if (o.type === 'once') { s.oneOffs.find(x => x.id === o.id).cancelled = value; return; }
+  if (o.type === 'once') {
+    s.oneOffs.find((x) => x.id === o.id).cancelled = value;
+    return;
+  }
   const k = exKey(o.ruleId, o.orig);
   (s.exceptions[k] ||= {}).cancelled = value;
   cleanException(s, k);
 }
 
 function addPair(s, f) {
-  const base = {group: f.group, course: f.course, subject: f.subject, lessonType: 'ЛР', color: f.color, room: f.room || '', teacher: ''};
-  if (f.repeat) s.rules.push({id: newId(), ...base, weekday: weekday(f.date), slot: f.slot, from: f.date, until: null, source: 'manual', importKey: null});
-  else s.oneOffs.push({id: newId(), ...base, date: f.date, slot: f.slot, cancelled: false, source: 'manual'});
+  const base = {
+    group: f.group,
+    course: f.course,
+    subject: f.subject,
+    lessonType: 'ЛР',
+    color: f.color,
+    room: f.room || '',
+    teacher: '',
+  };
+  if (f.repeat)
+    s.rules.push({
+      id: newId(),
+      ...base,
+      weekday: weekday(f.date),
+      slot: f.slot,
+      from: f.date,
+      until: null,
+      source: 'manual',
+      importKey: null,
+    });
+  else
+    s.oneOffs.push({
+      id: newId(),
+      ...base,
+      date: f.date,
+      slot: f.slot,
+      cancelled: false,
+      source: 'manual',
+    });
 }
 
 /**
@@ -283,13 +428,24 @@ function addPair(s, f) {
 export function reduce(state, action) {
   const s = structuredClone(state);
   switch (action.type) {
-    case 'add':          addPair(s, action.pair); break;
-    case 'edit':         applyChange(s, action.occ, action.changes, action.scope); break;
-    case 'delete':       removeOccurrence(s, action.occ, action.scope); break;
-    case 'setCancelled': setCancelled(s, action.occ, action.value); break;
-    case 'reset':        return seed();
-    case 'load':         return migrate(action.data);
-    default: throw new Error('Неизвестное действие: ' + action.type);
+    case 'add':
+      addPair(s, action.pair);
+      break;
+    case 'edit':
+      applyChange(s, action.occ, action.changes, action.scope);
+      break;
+    case 'delete':
+      removeOccurrence(s, action.occ, action.scope);
+      break;
+    case 'setCancelled':
+      setCancelled(s, action.occ, action.value);
+      break;
+    case 'reset':
+      return seed();
+    case 'load':
+      return migrate(action.data);
+    default:
+      throw new Error('Неизвестное действие: ' + action.type);
   }
   return s;
 }
