@@ -1151,8 +1151,9 @@ button {
   display: none;
 }
 
-/* select: своя стрелка вместо браузерной — chevron-down поверх справа */
-.field__select {
+/* «Предмет», «Пара», «Дата» — открывают системный выбор: своя стрелка
+   вместо браузерной, chevron-down поверх справа */
+.field__picker {
   position: relative;
 }
 
@@ -1162,6 +1163,29 @@ button {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.field__input--date {
+  position: relative;
+  padding-right: 40px;
+}
+
+/* системный значок календаря — прозрачный и на всё поле: тап в любом месте
+   открывает календарь, а видна только наша стрелка */
+.field__input--date::-webkit-calendar-picker-indicator {
+  position: absolute;
+  inset: 0;
+  width: auto;
+  height: auto;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* на Android дата по умолчанию по центру поля — как у остальных полей, слева */
+.field__input--date::-webkit-date-and-time-value {
+  text-align: left;
 }
 
 .field__chevron {

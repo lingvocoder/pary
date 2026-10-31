@@ -56,9 +56,14 @@ export function openEditor(o, preset) {
           `<option value="${esc(s)}"${s === v.subject ? ' selected' : ''}>${esc(s)}</option>`,
       )
       .join('') + `<option value="${OTHER_SUBJECT}">Другой…</option>`;
-  // select в стиле поля: стрелка браузера скрыта, вместо неё chevron-down
+  // поле, которое открывает системный выбор (список или календарь):
+  // значок браузера скрыт, вместо него chevron-down справа — одинаково у всех трёх
+  const picker = (control) =>
+    `<div class="field__picker">${control}${iconChevronDown('field__chevron')}</div>`;
   const select = (id, options) =>
-    `<div class="field__select"><select class="field__input field__input--select" id="${id}">${options}</select>${iconChevronDown('field__chevron')}</div>`;
+    picker(
+      `<select class="field__input field__input--select" id="${id}">${options}</select>`,
+    );
   // переключатель: <input role="switch"> внутри label — касание по всей строке
   const switchRow = (title, description, id, checked) =>
     `<label class="toggle"><span class="toggle__text"><span class="toggle__title">${title}</span><span class="toggle__description">${description}</span></span><span class="switch"><input class="switch__input" type="checkbox" role="switch" id="${id}"${checked ? ' checked' : ''}><span class="switch__knob" aria-hidden="true"></span></span></label>`;
@@ -78,7 +83,7 @@ export function openEditor(o, preset) {
     </div>
     <div class="field" id="esOtherField" hidden><label class="field__label" for="esOther">Название предмета</label><input class="field__input" type="text" id="esOther" autocomplete="off"></div>
     <div class="form-row">
-      <div class="field"><label class="field__label" for="ed">Дата</label><input class="field__input" type="date" id="ed" value="${v.date}"></div>
+      <div class="field"><label class="field__label" for="ed">Дата</label>${picker(`<input class="field__input field__input--date" type="date" id="ed" value="${v.date}">`)}</div>
       <div class="field"><label class="field__label" for="ep">Пара</label>${select('ep', slots)}</div>
     </div>
     <div class="field"><span class="field__label">Цвет</span><div class="color-picker" id="ecol">${CONFIG.palette.map((p) => `<button class="color-picker__swatch ${p.tint ? 'tint-' + p.tint : 'color-picker__swatch--default'}" data-col="${p.id}" aria-label="${p.name}" aria-pressed="${(v.color || '') === p.id}"></button>`).join('')}</div></div>
