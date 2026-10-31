@@ -18,15 +18,18 @@ export const CONFIG = {
     { start: '18:40', end: '20:00' },
     { start: '20:10', end: '21:30' },
   ],
-  /** Цвета для важных пар. id хранится в данных, hex — только здесь. */
+  /**
+   * Цвета для важных пар. id хранится в данных пользователя и не меняется
+   * (иначе нужна миграция). tint — оттенок палитры Tailwind, CSS-класс tint-<tint>.
+   */
   palette: [
     { id: '', name: 'Как у курса' },
-    { id: 'red', name: 'Красный', hex: '#C62828' },
-    { id: 'amber', name: 'Жёлтый', hex: '#A16207' },
-    { id: 'green', name: 'Зелёный', hex: '#15803D' },
-    { id: 'blue', name: 'Синий', hex: '#1D4ED8' },
-    { id: 'violet', name: 'Фиолетовый', hex: '#6D28D9' },
-    { id: 'slate', name: 'Серый', hex: '#475569' },
+    { id: 'red', name: 'Красный', tint: 'red' },
+    { id: 'amber', name: 'Оранжевый', tint: 'orange' },
+    { id: 'green', name: 'Зелёный', tint: 'green' },
+    { id: 'blue', name: 'Синий', tint: 'blue' },
+    { id: 'violet', name: 'Фиолетовый', tint: 'violet' },
+    { id: 'slate', name: 'Серый', tint: 'gray' },
   ],
   subjects: ['ПК первого ин. яз.', 'ИКТ в лингвистике'],
   timezone: 'Europe/Moscow',

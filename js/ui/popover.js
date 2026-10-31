@@ -3,7 +3,7 @@ import { DAY_NAME } from '../config.js';
 import { weekday, humanDate } from '../dates.js';
 import { findAt } from '../model.js';
 import { getState, dispatch } from '../store.js';
-import { esc, toast, userHex, courseClass, slotOf } from './helpers.js';
+import { esc, toast, colorClass, slotOf } from './helpers.js';
 import { openEditor } from './editor.js';
 import { gcalUrl } from './calendar.js';
 
@@ -21,8 +21,7 @@ export function closePopover() {
 
 export function openPopover(o, card) {
   closePopover();
-  const hex = userHex(o),
-    sl = slotOf(o.slot);
+  const sl = slotOf(o.slot);
   const catcher = document.createElement('div');
   catcher.className = 'popover-catcher'; // ловит тап мимо подсказки
   const el = document.createElement('section');
@@ -30,7 +29,7 @@ export function openPopover(o, card) {
   el.setAttribute('role', 'dialog');
   el.setAttribute('aria-label', `Группа ${o.group}`);
   el.innerHTML = `<span class="popover__tip"></span>
-    <div class="popover__head"><span class="chip popover__chip ${courseClass(o.course)}${hex ? ' chip--custom-color' : ''}"${hex ? ` style="--cc:${hex}"` : ''}>${esc(o.group)}</span><span class="popover__meta">${o.course} курс, ${esc(o.lessonType)}</span></div>
+    <div class="popover__head"><span class="chip popover__chip ${colorClass(o)}">${esc(o.group)}</span><span class="popover__meta">${o.course} курс, ${esc(o.lessonType)}</span></div>
     <div><div class="popover__when">${DAY_NAME[weekday(o.date)].replace(/^./, (c) => c.toUpperCase())}, ${humanDate(o.date)}, ${sl.start}–${sl.end}</div>
       <div class="popover__subject">${esc(o.subject)}</div>
       ${o.cancelled ? '<div class="popover__flag">Отменена</div>' : ''}${o.moved ? '<div class="popover__moved">↪ перенесена разово</div>' : ''}</div>

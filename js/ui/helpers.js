@@ -19,12 +19,12 @@ export const abbr = (s) => {
       .split(/\s+/)[0] || '';
   return w.length <= 5 ? w : w.slice(0, 4) + '.';
 };
-/** Цвет «важной» пары или null, если цвет — как у курса. */
-export const userHex = (o) =>
-  (CONFIG.palette.find((p) => p.id === o.color) || {}).hex || null;
-/** CSS-класс цвета курса: course-1…course-4. */
-export const courseClass = (c) =>
-  'course-' + ([1, 2, 3, 4].includes(+c) ? +c : 3);
+/** CSS-класс цвета пары: свой цвет «важной» пары (tint-red…) или цвет курса (course-1…4). */
+export const colorClass = (o) => {
+  const custom = CONFIG.palette.find((p) => p.id && p.id === o.color);
+  if (custom) return 'tint-' + custom.tint;
+  return 'course-' + ([1, 2, 3, 4].includes(+o.course) ? +o.course : 3);
+};
 export const slotOf = (n) => CONFIG.slots[n - 1];
 
 let toastTimer;

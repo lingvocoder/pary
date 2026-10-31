@@ -75,76 +75,335 @@
     U+2215, U+FEFF, U+FFFD;
 }
 
-/* ---------- цвета: светлая и тёмная тема ---------- */
+/* ---------- слой 1: шкалы ---------- */
+/* Палитра Tailwind CSS v4.3 (tailwindcss.com/docs/colors), только нужные ступени.
+   Компоненты эти переменные не используют — только слой 2 ниже. */
 :root {
-  --paper: #eef2f6;
-  --sheet: #ffffff;
-  --ink: #18212f;
-  --ink2: #4b5768;
-  --mute: #6b7789;
-  --line: #d6dde6;
-  --line2: #e6ebf1;
-  --todaycol: #f3f6fa;
-  --on-ink: #ffffff;
-  --danger: #c62828;
-  --c1: #2563eb;
-  --c2: #047857;
-  --c3: #b45309;
-  --c4: #6d28d9;
-  --t1: #e8effd;
-  --t2: #e2f3eb;
-  --t3: #fbeedf;
-  --t4: #f0e9fc;
-  --hatch: #faf6f1;
-  --chip-text: #ffffff;
-  --scrim: rgba(16, 21, 29, 0.45);
+  --color-white: #fff;
+  --color-black: #000;
+
+  --color-gray-50: oklch(98.5% 0.002 247.839);
+  --color-gray-100: oklch(96.7% 0.003 264.542);
+  --color-gray-300: oklch(87.2% 0.01 258.338);
+  --color-gray-400: oklch(70.7% 0.022 261.325);
+  --color-gray-500: oklch(55.1% 0.027 264.364);
+  --color-gray-600: oklch(44.6% 0.03 256.802);
+  --color-gray-700: oklch(37.3% 0.034 259.733);
+  --color-gray-800: oklch(27.8% 0.033 256.848);
+  --color-gray-900: oklch(21% 0.034 264.665);
+  --color-gray-950: oklch(13% 0.028 261.692);
+
+  --color-indigo-400: oklch(67.3% 0.182 276.935);
+  --color-indigo-500: oklch(58.5% 0.233 277.117);
+  --color-indigo-600: oklch(51.1% 0.262 276.966);
+
+  /* курсы 1–4 */
+  --color-sky-50: oklch(97.7% 0.013 236.62);
+  --color-sky-300: oklch(82.8% 0.111 230.318);
+  --color-sky-400: oklch(74.6% 0.16 232.661);
+  --color-sky-500: oklch(68.5% 0.169 237.323);
+  --color-sky-600: oklch(58.8% 0.158 241.966);
+  --color-sky-700: oklch(50% 0.134 242.749);
+
+  --color-emerald-50: oklch(97.9% 0.021 166.113);
+  --color-emerald-300: oklch(84.5% 0.143 164.978);
+  --color-emerald-400: oklch(76.5% 0.177 163.223);
+  --color-emerald-500: oklch(69.6% 0.17 162.48);
+  --color-emerald-600: oklch(59.6% 0.145 163.225);
+  --color-emerald-700: oklch(50.8% 0.118 165.612);
+
+  --color-amber-50: oklch(98.7% 0.022 95.277);
+  --color-amber-300: oklch(87.9% 0.169 91.605);
+  --color-amber-400: oklch(82.8% 0.189 84.429);
+  --color-amber-500: oklch(76.9% 0.188 70.08);
+  --color-amber-600: oklch(66.6% 0.179 58.318);
+  --color-amber-700: oklch(55.5% 0.163 48.998);
+
+  --color-fuchsia-50: oklch(97.7% 0.017 320.058);
+  --color-fuchsia-300: oklch(83.3% 0.145 321.434);
+  --color-fuchsia-400: oklch(74% 0.238 322.16);
+  --color-fuchsia-500: oklch(66.7% 0.295 322.15);
+  --color-fuchsia-600: oklch(59.1% 0.293 322.896);
+  --color-fuchsia-700: oklch(51.8% 0.253 323.949);
+
+  /* свои цвета «важных» пар; red-400 и green-400 — ещё и иконки уведомлений */
+  --color-red-50: oklch(97.1% 0.013 17.38);
+  --color-red-300: oklch(80.8% 0.114 19.571);
+  --color-red-400: oklch(70.4% 0.191 22.216);
+  --color-red-500: oklch(63.7% 0.237 25.331);
+  --color-red-600: oklch(57.7% 0.245 27.325);
+  --color-red-700: oklch(50.5% 0.213 27.518);
+
+  --color-orange-50: oklch(98% 0.016 73.684);
+  --color-orange-300: oklch(83.7% 0.128 66.29);
+  --color-orange-400: oklch(75% 0.183 55.934);
+  --color-orange-500: oklch(70.5% 0.213 47.604);
+  --color-orange-600: oklch(64.6% 0.222 41.116);
+  --color-orange-700: oklch(55.3% 0.195 38.402);
+
+  --color-green-50: oklch(98.2% 0.018 155.826);
+  --color-green-300: oklch(87.1% 0.15 154.449);
+  --color-green-400: oklch(79.2% 0.209 151.711);
+  --color-green-500: oklch(72.3% 0.219 149.579);
+  --color-green-600: oklch(62.7% 0.194 149.214);
+  --color-green-700: oklch(52.7% 0.154 150.069);
+
+  --color-blue-50: oklch(97% 0.014 254.604);
+  --color-blue-300: oklch(80.9% 0.105 251.813);
+  --color-blue-400: oklch(70.7% 0.165 254.624);
+  --color-blue-500: oklch(62.3% 0.214 259.815);
+  --color-blue-600: oklch(54.6% 0.245 262.881);
+  --color-blue-700: oklch(48.8% 0.243 264.376);
+
+  --color-violet-50: oklch(96.9% 0.016 293.756);
+  --color-violet-300: oklch(81.1% 0.111 293.571);
+  --color-violet-400: oklch(70.2% 0.183 293.541);
+  --color-violet-500: oklch(60.6% 0.25 292.717);
+  --color-violet-600: oklch(54.1% 0.281 293.009);
+  --color-violet-700: oklch(49.1% 0.27 292.581);
+
+  /* тени Tailwind: shadow-sm, shadow-lg, shadow-xl */
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-lg:
+    0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl:
+    0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+
+  /* радиусы: кнопки и поля, карточки и поповер, верх шторки */
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+
+  /* шрифт: размер и высота строки */
+  --text-xs: 12px;
+  --text-xs--line-height: 16px;
+  --text-sm: 14px;
+  --text-sm--line-height: 20px;
+  --text-base: 16px;
+  --text-base--line-height: 24px;
+  --text-lg: 18px;
+  --text-lg--line-height: 28px;
+  --text-5xl: 48px;
+  --tracking-tight: -0.025em;
+
+  /* отступы: шкала 4, 8, 12, 16, 24, 32, 48 */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+}
+
+/* ---------- слой 2: смысл ---------- */
+/* Компоненты берут только эти переменные. Тёмная тема переназначает их ниже. */
+:root {
+  color-scheme: light dark;
+
+  --page: var(--color-gray-50);
+  --surface: var(--color-white);
+  --text: var(--color-gray-900);
+  --text-muted: var(--color-gray-500);
+  --text-subject: var(--color-gray-900);
+  --icon: var(--color-gray-400);
+  --field-bg: var(--color-white);
+  --field-border: var(--color-gray-300);
+  --btn-secondary-bg: var(--color-white);
+  --divider: var(--color-gray-100);
+  --today-col: var(--color-gray-50);
+  --accent: var(--color-indigo-600);
+  --accent-text: var(--color-indigo-600);
+  --on-fill: var(--color-white);
+  --danger-text: var(--color-red-600);
+  --danger-fill: var(--color-red-600);
+  --success: var(--color-green-400);
+  --error: var(--color-red-400);
+  --focus-ring: var(--color-indigo-600);
+  --scrim: oklch(from var(--color-gray-500) l c h / 75%);
+
+  /* высота над страницей: в светлой теме — тень (и тонкая обводка) */
+  --elevation-sm: var(--shadow-sm), 0 0 0 1px rgb(0 0 0 / 0.05);
+  --elevation-lg: var(--shadow-lg), 0 0 0 1px rgb(0 0 0 / 0.05);
+  --elevation-xl: var(--shadow-xl);
+
+  /* отменённая пара: штриховка вместо цвета курса */
+  --cancelled-bg: var(--color-gray-50);
+  --cancelled-stripe: var(--color-gray-300);
+  --cancelled-ring: var(--color-gray-300);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --paper: #10151d;
-    --sheet: #19202b;
-    --ink: #e8edf4;
-    --ink2: #aeb8c6;
-    --mute: #8a96a8;
-    --line: #2a3443;
-    --line2: #222b38;
-    --todaycol: #1c2533;
-    --on-ink: #10151d;
-    --danger: #f07070;
-    --c1: #8ab4ff;
-    --c2: #4ade9f;
-    --c3: #f5b451;
-    --c4: #b79cfa;
-    --t1: #1e2a44;
-    --t2: #17332a;
-    --t3: #3a2c18;
-    --t4: #2c2442;
-    --hatch: #1f2530;
-    --chip-text: #10151d;
-    --scrim: rgba(0, 0, 0, 0.55);
+    --page: var(--color-gray-900);
+    --surface: var(--color-gray-800);
+    --text: var(--color-white);
+    --text-muted: var(--color-gray-400);
+    --text-subject: var(--color-gray-300);
+    --icon: var(--color-gray-500);
+    --field-bg: oklch(from var(--color-white) l c h / 5%);
+    --field-border: oklch(from var(--color-white) l c h / 10%);
+    --btn-secondary-bg: oklch(from var(--color-white) l c h / 10%);
+    --divider: oklch(from var(--color-white) l c h / 6%);
+    --today-col: oklch(from var(--color-white) l c h / 4%);
+    --accent: var(--color-indigo-500);
+    --accent-text: var(--color-indigo-400);
+    --danger-text: var(--color-red-400);
+    --focus-ring: var(--color-indigo-400);
+    --scrim: oklch(from var(--color-gray-950) l c h / 80%);
+
+    /* в тёмной теме тень не видна — вместо неё обводка */
+    --elevation-sm: 0 0 0 1px oklch(from var(--color-white) l c h / 10%);
+    --elevation-lg: 0 0 0 1px oklch(from var(--color-white) l c h / 10%);
+    --elevation-xl: 0 0 0 1px oklch(from var(--color-white) l c h / 10%);
+
+    --cancelled-bg: var(--color-gray-900);
+    --cancelled-stripe: var(--color-gray-700);
+    --cancelled-ring: var(--color-gray-700);
   }
 }
 
-/* Цвет курса: набор переменных, подмешивается к карточке и бейджу группы */
+/* ---------- оттенки пар: цвет курса или свой цвет ---------- */
+/* Класс задаёт ступени одного оттенка (--hue-*), а правило ниже превращает их
+   в смысл: текст и фон карточки, бейдж, кружок в редакторе. */
 .course-1 {
-  --cc: var(--c1);
-  --ct: var(--t1);
+  --hue-50: var(--color-sky-50);
+  --hue-300: var(--color-sky-300);
+  --hue-400: var(--color-sky-400);
+  --hue-500: var(--color-sky-500);
+  --hue-600: var(--color-sky-600);
+  --hue-700: var(--color-sky-700);
 }
 
 .course-2 {
-  --cc: var(--c2);
-  --ct: var(--t2);
+  --hue-50: var(--color-emerald-50);
+  --hue-300: var(--color-emerald-300);
+  --hue-400: var(--color-emerald-400);
+  --hue-500: var(--color-emerald-500);
+  --hue-600: var(--color-emerald-600);
+  --hue-700: var(--color-emerald-700);
 }
 
 .course-3 {
-  --cc: var(--c3);
-  --ct: var(--t3);
+  --hue-50: var(--color-amber-50);
+  --hue-300: var(--color-amber-300);
+  --hue-400: var(--color-amber-400);
+  --hue-500: var(--color-amber-500);
+  --hue-600: var(--color-amber-600);
+  --hue-700: var(--color-amber-700);
 }
 
 .course-4 {
-  --cc: var(--c4);
-  --ct: var(--t4);
+  --hue-50: var(--color-fuchsia-50);
+  --hue-300: var(--color-fuchsia-300);
+  --hue-400: var(--color-fuchsia-400);
+  --hue-500: var(--color-fuchsia-500);
+  --hue-600: var(--color-fuchsia-600);
+  --hue-700: var(--color-fuchsia-700);
+}
+
+.tint-red {
+  --hue-50: var(--color-red-50);
+  --hue-300: var(--color-red-300);
+  --hue-400: var(--color-red-400);
+  --hue-500: var(--color-red-500);
+  --hue-600: var(--color-red-600);
+  --hue-700: var(--color-red-700);
+}
+
+.tint-orange {
+  --hue-50: var(--color-orange-50);
+  --hue-300: var(--color-orange-300);
+  --hue-400: var(--color-orange-400);
+  --hue-500: var(--color-orange-500);
+  --hue-600: var(--color-orange-600);
+  --hue-700: var(--color-orange-700);
+}
+
+.tint-green {
+  --hue-50: var(--color-green-50);
+  --hue-300: var(--color-green-300);
+  --hue-400: var(--color-green-400);
+  --hue-500: var(--color-green-500);
+  --hue-600: var(--color-green-600);
+  --hue-700: var(--color-green-700);
+}
+
+.tint-blue {
+  --hue-50: var(--color-blue-50);
+  --hue-300: var(--color-blue-300);
+  --hue-400: var(--color-blue-400);
+  --hue-500: var(--color-blue-500);
+  --hue-600: var(--color-blue-600);
+  --hue-700: var(--color-blue-700);
+}
+
+.tint-violet {
+  --hue-50: var(--color-violet-50);
+  --hue-300: var(--color-violet-300);
+  --hue-400: var(--color-violet-400);
+  --hue-500: var(--color-violet-500);
+  --hue-600: var(--color-violet-600);
+  --hue-700: var(--color-violet-700);
+}
+
+.tint-gray {
+  --hue-300: var(--color-gray-300);
+  --hue-400: var(--color-gray-400);
+  --hue-600: var(--color-gray-600);
+  --hue-700: var(--color-gray-700);
+}
+
+/* смысл оттенка — одинаково для всех курсов и своих цветов */
+.course-1,
+.course-2,
+.course-3,
+.course-4,
+.tint-red,
+.tint-orange,
+.tint-green,
+.tint-blue,
+.tint-violet,
+.tint-gray {
+  --tint-text: var(--hue-700);
+  --tint-bg: var(--hue-50);
+  --badge-text: var(--hue-700);
+  --badge-bg: var(--hue-50);
+  --badge-ring: oklch(from var(--hue-600) l c h / 20%);
+  --swatch: var(--hue-500);
+}
+
+/* серый: gray-50 сливается с белым и с колонкой «сегодня», поэтому фон — gray-100 */
+.tint-gray {
+  --tint-bg: var(--color-gray-100);
+  --badge-bg: var(--color-gray-100);
+  --swatch: var(--color-gray-400);
+}
+
+@media (prefers-color-scheme: dark) {
+  .course-1,
+  .course-2,
+  .course-3,
+  .course-4,
+  .tint-red,
+  .tint-orange,
+  .tint-green,
+  .tint-blue,
+  .tint-violet,
+  .tint-gray {
+    --tint-text: var(--hue-300);
+    --tint-bg: oklch(from var(--hue-600) l c h / 15%);
+    --badge-text: var(--hue-400);
+    --badge-bg: oklch(from var(--hue-400) l c h / 10%);
+    --badge-ring: oklch(from var(--hue-400) l c h / 20%);
+  }
+
+  .tint-gray {
+    --tint-text: var(--color-gray-300);
+    --tint-bg: oklch(from var(--color-white) l c h / 10%);
+    --badge-text: var(--color-gray-300);
+    --badge-bg: oklch(from var(--color-white) l c h / 10%);
+  }
 }
 
 /* ---------- основа ---------- */
@@ -155,8 +414,8 @@
 html,
 body {
   margin: 0;
-  background: var(--paper);
-  color: var(--ink);
+  background: var(--page);
+  color: var(--text);
   font-family: 'Golos Text', system-ui, sans-serif;
   -webkit-tap-highlight-color: transparent;
 }
@@ -180,7 +439,7 @@ button {
 /* Рамка фокуса с клавиатуры. Стоит в основе, до блоков: если блок задаёт
    свой outline (как поле аудитории), он перебивает эту рамку. */
 :focus-visible {
-  outline: 2px solid var(--ink);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
 
@@ -193,23 +452,20 @@ button {
 
 .page__hint {
   font-size: 12px;
-  color: var(--mute);
+  color: var(--text-muted);
   text-align: center;
   margin: 12px 8px 0;
   line-height: 1.45;
 }
 
-/* ---------- бейдж группы: номер на фоне цвета курса ---------- */
+/* ---------- бейдж группы: номер в цвете курса ---------- */
 .chip {
   font-weight: 700;
-  color: var(--chip-text);
-  background: var(--cc);
+  color: var(--badge-text);
+  background: var(--badge-bg);
+  box-shadow: inset 0 0 0 1px var(--badge-ring);
   border-radius: 8px;
   font-variant-numeric: tabular-nums;
-}
-
-.chip--custom-color {
-  color: #ffffff;
 }
 
 /* ---------- следующая пара ---------- */
@@ -229,7 +485,7 @@ button {
 
 .hero__label {
   font-size: 13px;
-  color: var(--ink2);
+  color: var(--text-muted);
 }
 
 .hero__main {
@@ -260,7 +516,7 @@ button {
 
 .hero__details {
   font-size: 14px;
-  color: var(--ink2);
+  color: var(--text-muted);
   line-height: 1.45;
 }
 
@@ -270,7 +526,7 @@ button {
   border: 0;
   border-radius: 50%;
   background: transparent;
-  color: var(--ink2);
+  color: var(--icon);
   display: grid;
   place-items: center;
   padding: 0;
@@ -278,7 +534,7 @@ button {
 }
 
 .icon-btn:active {
-  background: var(--line2);
+  background: var(--divider);
 }
 
 /* ---------- навигация по неделям ---------- */
@@ -295,13 +551,13 @@ button {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  border: 1px solid var(--line);
-  background: var(--sheet);
+  border: 1px solid var(--field-border);
+  background: var(--btn-secondary-bg);
   font-size: 18px;
 }
 
 .week-nav__arrow:active {
-  background: var(--line2);
+  background: var(--divider);
 }
 
 .week-nav__range {
@@ -331,8 +587,8 @@ button {
 .week-grid {
   display: grid;
   grid-template-columns: 38px repeat(6, minmax(0, 1fr));
-  background: var(--sheet);
-  border: 1px solid var(--line);
+  background: var(--surface);
+  box-shadow: var(--elevation-sm);
   border-radius: 12px;
   overflow: hidden;
   user-select: none;
@@ -340,21 +596,21 @@ button {
 }
 
 .week-grid__corner {
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--divider);
 }
 
 /* шапка дня: «Ср» и число */
 .week-grid__day {
   text-align: center;
   padding: 6px 0 5px;
-  border-left: 1px solid var(--line2);
-  border-bottom: 1px solid var(--line);
+  border-left: 1px solid var(--divider);
+  border-bottom: 1px solid var(--divider);
 }
 
 .week-grid__day-name {
   display: block;
   font-size: 12px;
-  color: var(--ink2);
+  color: var(--text-muted);
 }
 
 .week-grid__day-num {
@@ -368,12 +624,12 @@ button {
 }
 
 .week-grid__day--today {
-  background: var(--todaycol);
+  background: var(--today-col);
 }
 
 .week-grid__day--today .week-grid__day-num {
-  background: var(--ink);
-  color: var(--on-ink);
+  background: var(--accent);
+  color: var(--on-fill);
   font-size: 15px;
 }
 
@@ -384,7 +640,7 @@ button {
   align-items: center;
   justify-content: center;
   line-height: 1.15;
-  border-bottom: 1px solid var(--line2);
+  border-bottom: 1px solid var(--divider);
 }
 
 .week-grid__time--last {
@@ -394,7 +650,7 @@ button {
 .week-grid__slot-num {
   font-size: 13px;
   font-weight: 600;
-  color: var(--ink2);
+  color: var(--text-muted);
 }
 
 .week-grid__time--now .week-grid__slot-num {
@@ -403,7 +659,7 @@ button {
 
 .week-grid__slot-start {
   font-size: 10.5px;
-  color: var(--mute);
+  color: var(--text-muted);
   font-variant-numeric: tabular-nums;
 }
 
@@ -411,15 +667,15 @@ button {
 .week-grid__cell {
   height: 54px;
   padding: 2px;
-  border-left: 1px solid var(--line2);
-  border-bottom: 1px solid var(--line2);
+  border-left: 1px solid var(--divider);
+  border-bottom: 1px solid var(--divider);
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
 .week-grid__cell--today {
-  background: var(--todaycol);
+  background: var(--today-col);
 }
 
 .week-grid__cell--last {
@@ -428,12 +684,12 @@ button {
 
 /* клетка под пальцем при переносе; занятая — красной рамкой */
 .week-grid__cell--target {
-  outline: 2px dashed var(--ink);
+  outline: 2px dashed var(--text);
   outline-offset: -3px;
 }
 
 .week-grid__cell--busy {
-  outline-color: var(--danger);
+  outline-color: var(--danger-text);
 }
 
 /* ---------- карточка пары ---------- */
@@ -444,8 +700,8 @@ button {
   border-radius: 7px;
   padding: 4px 4px 3px 7px;
   overflow: hidden;
-  background: var(--ct);
-  border-left: 3px solid var(--cc);
+  background: var(--tint-bg);
+  border-left: 3px solid var(--tint-text);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -458,7 +714,7 @@ button {
   font-size: 15px;
   font-weight: 700;
   line-height: 1.1;
-  color: var(--cc);
+  color: var(--tint-text);
   font-variant-numeric: tabular-nums;
 }
 
@@ -466,7 +722,7 @@ button {
   display: block;
   font-size: 10px;
   margin-top: 1px;
-  color: var(--ink2);
+  color: var(--text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -483,37 +739,25 @@ button {
   top: 2px;
   font-size: 10px;
   font-weight: 700;
-  color: var(--danger);
+  color: var(--danger-text);
 }
 
 .card__mark--moved {
   bottom: 1px;
   font-size: 11px;
-  color: var(--mute);
+  color: var(--text-muted);
 }
 
-/* пара, для которой выбран свой цвет */
-.card--custom-color {
-  background: var(--hl);
-  border-left-color: var(--hl);
-}
-
-.card--custom-color .card__group,
-.card--custom-color .card__subject,
-.card--custom-color .card__mark--moved {
-  color: #ffffff;
-}
-
-/* отменённая: штриховка и размытый текст */
+/* отменённая: штриховка из ступеней палитры и размытый текст */
 .card--cancelled {
   background:
     repeating-linear-gradient(
       -45deg,
       transparent 0 5px,
-      color-mix(in srgb, var(--mute) 18%, transparent) 5px 7px
+      var(--cancelled-stripe) 5px 7px
     ),
-    var(--hatch);
-  border-left-color: color-mix(in srgb, var(--cc) 40%, transparent);
+    var(--cancelled-bg);
+  border-left-color: var(--cancelled-ring);
 }
 
 .card--cancelled .card__body {
@@ -524,8 +768,8 @@ button {
 /* карточка, для которой открыта подсказка */
 .card--selected {
   box-shadow:
-    0 0 0 2px var(--sheet),
-    0 0 0 4px var(--ink);
+    0 0 0 2px var(--surface),
+    0 0 0 4px var(--focus-ring);
 }
 
 /* карточка на старом месте, пока её копия едет за пальцем */
@@ -541,7 +785,7 @@ button {
   width: 62px;
   height: 50px;
   transform: translate(-50%, -70%) rotate(-3deg) scale(1.08);
-  box-shadow: 0 12px 28px rgba(16, 21, 29, 0.28);
+  box-shadow: var(--elevation-lg);
 }
 
 /* ---------- пустая неделя ---------- */
@@ -550,15 +794,15 @@ button {
   flex-direction: column;
   align-items: center;
   gap: 12px;
-  background: var(--sheet);
-  border: 1px dashed var(--line);
+  background: var(--surface);
+  box-shadow: var(--elevation-sm);
   border-radius: 12px;
   padding: 40px 24px;
   text-align: center;
 }
 
 .empty-week__icon {
-  color: var(--mute);
+  color: var(--icon);
 }
 
 .empty-week__title {
@@ -570,7 +814,7 @@ button {
   margin: 0;
   font-size: 14px;
   line-height: 1.5;
-  color: var(--ink2);
+  color: var(--text-muted);
   max-width: 270px;
 }
 
@@ -590,10 +834,9 @@ button {
   position: fixed;
   z-index: 41;
   width: min(300px, calc(100vw - 24px));
-  background: var(--sheet);
-  border: 1px solid var(--line);
+  background: var(--surface);
+  box-shadow: var(--elevation-lg);
   border-radius: 14px;
-  box-shadow: 0 16px 36px rgba(16, 21, 29, 0.22);
   padding: 14px 14px 12px;
   display: flex;
   flex-direction: column;
@@ -605,9 +848,7 @@ button {
   position: absolute;
   width: 14px;
   height: 14px;
-  background: var(--sheet);
-  border-left: 1px solid var(--line);
-  border-top: 1px solid var(--line);
+  background: var(--surface);
   transform: rotate(45deg);
 }
 
@@ -635,7 +876,7 @@ button {
 /* «3 курс, ЛР» рядом с бейджем */
 .popover__meta {
   font-size: 13px;
-  color: var(--ink2);
+  color: var(--text-muted);
 }
 
 .popover__when {
@@ -646,19 +887,20 @@ button {
 .popover__subject {
   font-size: 15px;
   margin-top: 3px;
+  color: var(--text-subject);
 }
 
 /* «↪ перенесена разово» под предметом */
 .popover__moved {
   font-size: 13px;
   margin-top: 3px;
-  color: var(--mute);
+  color: var(--text-muted);
 }
 
 .popover__flag {
   font-size: 13px;
   font-weight: 700;
-  color: var(--danger);
+  color: var(--danger-text);
 }
 
 /* строка аудитории: текст + кнопка или поле + «Готово» */
@@ -667,7 +909,7 @@ button {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  background: var(--paper);
+  background: var(--page);
   border-radius: 10px;
   padding: 4px 4px 4px 12px;
   min-height: 44px;
@@ -675,7 +917,7 @@ button {
 
 .popover__room-label {
   font-size: 14px;
-  color: var(--ink2);
+  color: var(--text-muted);
 }
 
 /* рамку фокуса не рисуем: поле и так выделено фоном строки */
@@ -694,7 +936,8 @@ button {
   padding: 0 12px;
   border: 0;
   border-radius: 8px;
-  background: var(--sheet);
+  background: var(--surface);
+  color: var(--accent-text);
   font-size: 13.5px;
   font-weight: 600;
 }
@@ -717,7 +960,8 @@ button {
 }
 
 .sheet__panel {
-  background: var(--sheet);
+  background: var(--surface);
+  box-shadow: var(--elevation-xl);
   width: 100%;
   max-width: 560px;
   border-radius: 18px 18px 0 0;
@@ -741,7 +985,7 @@ button {
   width: 40px;
   height: 4px;
   border-radius: 2px;
-  background: var(--line);
+  background: var(--field-border);
   margin: 2px 0;
 }
 
@@ -753,15 +997,15 @@ button {
 .sheet__note {
   margin: -4px 0 0;
   font-size: 13.5px;
-  color: var(--ink2);
+  color: var(--text-muted);
 }
 
 .sheet__info {
   margin: 0;
   font-size: 13px;
   line-height: 1.4;
-  color: var(--ink2);
-  background: var(--paper);
+  color: var(--text-muted);
+  background: var(--page);
   border-radius: 10px;
   padding: 9px 12px;
 }
@@ -776,15 +1020,15 @@ button {
 
 .field__label {
   font-size: 12.5px;
-  color: var(--ink2);
+  color: var(--text-muted);
 }
 
 .field__input {
   width: 100%;
   height: 44px;
   font-size: 16px;
-  background: var(--paper);
-  border: 1px solid var(--line);
+  background: var(--field-bg);
+  border: 1px solid var(--field-border);
   border-radius: 10px;
   padding: 0 12px;
 }
@@ -815,15 +1059,15 @@ button {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  border: 1px solid var(--line);
-  background: var(--paper);
+  border: 1px solid var(--field-border);
+  background: var(--btn-secondary-bg);
   font-size: 15px;
 }
 
 .course-picker__button[aria-pressed='true'] {
-  background: var(--ink);
-  border-color: var(--ink);
-  color: var(--on-ink);
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-fill);
 }
 
 /* ---------- выбор цвета пары ---------- */
@@ -839,21 +1083,21 @@ button {
   border-radius: 50%;
   border: 0;
   padding: 0;
-  background: var(--sw);
+  background: var(--swatch);
 }
 
-/* «Как у курса» — круг из всех четырёх цветов */
+/* «Как у курса» — круг из всех четырёх цветов курсов */
 .color-picker__swatch--default {
   background: conic-gradient(
-    var(--c1) 0 25%,
-    var(--c2) 0 50%,
-    var(--c3) 0 75%,
-    var(--c4) 0
+    var(--color-sky-500) 0 25%,
+    var(--color-emerald-500) 0 50%,
+    var(--color-amber-500) 0 75%,
+    var(--color-fuchsia-500) 0
   );
 }
 
 .color-picker__swatch[aria-pressed='true'] {
-  outline: 2px solid var(--ink);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
 
@@ -864,7 +1108,7 @@ button {
   justify-content: space-between;
   gap: 12px;
   padding-top: 10px;
-  border-top: 1px solid var(--line2);
+  border-top: 1px solid var(--divider);
 }
 
 .toggle__title {
@@ -875,14 +1119,14 @@ button {
 .toggle__description {
   display: block;
   font-size: 12px;
-  color: var(--mute);
+  color: var(--text-muted);
   margin-top: 2px;
 }
 
 .toggle__input {
   width: 24px;
   height: 24px;
-  accent-color: var(--ink);
+  accent-color: var(--accent);
   flex: none;
 }
 
@@ -896,19 +1140,19 @@ button {
 }
 
 .btn--primary {
-  background: var(--ink);
-  color: var(--on-ink);
+  background: var(--accent);
+  color: var(--on-fill);
 }
 
 /* красная заливка — для необратимых действий («Да, сбросить правки») */
 .btn--danger {
-  background: var(--danger);
-  color: var(--on-ink);
+  background: var(--danger-fill);
+  color: var(--on-fill);
 }
 
 .btn--secondary {
-  background: var(--paper);
-  border: 1px solid var(--line);
+  background: var(--btn-secondary-bg);
+  border: 1px solid var(--field-border);
   font-size: 14.5px;
   height: 46px;
 }
@@ -916,14 +1160,14 @@ button {
 /* красный текст без фона и рамки */
 .btn--danger-text {
   background: transparent;
-  color: var(--danger);
+  color: var(--danger-text);
   font-size: 14.5px;
   height: 46px;
 }
 
 .btn--plain {
   background: transparent;
-  color: var(--ink2);
+  color: var(--text-muted);
 }
 
 /* размер поменьше — для подсказки по тапу */
@@ -935,15 +1179,15 @@ button {
 
 /* обводка на фоне панели; идут после --compact, чтобы их шрифт 14px победил */
 .btn--outline {
-  background: var(--sheet);
-  border: 1px solid var(--line);
+  background: var(--btn-secondary-bg);
+  border: 1px solid var(--field-border);
   font-size: 14px;
 }
 
 .btn--danger-outline {
-  background: var(--sheet);
-  border: 1px solid var(--line);
-  color: var(--danger);
+  background: var(--btn-secondary-bg);
+  border: 1px solid var(--field-border);
+  color: var(--danger-text);
   font-size: 14px;
 }
 
@@ -957,8 +1201,8 @@ button {
 /* ---------- вариант в вопросе «только эта дата или дальше» ---------- */
 .scope-option {
   text-align: left;
-  border: 1px solid var(--line);
-  background: var(--paper);
+  border: 1px solid var(--field-border);
+  background: var(--btn-secondary-bg);
   border-radius: 12px;
   padding: 14px 16px;
   display: flex;
@@ -973,7 +1217,7 @@ button {
 
 .scope-option__hint {
   font-size: 13px;
-  color: var(--mute);
+  color: var(--text-muted);
 }
 
 /* ---------- пункт меню ---------- */
@@ -982,8 +1226,8 @@ button {
   display: flex;
   align-items: center;
   gap: 14px;
-  border: 1px solid var(--line);
-  background: var(--paper);
+  border: 1px solid var(--divider);
+  background: var(--surface);
   border-radius: 12px;
   padding: 13px 14px;
 }
@@ -997,13 +1241,12 @@ button {
 .menu-item__hint {
   display: block;
   font-size: 12.5px;
-  color: var(--mute);
+  color: var(--text-muted);
   margin-top: 2px;
 }
 
 .menu-item--danger {
-  background: var(--sheet);
-  color: var(--danger);
+  color: var(--danger-text);
 }
 
 .menu-item:disabled {
@@ -1012,7 +1255,7 @@ button {
 
 .app-version {
   font-size: 12px;
-  color: var(--mute);
+  color: var(--text-muted);
   text-align: center;
   margin: 4px 0 0;
 }
@@ -1024,8 +1267,9 @@ button {
   top: calc(14px + env(safe-area-inset-top));
   transform: translate(-50%, -16px);
   z-index: 80;
-  background: var(--ink);
-  color: var(--on-ink);
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--elevation-lg);
   padding: 10px 16px;
   border-radius: 10px;
   font-size: 14px;

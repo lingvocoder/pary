@@ -17,7 +17,7 @@ import {
 } from '../dates.js';
 import { weekOccurrences, nextPair } from '../model.js';
 import { getState } from '../store.js';
-import { $, esc, abbr, userHex, courseClass, slotOf } from './helpers.js';
+import { $, esc, abbr, colorClass, slotOf } from './helpers.js';
 import { ui, thisWeek } from './state.js';
 import { closePopover } from './popover.js';
 import { openEditor } from './editor.js';
@@ -42,8 +42,7 @@ export function renderHero() {
       `<div class="hero__info"><span class="hero__label">Следующая пара</span><span class="hero__empty">В ближайшие 4 недели пар нет</span></div>${menu}`;
   } else {
     const now = new Date(),
-      going = n.start <= now,
-      hex = userHex(n);
+      going = n.start <= now;
     let when;
     if (going) when = `идёт сейчас, до ${slotOf(n.slot).end}`;
     else {
@@ -61,7 +60,7 @@ export function renderHero() {
     const room = n.room ? `ауд. ${esc(n.room)}` : 'ауд. не указана';
     $('#hero').innerHTML =
       `<div class="hero__info"><span class="hero__label">${going ? 'Сейчас' : 'Следующая пара'}</span>
-      <div class="hero__main"><span class="hero__time">${slotOf(n.slot).start}</span><span class="chip hero__chip ${courseClass(n.course)}${hex ? ' chip--custom-color' : ''}"${hex ? ` style="--cc:${hex}"` : ''}>${esc(n.group)}</span></div>
+      <div class="hero__main"><span class="hero__time">${slotOf(n.slot).start}</span><span class="chip hero__chip ${colorClass(n)}">${esc(n.group)}</span></div>
       <span class="hero__details">${esc(when)}, ${room}<br>${esc(n.subject)}, ${n.course} курс, ${n.slot}-я пара</span></div>${menu}`;
   }
   $('#menu').onclick = openMenu;
@@ -81,14 +80,12 @@ function renderRange() {
 }
 
 function cardHtml(o) {
-  const hex = userHex(o);
   const cls = [
     'card',
-    courseClass(o.course),
-    hex ? 'card--custom-color' : '',
+    colorClass(o),
     o.cancelled ? 'card--cancelled' : '',
   ].join(' ');
-  return `<div class="${cls}" data-id="${esc(o.id)}"${hex ? ` style="--hl:${hex}"` : ''} role="button" tabindex="0"
+  return `<div class="${cls}" data-id="${esc(o.id)}" role="button" tabindex="0"
     aria-label="Группа ${esc(o.group)}, ${esc(o.subject)}${o.cancelled ? ', отменена' : ''}">
     <div class="card__body"><b class="card__group">${esc(o.group)}</b><span class="card__subject">${esc(abbr(o.subject))}</span></div>
     ${o.cancelled ? '<i class="card__mark card__mark--cancelled" aria-hidden="true">✕</i>' : ''}${o.moved ? '<i class="card__mark card__mark--moved" aria-hidden="true">↪</i>' : ''}</div>`;

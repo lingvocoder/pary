@@ -58,7 +58,7 @@ export function openEditor(o, preset) {
       <div class="field"><label class="field__label" for="ed">Дата</label><input class="field__input" type="date" id="ed" value="${v.date}"></div>
       <div class="field"><label class="field__label" for="ep">Пара</label><select class="field__input" id="ep">${slots}</select></div>
     </div>
-    <div class="field"><span class="field__label">Цвет</span><div class="color-picker" id="ecol">${CONFIG.palette.map((p) => `<button class="color-picker__swatch${p.id ? '' : ' color-picker__swatch--default'}" data-col="${p.id}" style="--sw:${p.hex || 'transparent'}" aria-label="${p.name}" aria-pressed="${(v.color || '') === p.id}"></button>`).join('')}</div></div>
+    <div class="field"><span class="field__label">Цвет</span><div class="color-picker" id="ecol">${CONFIG.palette.map((p) => `<button class="color-picker__swatch ${p.tint ? 'tint-' + p.tint : 'color-picker__swatch--default'}" data-col="${p.id}" aria-label="${p.name}" aria-pressed="${(v.color || '') === p.id}"></button>`).join('')}</div></div>
     ${
       isNew
         ? `<label class="toggle"><span><span class="toggle__title">Каждую неделю</span><span class="toggle__description">Иначе пара будет только в эту дату</span></span><input class="toggle__input" type="checkbox" id="erep" checked></label>`
