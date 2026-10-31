@@ -9,3 +9,5 @@ samples/
 node_modules/
 .idea/
 .DS_Store
+# логи и скриншоты Playwright MCP при проверке интерфейса
+.playwright-mcp/
