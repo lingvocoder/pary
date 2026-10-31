@@ -2,7 +2,7 @@
    тап по паре — подсказка; удержание 280 мс — перетаскивание; тап по пустой клетке — новая пара. */
 import { DAY_SHORT, DAY_NAME, DAY_TO } from '../config.js';
 import { weekday, humanDate } from '../dates.js';
-import { busyAt } from '../model.js';
+import { busyAt, isPastSlot } from '../model.js';
 import { getState, dispatch } from '../store.js';
 import { toast, stickyToast, hideToast, slotOf } from './helpers.js';
 import { askScope } from './sheets.js';
@@ -20,6 +20,8 @@ const TOUCH_MOUSE_GAP = 800; // мс: мышиные события сразу �
 const CELL = '.week-grid__cell';
 const CELL_TARGET = 'week-grid__cell--target';
 const CELL_BUSY = 'week-grid__cell--busy';
+const CELL_PAST = 'week-grid__cell--past';
+const PAST_TEXT = 'Прошедшее время — сюда нельзя';
 
 let drag = null,
   press = null,
@@ -52,6 +54,12 @@ function startDrag(card, x, y) {
   g.classList.remove('card--selected');
   document.body.appendChild(g);
   card.classList.add('card--lifted');
+  // прошедшие клетки заштрихованы, пока идёт перенос
+  const now = new Date();
+  document.querySelectorAll(CELL).forEach((c) => {
+    if (isPastSlot(c.dataset.date, +c.dataset.slot, now))
+      c.classList.add(CELL_PAST);
+  });
   drag = { card, o, ghost: g, target: null };
   moveDrag(x, y);
   if (navigator.vibrate) navigator.vibrate(12);
@@ -69,18 +77,27 @@ function moveDrag(x, y) {
     return;
   }
   const date = c.dataset.date,
-    slot = +c.dataset.slot,
-    b = busyAt(getState(), date, slot, drag.o.id);
+    slot = +c.dataset.slot;
   c.classList.add(CELL_TARGET);
+  // порядок проверок: своя клетка → прошедшее время → занято → можно
+  if (date === drag.o.date && slot === drag.o.slot) {
+    stickyToast('Отпусти здесь, чтобы ничего не менять');
+    return;
+  }
+  if (isPastSlot(date, slot, new Date())) {
+    c.classList.add(CELL_BUSY); // та же рамка, что над занятой клеткой
+    stickyToast(PAST_TEXT);
+    return;
+  }
+  const b = busyAt(getState(), date, slot, drag.o.id);
   if (b) {
     c.classList.add(CELL_BUSY);
     stickyToast(`Слот занят группой ${b.group}`);
-  } else if (date === drag.o.date && slot === drag.o.slot)
-    stickyToast('Отпусти здесь, чтобы ничего не менять');
-  else
-    stickyToast(
-      `Отпусти, чтобы перенести ${DAY_TO[weekday(date)]}, ${slotOf(slot).start}`,
-    );
+    return;
+  }
+  stickyToast(
+    `Отпусти, чтобы перенести ${DAY_TO[weekday(date)]}, ${slotOf(slot).start}`,
+  );
 }
 
 async function endDrag() {
@@ -88,12 +105,20 @@ async function endDrag() {
   drag = null;
   ghost.remove();
   card.classList.remove('card--lifted');
+  document
+    .querySelectorAll('.' + CELL_PAST)
+    .forEach((c) => c.classList.remove(CELL_PAST));
   hideToast();
   if (!target) return;
   target.classList.remove(CELL_TARGET, CELL_BUSY);
   const date = target.dataset.date,
     slot = +target.dataset.slot;
   if (date === o.date && slot === o.slot) return;
+  // отпустили над прошедшим временем — карточка остаётся на месте
+  if (isPastSlot(date, slot, new Date())) {
+    toast(PAST_TEXT, 'error');
+    return;
+  }
   const b = busyAt(getState(), date, slot, o.id);
   if (b) {
     toast(`Слот занят группой ${b.group}`, 'error');

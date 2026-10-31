@@ -1,7 +1,7 @@
 /* Редактор пары: новая или существующая. */
 import { CONFIG, DAY_NAME, DAY_IN } from '../config.js';
 import { weekday, humanDate } from '../dates.js';
-import { busyAt, findAt } from '../model.js';
+import { busyAt, findAt, isPastSlot } from '../model.js';
 import { getState, dispatch } from '../store.js';
 import { esc, toast, slotOf } from './helpers.js';
 import { openSheet, askScope } from './sheets.js';
@@ -153,6 +153,11 @@ export function openEditor(o, preset) {
     if (f.date !== o.date) changes.date = f.date;
     if (f.slot !== o.slot) changes.slot = f.slot;
     if ('date' in changes || 'slot' in changes) {
+      // переносить в прошлое нельзя; новую пару в прошлом добавить можно — это запись факта
+      if (isPastSlot(f.date, f.slot, new Date())) {
+        toast('Нельзя перенести в прошедшее время', 'error');
+        return;
+      }
       const b = busyAt(getState(), f.date, f.slot, o.id);
       if (b) {
         toast(`В этом слоте уже группа ${b.group}`, 'error');

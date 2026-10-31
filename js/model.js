@@ -268,6 +268,11 @@ export function isOngoing(o, now) {
   return start <= now && now < end;
 }
 
+/** Слот уже в прошлом: его начало ≤ now. Значит, и пара, которая идёт сейчас, — прошлое. */
+export function isPastSlot(date, slot, now) {
+  return slotTimes(date, slot).start <= now;
+}
+
 /** Кто уже занимает слот (отменённые не считаются). */
 export function busyAt(s, date, slot, exceptId) {
   return (

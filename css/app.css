@@ -202,6 +202,7 @@
   --danger-fill: var(--color-red-600);
   --success: var(--color-green-400);
   --live: var(--color-green-500);
+  --past-stripe: var(--color-gray-200);
   --error: var(--color-red-400);
   --focus-ring: var(--color-indigo-600);
   --scrim: oklch(from var(--color-gray-500) l c h / 75%);
@@ -237,6 +238,7 @@
     --accent-text: var(--color-indigo-400);
     --danger-text: var(--color-red-400);
     --live: var(--color-green-400);
+    --past-stripe: oklch(from var(--color-white) l c h / 5%);
     --focus-ring: var(--color-indigo-400);
     --scrim: oklch(from var(--color-gray-950) l c h / 80%);
 
@@ -720,6 +722,15 @@ button {
 
 .week-grid__cell--busy {
   outline-color: var(--danger-text);
+}
+
+/* прошедшее время — штриховка, только пока идёт перенос */
+.week-grid__cell--past {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent 0 6px,
+    var(--past-stripe) 6px 8px
+  );
 }
 
 /* ---------- карточка пары ---------- */

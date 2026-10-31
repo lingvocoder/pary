@@ -10,6 +10,7 @@ import {
   busyAt,
   reduce,
   isOngoing,
+  isPastSlot,
 } from '../js/model.js';
 
 const WEEK = '2026-10-26'; // неделя 26–31 октября
@@ -201,4 +202,17 @@ test('идёт сейчас: начало ≤ now < конец, отменённ
     isOngoing({ ...o, cancelled: true }, new Date('2026-10-28T15:50:00')),
     false,
   );
+});
+
+test('прошедший слот: вчера, сегодня уже началась, сегодня впереди, идёт сейчас', () => {
+  const now = new Date('2026-10-28T15:50:00'); // среда, идёт 6-я пара (15:40–17:00)
+  assert.equal(isPastSlot('2026-10-27', 9, now), true); // вчера, даже последняя пара
+  assert.equal(isPastSlot('2026-10-28', 5, now), true); // сегодня, уже закончилась
+  assert.equal(isPastSlot('2026-10-28', 6, now), true); // идёт сейчас — тоже прошлое
+  assert.equal(isPastSlot('2026-10-28', 7, now), false); // сегодня, впереди
+  assert.equal(isPastSlot('2026-10-29', 1, now), false); // завтра
+  assert.equal(
+    isPastSlot('2026-10-28', 6, new Date('2026-10-28T15:40:00')),
+    true,
+  ); // ровно в начало
 });
