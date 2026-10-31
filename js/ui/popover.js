@@ -78,6 +78,7 @@ export function openPopover(o, card) {
           : o.type === 'rule'
             ? `Аудитория ${room}: с ${humanDate(o.orig)} и дальше`
             : `Аудитория ${room}`,
+        'success',
       );
       const again = findAt(getState(), o.date, o.slot),
         c =
@@ -100,7 +101,10 @@ export function openPopover(o, card) {
   el.querySelector('#pCancel').onclick = () => {
     closePopover();
     dispatch({ type: 'setCancelled', occ: o, value: !o.cancelled });
-    toast(o.cancelled ? 'Пара возвращена' : `Отменена: ${humanDate(o.orig)}`);
+    toast(
+      o.cancelled ? 'Пара возвращена' : `Отменена: ${humanDate(o.orig)}`,
+      'success',
+    );
   };
   el.querySelector('#pCal').onclick = () =>
     window.open(gcalUrl(o), '_blank', 'noopener');

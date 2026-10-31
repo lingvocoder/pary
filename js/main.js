@@ -9,7 +9,7 @@ import { initBackupInput } from './ui/menu.js';
 
 subscribe(render); // любое изменение данных → перерисовка
 onSaveError(() =>
-  toast('Не получается сохранить: правки пропадут после закрытия'),
+  toast('Не получается сохранить: правки пропадут после закрытия', 'error'),
 );
 
 initGestures($('#week'));

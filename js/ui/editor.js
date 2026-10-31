@@ -118,22 +118,22 @@ export function openEditor(o, preset) {
   root.querySelector('#esave').onclick = async () => {
     const f = read();
     if (!f.group) {
-      toast('Укажи номер группы');
+      toast('Укажи номер группы', 'error');
       root.querySelector('#eg').focus();
       return;
     }
     if (!f.date) {
-      toast('Выбери дату');
+      toast('Выбери дату', 'error');
       return;
     }
     if (weekday(f.date) === 6) {
-      toast('В воскресенье пар нет, выбери другой день');
+      toast('В воскресенье пар нет, выбери другой день', 'error');
       return;
     }
     if (isNew) {
       const b = busyAt(getState(), f.date, f.slot);
       if (b) {
-        toast(`В этом слоте уже группа ${b.group}`);
+        toast(`В этом слоте уже группа ${b.group}`, 'error');
         return;
       }
       f.repeat = root.querySelector('#erep').checked;
@@ -143,6 +143,7 @@ export function openEditor(o, preset) {
         f.repeat
           ? `Добавлено: ${DAY_IN[weekday(f.date)]}, ${slotOf(f.slot).start}, каждую неделю`
           : `Добавлено: ${humanDate(f.date)}, ${slotOf(f.slot).start}`,
+        'success',
       );
       return;
     }
@@ -154,7 +155,7 @@ export function openEditor(o, preset) {
     if ('date' in changes || 'slot' in changes) {
       const b = busyAt(getState(), f.date, f.slot, o.id);
       if (b) {
-        toast(`В этом слоте уже группа ${b.group}`);
+        toast(`В этом слоте уже группа ${b.group}`, 'error');
         return;
       }
     }
@@ -173,7 +174,7 @@ export function openEditor(o, preset) {
       if (off !== o.cancelled)
         dispatch({ type: 'setCancelled', occ: o, value: off });
     }
-    toast('Сохранено');
+    toast('Сохранено', 'success');
   };
   if (!isNew) {
     root.querySelector('#edel').onclick = async () => {
@@ -181,7 +182,7 @@ export function openEditor(o, preset) {
       if (!scope) return;
       close();
       dispatch({ type: 'delete', occ: o, scope });
-      toast('Пара удалена');
+      toast('Пара удалена', 'success');
     };
     root.querySelector('#ecal').onclick = () =>
       window.open(gcalUrl(o), '_blank', 'noopener');

@@ -18,7 +18,13 @@ import {
 import { weekOccurrences, nextPair } from '../model.js';
 import { getState } from '../store.js';
 import { $, esc, colorClass, slotOf } from './helpers.js';
-import { iconEllipsis, iconXMark, iconUturnRight } from './icons.js';
+import {
+  iconEllipsis,
+  iconXMark,
+  iconUturnRight,
+  iconCalendarDays,
+  iconPlus,
+} from './icons.js';
 import { ui, thisWeek } from './state.js';
 import { closePopover } from './popover.js';
 import { openEditor } from './editor.js';
@@ -121,10 +127,11 @@ function renderGrid() {
 }
 
 function renderEmpty() {
-  $('#week').innerHTML =
-    `<div class="empty-week"><svg class="empty-week__icon" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>
-    <h2 class="empty-week__title">На этой неделе пар нет</h2><p class="empty-week__text">Добавь пару вручную или открой соседнюю неделю.</p>
-    <button class="btn btn--primary empty-week__button" id="emptyAdd">Добавить пару</button></div>`;
+  $('#week').innerHTML = `<div class="empty-week">
+    ${iconCalendarDays('empty-week__icon')}
+    <h2 class="empty-week__title">На этой неделе пар нет</h2>
+    <p class="empty-week__text">Добавь пару вручную или открой соседнюю неделю.</p>
+    <button class="btn btn--primary empty-week__button" id="emptyAdd">${iconPlus('btn__icon')}Добавить пару</button></div>`;
   $('#emptyAdd').onclick = () => {
     const t = toIso(new Date());
     const date = t >= ui.week && t <= addDays(ui.week, 5) ? t : ui.week;

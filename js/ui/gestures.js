@@ -4,7 +4,7 @@ import { DAY_SHORT, DAY_NAME, DAY_TO } from '../config.js';
 import { weekday, humanDate } from '../dates.js';
 import { busyAt } from '../model.js';
 import { getState, dispatch } from '../store.js';
-import { toast, hideToast, slotOf } from './helpers.js';
+import { toast, stickyToast, hideToast, slotOf } from './helpers.js';
 import { askScope } from './sheets.js';
 import { ui } from './state.js';
 import { openPopover, closePopover } from './popover.js';
@@ -61,7 +61,7 @@ function moveDrag(x, y) {
   if (drag.target) drag.target.classList.remove(CELL_TARGET, CELL_BUSY);
   drag.target = c;
   if (!c) {
-    toast('Веди к нужной клетке', true);
+    stickyToast('Веди к нужной клетке');
     return;
   }
   const date = c.dataset.date,
@@ -70,13 +70,12 @@ function moveDrag(x, y) {
   c.classList.add(CELL_TARGET);
   if (b) {
     c.classList.add(CELL_BUSY);
-    toast(`Слот занят группой ${b.group}`, true);
+    stickyToast(`Слот занят группой ${b.group}`);
   } else if (date === drag.o.date && slot === drag.o.slot)
-    toast('Отпусти здесь, чтобы ничего не менять', true);
+    stickyToast('Отпусти здесь, чтобы ничего не менять');
   else
-    toast(
+    stickyToast(
       `Отпусти, чтобы перенести ${DAY_TO[weekday(date)]}, ${slotOf(slot).start}`,
-      true,
     );
 }
 
@@ -93,7 +92,7 @@ async function endDrag() {
   if (date === o.date && slot === o.slot) return;
   const b = busyAt(getState(), date, slot, o.id);
   if (b) {
-    toast(`Слот занят группой ${b.group}`);
+    toast(`Слот занят группой ${b.group}`, 'error');
     return;
   }
   const rule =
@@ -109,6 +108,7 @@ async function endDrag() {
   dispatch({ type: 'edit', occ: o, changes: { date, slot }, scope });
   toast(
     `Перенесено: ${DAY_SHORT[weekday(date)]} ${humanDate(date)}, ${slotOf(slot).start}`,
+    'success',
   );
 }
 
