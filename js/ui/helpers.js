@@ -11,14 +11,6 @@ export const esc = (v) =>
         c
       ],
   );
-/** 'ПК первого ин. яз.' → 'ПК' — подпись на маленькой карточке. */
-export const abbr = (s) => {
-  const w =
-    String(s || '')
-      .trim()
-      .split(/\s+/)[0] || '';
-  return w.length <= 5 ? w : w.slice(0, 4) + '.';
-};
 /** CSS-класс цвета пары: свой цвет «важной» пары (tint-red…) или цвет курса (course-1…4). */
 export const colorClass = (o) => {
   const custom = CONFIG.palette.find((p) => p.id && p.id === o.color);
