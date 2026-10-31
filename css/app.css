@@ -65,6 +65,7 @@
 
   --color-gray-50: oklch(98.5% 0.002 247.839);
   --color-gray-100: oklch(96.7% 0.003 264.542);
+  --color-gray-200: oklch(92.8% 0.006 264.531);
   --color-gray-300: oklch(87.2% 0.01 258.338);
   --color-gray-400: oklch(70.7% 0.022 261.325);
   --color-gray-500: oklch(55.1% 0.027 264.364);
@@ -214,8 +215,8 @@
   --cancelled-stripe: var(--color-gray-300);
   --cancelled-ring: var(--color-gray-300);
 
-  /* выключенный переключатель (в образце gray-200, его нет в шкале — ближайшая gray-100) */
-  --switch-off: var(--color-gray-100);
+  /* выключенный переключатель — как в образце Tailwind Plus */
+  --switch-off: var(--color-gray-200);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -1441,6 +1442,19 @@ button {
 
 .toast--visible {
   opacity: 1;
+  transform: none;
+}
+
+/* Пока открыта шторка, уведомление сверху — внизу оно закрыло бы её кнопки.
+   sheet--open, а не просто .sheet: при закрытии класс снимается сразу,
+   а сама шторка ещё 180 мс уезжает — уведомление не прыгает. */
+body:has(.sheet--open) .toast {
+  top: calc(var(--space-4) + env(safe-area-inset-top));
+  bottom: auto;
+  transform: translateY(-16px);
+}
+
+body:has(.sheet--open) .toast--visible {
   transform: none;
 }
 
