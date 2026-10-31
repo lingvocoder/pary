@@ -9,6 +9,7 @@ import {
   nextPair,
   busyAt,
   reduce,
+  isOngoing,
 } from '../js/model.js';
 
 const WEEK = '2026-10-26'; // неделя 26–31 октября
@@ -186,4 +187,18 @@ test('миграция данных прототипа 0.1', () => {
 
 test('миграция отвергает чужой файл', () => {
   assert.throws(() => migrate({ hello: 'world' }));
+});
+
+test('идёт сейчас: начало ≤ now < конец, отменённая — нет', () => {
+  // 323, среда 28.10, 6-я пара: 15:40–17:00
+  const o = one(seed(), WEEK, '2026-10-28', 6);
+  assert.equal(isOngoing(o, new Date('2026-10-28T15:39:59')), false);
+  assert.equal(isOngoing(o, new Date('2026-10-28T15:40:00')), true);
+  assert.equal(isOngoing(o, new Date('2026-10-28T16:30:00')), true);
+  assert.equal(isOngoing(o, new Date('2026-10-28T17:00:00')), false);
+  assert.equal(isOngoing(o, new Date('2026-10-29T15:50:00')), false); // другой день
+  assert.equal(
+    isOngoing({ ...o, cancelled: true }, new Date('2026-10-28T15:50:00')),
+    false,
+  );
 });

@@ -201,6 +201,7 @@
   --danger-text: var(--color-red-600);
   --danger-fill: var(--color-red-600);
   --success: var(--color-green-400);
+  --live: var(--color-green-500);
   --error: var(--color-red-400);
   --focus-ring: var(--color-indigo-600);
   --scrim: oklch(from var(--color-gray-500) l c h / 75%);
@@ -235,6 +236,7 @@
     --accent: var(--color-indigo-500);
     --accent-text: var(--color-indigo-400);
     --danger-text: var(--color-red-400);
+    --live: var(--color-green-400);
     --focus-ring: var(--color-indigo-400);
     --scrim: oklch(from var(--color-gray-950) l c h / 80%);
 
@@ -775,6 +777,18 @@ button {
 .card__mark--moved {
   bottom: 2px;
   color: var(--text-muted);
+}
+
+/* точка «идёт сейчас» в правом верхнем углу, с ореолом того же цвета; без анимации */
+.card__live {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--live);
+  box-shadow: 0 0 0 3px oklch(from var(--live) l c h / 20%);
 }
 
 /* отменённая: штриховка и рамка из ступеней gray, текст размыт */

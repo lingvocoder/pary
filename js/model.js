@@ -255,6 +255,19 @@ export function nextPair(s, now) {
   return null;
 }
 
+/** Начало и конец слота в эту дату — объекты Date. */
+const slotTimes = (date, slot) => ({
+  start: atTime(date, CONFIG.slots[slot - 1].start),
+  end: atTime(date, CONFIG.slots[slot - 1].end),
+});
+
+/** Идёт ли пара прямо сейчас: не отменена и начало ≤ now < конец. */
+export function isOngoing(o, now) {
+  if (o.cancelled) return false;
+  const { start, end } = slotTimes(o.date, o.slot);
+  return start <= now && now < end;
+}
+
 /** Кто уже занимает слот (отменённые не считаются). */
 export function busyAt(s, date, slot, exceptId) {
   return (

@@ -3,7 +3,7 @@ import { addDays } from './dates.js';
 import { subscribe, onSaveError } from './store.js';
 import { $, toast } from './ui/helpers.js';
 import { ui, thisWeek } from './ui/state.js';
-import { render, renderHero } from './ui/week.js';
+import { render, refreshNow } from './ui/week.js';
 import { initGestures } from './ui/gestures.js';
 import { initBackupInput } from './ui/menu.js';
 
@@ -28,9 +28,9 @@ $('#tod').onclick = () => {
   render();
 };
 document.addEventListener('visibilitychange', () => {
-  if (!document.hidden) renderHero();
+  if (!document.hidden) refreshNow();
 });
-setInterval(renderHero, 30000); // «через 1 ч 10 мин» обновляется само
+setInterval(refreshNow, 30000); // «через 1 ч 10 мин», текущая пара и точки обновляются сами
 
 render();
 

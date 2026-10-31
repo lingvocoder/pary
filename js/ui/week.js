@@ -15,7 +15,7 @@ import {
   atTime,
   humanDate,
 } from '../dates.js';
-import { weekOccurrences, nextPair } from '../model.js';
+import { weekOccurrences, nextPair, isOngoing } from '../model.js';
 import { getState, getPref, setPref } from '../store.js';
 import { $, esc, colorClass, slotOf } from './helpers.js';
 import {
@@ -51,6 +51,7 @@ export function markHintLearned(gesture) {
 export function render() {
   closePopover();
   ui.occ = weekOccurrences(getState(), ui.week);
+  ui.today = toIso(new Date());
   renderHero();
   renderRange();
   if (ui.occ.length) renderGrid();
@@ -58,7 +59,7 @@ export function render() {
   renderHint();
 }
 
-export function renderHero() {
+function renderHero() {
   const n = nextPair(getState(), new Date());
   const menu = `<button class="icon-btn" id="menu" aria-label="Меню">${iconEllipsis('icon-btn__icon')}</button>`;
   if (!n) {
@@ -102,7 +103,25 @@ function renderRange() {
   $('#tod').disabled = ui.week === thisWeek();
 }
 
+/** Номер пары, которая идёт сейчас, — только на текущей неделе. */
+function isNowSlot(slot, now) {
+  const today = toIso(now),
+    sl = slotOf(slot);
+  return (
+    ui.week === weekStart(today) &&
+    now >= atTime(today, sl.start) &&
+    now < atTime(today, sl.end)
+  );
+}
+
+// зелёная точка «идёт сейчас» в углу карточки
+const LIVE_DOT = '<span class="card__live" aria-hidden="true"></span>';
+
+const cardLabel = (o, live) =>
+  `Группа ${o.group}, ${o.subject}${o.cancelled ? ', отменена' : ''}${live ? ', идёт сейчас' : ''}`;
+
 function cardHtml(o) {
+  const live = isOngoing(o, new Date());
   const cls = [
     'card',
     colorClass(o),
@@ -111,14 +130,14 @@ function cardHtml(o) {
   // под номером группы — аудитория, если известна
   const room = o.room ? `<span class="card__room">${esc(o.room)}</span>` : '';
   return `<div class="${cls}" data-id="${esc(o.id)}" role="button" tabindex="0"
-    aria-label="Группа ${esc(o.group)}, ${esc(o.subject)}${o.cancelled ? ', отменена' : ''}">
+    aria-label="${esc(cardLabel(o, live))}">
     <div class="card__body"><b class="card__group">${esc(o.group)}</b>${room}</div>
-    ${o.cancelled ? iconXMark('card__mark card__mark--cancelled') : ''}${o.moved ? iconUturnRight('card__mark card__mark--moved') : ''}</div>`;
+    ${o.cancelled ? iconXMark('card__mark card__mark--cancelled') : ''}${o.moved ? iconUturnRight('card__mark card__mark--moved') : ''}${live ? LIVE_DOT : ''}</div>`;
 }
 
 function renderGrid() {
-  const today = toIso(new Date()),
-    now = new Date();
+  const now = new Date(),
+    today = toIso(now);
   let h = '<div class="week-grid__corner"></div>';
   for (let i = 0; i < 6; i++) {
     const d = addDays(ui.week, i);
@@ -127,11 +146,7 @@ function renderGrid() {
   CONFIG.slots.forEach((sl, si) => {
     const n = si + 1,
       isLast = n === CONFIG.slots.length;
-    const nowSlot =
-      ui.week === weekStart(today) &&
-      now >= atTime(today, sl.start) &&
-      now < atTime(today, sl.end);
-    h += `<div class="week-grid__time${isLast ? ' week-grid__time--last' : ''}${nowSlot ? ' week-grid__time--now' : ''}"><b class="week-grid__slot-num">${n}</b><span class="week-grid__slot-start">${sl.start}</span></div>`;
+    h += `<div class="week-grid__time${isLast ? ' week-grid__time--last' : ''}${isNowSlot(n, now) ? ' week-grid__time--now' : ''}" data-slot="${n}"><b class="week-grid__slot-num">${n}</b><span class="week-grid__slot-start">${sl.start}</span></div>`;
     for (let i = 0; i < 6; i++) {
       const d = addDays(ui.week, i);
       const here = ui.occ
@@ -154,4 +169,35 @@ function renderEmpty() {
     const date = t >= ui.week && t <= addDays(ui.week, 5) ? t : ui.week;
     openEditor(null, { date, slot: 1 });
   };
+}
+
+/**
+ * Обновляет всё, что зависит от времени: шапку, номер текущей пары, точки «идёт сейчас».
+ * Точечно, без render(): иначе закроется открытая подсказка по тапу.
+ * Если прошла полночь — полная перерисовка: сменился день «сегодня».
+ */
+export function refreshNow() {
+  const now = new Date();
+  if (toIso(now) !== ui.today) {
+    render();
+    return;
+  }
+  renderHero();
+  const grid = $('#grid');
+  if (!grid) return;
+  grid.querySelectorAll('.week-grid__time').forEach((el) => {
+    el.classList.toggle(
+      'week-grid__time--now',
+      isNowSlot(+el.dataset.slot, now),
+    );
+  });
+  grid.querySelectorAll('.card').forEach((card) => {
+    const o = ui.occ.find((x) => x.id === card.dataset.id);
+    if (!o) return;
+    const live = isOngoing(o, now),
+      dot = card.querySelector('.card__live');
+    if (live && !dot) card.insertAdjacentHTML('beforeend', LIVE_DOT);
+    if (!live && dot) dot.remove();
+    card.setAttribute('aria-label', cardLabel(o, live));
+  });
 }
