@@ -1,12 +1,15 @@
 /* Редактор пары: новая или существующая. */
 import { CONFIG, DAY_NAME, DAY_IN } from '../config.js';
 import { weekday, humanDate } from '../dates.js';
-import { busyAt, findAt, isPastSlot } from '../model.js';
+import { busyAt, findAt, isPastSlot, knownSubjects } from '../model.js';
 import { getState, dispatch } from '../store.js';
 import { esc, toast, slotOf } from './helpers.js';
 import { openSheet, askScope } from './sheets.js';
 import { gcalUrl } from './calendar.js';
-import { iconCalendar } from './icons.js';
+import { iconCalendar, iconChevronDown } from './icons.js';
+
+// значение пункта «Другой…» в списке предметов — не название предмета
+const OTHER_SUBJECT = '__other__';
 
 /**
  * @param {Object|null} o       занятие или null для новой пары
@@ -43,6 +46,19 @@ export function openEditor(o, preset) {
         `<option value="${i + 1}"${v.slot === i + 1 ? ' selected' : ''}>${i + 1}-я, ${s.start}</option>`,
     )
     .join('');
+  // предметы: из настроек, затем из данных; текущий — если его нет в списке; последним — «Другой…»
+  const subjects = knownSubjects(state, CONFIG.subjects);
+  if (v.subject && !subjects.includes(v.subject)) subjects.push(v.subject);
+  const subjectOptions =
+    subjects
+      .map(
+        (s) =>
+          `<option value="${esc(s)}"${s === v.subject ? ' selected' : ''}>${esc(s)}</option>`,
+      )
+      .join('') + `<option value="${OTHER_SUBJECT}">Другой…</option>`;
+  // select в стиле поля: стрелка браузера скрыта, вместо неё chevron-down
+  const select = (id, options) =>
+    `<div class="field__select"><select class="field__input field__input--select" id="${id}">${options}</select>${iconChevronDown('field__chevron')}</div>`;
   // переключатель: <input role="switch"> внутри label — касание по всей строке
   const switchRow = (title, description, id, checked) =>
     `<label class="toggle"><span class="toggle__text"><span class="toggle__title">${title}</span><span class="toggle__description">${description}</span></span><span class="switch"><input class="switch__input" type="checkbox" role="switch" id="${id}"${checked ? ' checked' : ''}><span class="switch__knob" aria-hidden="true"></span></span></label>`;
@@ -57,12 +73,13 @@ export function openEditor(o, preset) {
       <div class="field"><span class="field__label">Курс</span><div class="course-picker" id="ec">${[1, 2, 3, 4].map((c) => `<button class="course-picker__button" data-c="${c}" aria-pressed="${+v.course === c}">${c}</button>`).join('')}</div></div>
     </div>
     <div class="form-row">
-      <div class="field"><label class="field__label" for="es">Предмет</label><input class="field__input" type="text" id="es" list="subjects" value="${esc(v.subject)}"><datalist id="subjects">${CONFIG.subjects.map((s) => `<option value="${esc(s)}">`).join('')}</datalist></div>
+      <div class="field"><label class="field__label" for="es">Предмет</label>${select('es', subjectOptions)}</div>
       <div class="field"><label class="field__label" for="er">Аудитория</label><input class="field__input" type="text" id="er" autocomplete="off" value="${esc(v.room)}" placeholder="например, 301"></div>
     </div>
+    <div class="field" id="esOtherField" hidden><label class="field__label" for="esOther">Название предмета</label><input class="field__input" type="text" id="esOther" autocomplete="off"></div>
     <div class="form-row">
       <div class="field"><label class="field__label" for="ed">Дата</label><input class="field__input" type="date" id="ed" value="${v.date}"></div>
-      <div class="field"><label class="field__label" for="ep">Пара</label><select class="field__input" id="ep">${slots}</select></div>
+      <div class="field"><label class="field__label" for="ep">Пара</label>${select('ep', slots)}</div>
     </div>
     <div class="field"><span class="field__label">Цвет</span><div class="color-picker" id="ecol">${CONFIG.palette.map((p) => `<button class="color-picker__swatch ${p.tint ? 'tint-' + p.tint : 'color-picker__swatch--default'}" data-col="${p.id}" aria-label="${p.name}" aria-pressed="${(v.color || '') === p.id}"></button>`).join('')}</div></div>
     ${
@@ -105,10 +122,22 @@ export function openEditor(o, preset) {
       .querySelectorAll('.color-picker__swatch')
       .forEach((x) => x.setAttribute('aria-pressed', x === b));
   };
+  // «Другой…» — под списком появляется поле для названия
+  const subjectSelect = root.querySelector('#es'),
+    otherField = root.querySelector('#esOtherField'),
+    otherInput = root.querySelector('#esOther');
+  subjectSelect.onchange = () => {
+    otherField.hidden = subjectSelect.value !== OTHER_SUBJECT;
+    if (!otherField.hidden) otherInput.focus();
+  };
+  const readSubject = () =>
+    subjectSelect.value === OTHER_SUBJECT
+      ? otherInput.value.trim()
+      : subjectSelect.value;
   const read = () => ({
     group: root.querySelector('#eg').value.trim(),
     course,
-    subject: root.querySelector('#es').value.trim(),
+    subject: readSubject(),
     room: root.querySelector('#er').value.trim(),
     color,
     date: root.querySelector('#ed').value,
@@ -120,6 +149,11 @@ export function openEditor(o, preset) {
     if (!f.group) {
       toast('Укажи номер группы', 'error');
       root.querySelector('#eg').focus();
+      return;
+    }
+    if (!f.subject) {
+      toast('Укажи предмет', 'error');
+      otherInput.focus();
       return;
     }
     if (!f.date) {

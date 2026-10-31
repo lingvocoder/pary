@@ -11,6 +11,7 @@ import {
   reduce,
   isOngoing,
   isPastSlot,
+  knownSubjects,
 } from '../js/model.js';
 
 const WEEK = '2026-10-26'; // неделя 26–31 октября
@@ -215,4 +216,24 @@ test('прошедший слот: вчера, сегодня уже начал�
     isPastSlot('2026-10-28', 6, new Date('2026-10-28T15:40:00')),
     true,
   ); // ровно в начало
+});
+
+test('предметы для списка: сначала из настроек, потом из данных по алфавиту', () => {
+  const s = seed();
+  s.rules[0].subject = 'Практическая фонетика';
+  s.rules[1].subject = 'Домашнее чтение';
+  s.oneOffs.push({
+    ...s.rules[2],
+    id: 'x',
+    date: '2026-10-30',
+    subject: 'Домашнее чтение',
+  });
+  const base = ['ПК первого ин. яз.', 'ИКТ в лингвистике'];
+  assert.deepEqual(knownSubjects(s, base), [
+    'ПК первого ин. яз.',
+    'ИКТ в лингвистике',
+    'Домашнее чтение', // повтор из разовой пары — один раз
+    'Практическая фонетика',
+  ]);
+  assert.deepEqual(knownSubjects(seed(), base), base); // в исходных данных только базовый
 });

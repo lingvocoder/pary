@@ -1127,6 +1127,35 @@ button {
   font-size: var(--text-base);
 }
 
+/* атрибут hidden: display: flex у .field иначе перебил бы его */
+.field[hidden] {
+  display: none;
+}
+
+/* select: своя стрелка вместо браузерной — chevron-down поверх справа */
+.field__select {
+  position: relative;
+}
+
+.field__input--select {
+  appearance: none;
+  padding-right: 40px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.field__chevron {
+  position: absolute;
+  top: 50%;
+  right: var(--space-3);
+  width: 20px;
+  height: 20px;
+  color: var(--text-muted);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
 .field__input:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: -2px;
