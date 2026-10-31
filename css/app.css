@@ -481,10 +481,10 @@ button {
   color: var(--text-muted);
 }
 
-/* время и бейдж — разные размеры, поэтому по базовой линии */
+/* бейдж — по центру высоты времени */
 .hero__main {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   flex-wrap: wrap;
   gap: var(--space-3);
 }
