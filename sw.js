@@ -1,7 +1,7 @@
 // Офлайн-режим: страница — сначала из сети (чтобы обновления приходили сразу),
 // остальные файлы — из кэша. При новой версии меняется имя кэша.
 // ВАЖНО: каждый новый файл приложения нужно добавить в FILES, иначе без интернета он не загрузится.
-const CACHE = 'pary-v0.3.2';
+const CACHE = 'pary-v0.3.3';
 const FILES = [
   './',
   './index.html',
@@ -28,13 +28,9 @@ const FILES = [
   './fonts/golos-text-cyrillic-400-normal.woff2',
   './fonts/golos-text-cyrillic-500-normal.woff2',
   './fonts/golos-text-cyrillic-600-normal.woff2',
-  './fonts/golos-text-cyrillic-700-normal.woff2',
-  './fonts/golos-text-cyrillic-800-normal.woff2',
   './fonts/golos-text-latin-400-normal.woff2',
   './fonts/golos-text-latin-500-normal.woff2',
   './fonts/golos-text-latin-600-normal.woff2',
-  './fonts/golos-text-latin-700-normal.woff2',
-  './fonts/golos-text-latin-800-normal.woff2',
 ];
 self.addEventListener('install', (e) => {
   // cache: 'reload' — брать файлы с сервера мимо HTTP-кэша браузера. Иначе в новый кэш
