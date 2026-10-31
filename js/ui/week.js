@@ -36,7 +36,8 @@ export function render() {
 
 export function renderHero() {
   const n = nextPair(getState(), new Date());
-  const menu = `<button class="icon-btn" id="menu" aria-label="Меню"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>`;
+  // Heroicons: ellipsis-horizontal, outline 24
+  const menu = `<button class="icon-btn" id="menu" aria-label="Меню"><svg class="icon-btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM12.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM18.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z"/></svg></button>`;
   if (!n) {
     $('#hero').innerHTML =
       `<div class="hero__info"><span class="hero__label">Следующая пара</span><span class="hero__empty">В ближайшие 4 недели пар нет</span></div>${menu}`;
@@ -57,11 +58,12 @@ export function renderHero() {
         when = `завтра, ${humanDate(n.date)}`;
       else when = `${DAY_IN[weekday(n.date)]}, ${humanDate(n.date)}`;
     }
-    const room = n.room ? `ауд. ${esc(n.room)}` : 'ауд. не указана';
+    // аудитория — только если указана
+    const room = n.room ? `, ауд. ${esc(n.room)}` : '';
     $('#hero').innerHTML =
       `<div class="hero__info"><span class="hero__label">${going ? 'Сейчас' : 'Следующая пара'}</span>
       <div class="hero__main"><span class="hero__time">${slotOf(n.slot).start}</span><span class="chip hero__chip ${colorClass(n)}">${esc(n.group)}</span></div>
-      <span class="hero__details">${esc(when)}, ${room}<br>${esc(n.subject)}, ${n.course} курс, ${n.slot}-я пара</span></div>${menu}`;
+      <span class="hero__details">${esc(when)}${room}</span></div>${menu}`;
   }
   $('#menu').onclick = openMenu;
 }
@@ -73,10 +75,8 @@ function renderRange() {
     a.getMonth() === b.getMonth()
       ? `${a.getDate()}–${b.getDate()} ${MONTH_GEN[a.getMonth()]}`
       : `${a.getDate()} ${MONTH_SHORT[a.getMonth()]} – ${b.getDate()} ${MONTH_SHORT[b.getMonth()]}`;
-  $('#tod').classList.toggle(
-    'week-nav__today--visible',
-    ui.week !== thisWeek(),
-  );
+  // «Сегодня» видна всегда, чтобы группа кнопок не прыгала; на текущей неделе — неактивна
+  $('#tod').disabled = ui.week === thisWeek();
 }
 
 function cardHtml(o) {

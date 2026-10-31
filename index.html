@@ -27,21 +27,48 @@
   <body>
     <div class="page">
       <header class="hero" id="hero"></header>
-      <nav class="week-nav">
-        <button
-          class="week-nav__arrow"
-          id="prev"
-          aria-label="Предыдущая неделя"
-        >
-          ‹
-        </button>
-        <div class="week-nav__range">
-          <span id="range"></span
-          ><button class="week-nav__today" id="tod">К текущей неделе</button>
+      <nav class="week-nav" aria-label="Неделя">
+        <h2 class="week-nav__title" id="range"></h2>
+        <!-- группа ‹ Сегодня ›; иконки — Heroicons chevron-left/right, solid 20 -->
+        <div class="week-nav__controls">
+          <button
+            class="week-nav__button week-nav__button--arrow"
+            id="prev"
+            aria-label="Предыдущая неделя"
+          >
+            <svg
+              class="week-nav__icon"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M11.78 5.22a.75.75 0 0 1 0 1.06L8.06 10l3.72 3.72a.75.75 0 1 1-1.06 1.06l-4.25-4.25a.75.75 0 0 1 0-1.06l4.25-4.25a.75.75 0 0 1 1.06 0Z"
+                clip-rule="evenodd"
+              />
+            </svg>
+          </button>
+          <button class="week-nav__button" id="tod">Сегодня</button>
+          <button
+            class="week-nav__button week-nav__button--arrow"
+            id="next"
+            aria-label="Следующая неделя"
+          >
+            <svg
+              class="week-nav__icon"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z"
+                clip-rule="evenodd"
+              />
+            </svg>
+          </button>
         </div>
-        <button class="week-nav__arrow" id="next" aria-label="Следующая неделя">
-          ›
-        </button>
       </nav>
       <main id="week"></main>
       <p class="page__hint" id="hint">

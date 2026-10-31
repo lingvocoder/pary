@@ -67,6 +67,10 @@ Prettier — единственная зависимость, только дл�
 Инструкции — `CLAUDE.md`, решения — `docs/decisions.md`, планы и ступени стека — `docs/roadmap.md`,
 импорт PDF — `docs/pdf-parser.md`.
 
+## Иконки
+
+Heroicons 2.2.0 (https://heroicons.com), лицензия MIT. Вставлены в разметку инлайн-SVG, только используемые.
+
 ## Выкладка
 
 GitHub Pages, ветка `main`, корень репозитория. Переход на Vite, TypeScript и React — по ступеням из плана, когда текущий стек начнёт мешать.
