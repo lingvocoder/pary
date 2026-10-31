@@ -1,7 +1,7 @@
 /* Модель расписания.
    Чистые функции: получают данные, возвращают данные.
    Ни одна не трогает страницу (document) и не сохраняет сама —
-   поэтому модель проверяется тестами без браузера (tests/model.test.mjs)
+   поэтому модель проверяется тестами без браузера (tests/model.test.js)
    и переедет в TypeScript и React без изменений. */
 import {CONFIG, SCHEMA} from './config.js';
 import {toIso, addDays, weekday, weekStart, atTime} from './dates.js';

@@ -12,6 +12,8 @@ import {openEditor} from './editor.js';
 
 const LONG_PRESS = 280;   // мс удержания до начала переноса
 const SLOP = 10;          // px: если палец сдвинулся раньше — это прокрутка, а не перенос
+const MOUSE_SLOP = 6;     // px: сдвиг мыши, после которого начинается перенос
+const TOUCH_MOUSE_GAP = 800;   // мс: мышиные события сразу после касания игнорируются
 
 // классы, которые читает и переключает перенос
 const CELL = '.week-grid__cell';
@@ -88,17 +90,17 @@ export function initGestures(week) {
 
   // мышь — чтобы проверять на компьютере
   week.addEventListener('mousedown', e => {
-    if (Date.now() - lastTouch < 800 || e.button !== 0) return;
+    if (Date.now() - lastTouch < TOUCH_MOUSE_GAP || e.button !== 0) return;
     const card = e.target.closest('.card'); if (!card) return;
     press = {card, x: e.clientX, y: e.clientY, mouse: true, timer: setTimeout(() => { if (press) { const p = press; press = null; startDrag(p.card, p.x, p.y); } }, LONG_PRESS)};
   });
   document.addEventListener('mousemove', e => {
-    if (Date.now() - lastTouch < 800) return;
+    if (Date.now() - lastTouch < TOUCH_MOUSE_GAP) return;
     if (drag) { moveDrag(e.clientX, e.clientY); return; }
-    if (press && press.mouse && Math.hypot(e.clientX - press.x, e.clientY - press.y) > 6) { const p = press; cancelPress(); startDrag(p.card, e.clientX, e.clientY); }
+    if (press && press.mouse && Math.hypot(e.clientX - press.x, e.clientY - press.y) > MOUSE_SLOP) { const p = press; cancelPress(); startDrag(p.card, e.clientX, e.clientY); }
   });
   document.addEventListener('mouseup', () => {
-    if (Date.now() - lastTouch < 800) return;
+    if (Date.now() - lastTouch < TOUCH_MOUSE_GAP) return;
     if (drag) { endDrag(); return; }
     if (press && press.mouse) { const card = press.card; cancelPress(); openCard(card); }
   });
