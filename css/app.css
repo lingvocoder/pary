@@ -784,7 +784,7 @@ button {
   text-overflow: ellipsis;
 }
 
-/* значок 16 px в углу: x-mark — отменена, arrow-uturn-right — перенесена */
+/* значок 16 px в углу: x-mark — отменена */
 .card__mark {
   position: absolute;
   right: 2px;
@@ -795,11 +795,6 @@ button {
 .card__mark--cancelled {
   top: 2px;
   color: var(--danger-text);
-}
-
-.card__mark--moved {
-  bottom: 2px;
-  color: var(--text-muted);
 }
 
 /* точка «идёт сейчас» в правом верхнем углу, с ореолом того же цвета; без анимации */
@@ -829,6 +824,13 @@ button {
 .card--cancelled .card__body {
   filter: blur(1.6px);
   opacity: 0.55;
+}
+
+/* перенесённая: пунктир цвета текста карточки внутри — размеры не меняются.
+   outline, а не box-shadow: у выбранной и отменённой карточки box-shadow уже занят */
+.card--moved {
+  outline: 1.5px dashed oklch(from var(--tint-text) l c h / 60%);
+  outline-offset: -1.5px;
 }
 
 /* карточка, для которой открыта подсказка */
@@ -965,18 +967,9 @@ button {
 }
 
 .popover__moved {
-  display: flex;
-  align-items: center;
-  gap: var(--space-1);
   font-size: var(--text-sm);
   line-height: var(--text-sm--line-height);
   color: var(--text-muted);
-}
-
-.popover__moved-icon {
-  flex: none;
-  width: 16px;
-  height: 16px;
 }
 
 /* строка аудитории без плашки: значок, текст, ссылка «Указать» */

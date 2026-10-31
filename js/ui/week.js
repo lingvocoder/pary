@@ -21,7 +21,6 @@ import { $, esc, colorClass, slotOf, plural } from './helpers.js';
 import {
   iconEllipsis,
   iconXMark,
-  iconUturnRight,
   iconCalendarDays,
   iconPlus,
 } from './icons.js';
@@ -129,7 +128,7 @@ function isNowSlot(slot, now) {
 const LIVE_DOT = '<span class="card__live" aria-hidden="true"></span>';
 
 const cardLabel = (o, live) =>
-  `Группа ${o.group}, ${o.subject}${o.cancelled ? ', отменена' : ''}${live ? ', идёт сейчас' : ''}`;
+  `Группа ${o.group}, ${o.subject}${o.cancelled ? ', отменена' : ''}${o.moved ? ', перенесена' : ''}${live ? ', идёт сейчас' : ''}`;
 
 function cardHtml(o) {
   const live = isOngoing(o, new Date());
@@ -137,13 +136,14 @@ function cardHtml(o) {
     'card',
     colorClass(o),
     o.cancelled ? 'card--cancelled' : '',
+    o.moved ? 'card--moved' : '',
   ].join(' ');
   // под номером группы — аудитория, если известна
   const room = o.room ? `<span class="card__room">${esc(o.room)}</span>` : '';
   return `<div class="${cls}" data-id="${esc(o.id)}" role="button" tabindex="0"
     aria-label="${esc(cardLabel(o, live))}">
     <div class="card__body"><b class="card__group">${esc(o.group)}</b>${room}</div>
-    ${o.cancelled ? iconXMark('card__mark card__mark--cancelled') : ''}${o.moved ? iconUturnRight('card__mark card__mark--moved') : ''}${live ? LIVE_DOT : ''}</div>`;
+    ${o.cancelled ? iconXMark('card__mark card__mark--cancelled') : ''}${live ? LIVE_DOT : ''}</div>`;
 }
 
 function renderGrid() {

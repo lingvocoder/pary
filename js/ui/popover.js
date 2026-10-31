@@ -1,14 +1,21 @@
 /* Подсказка по тапу на пару: подробности, аудитория, быстрые действия. */
-import { DAY_NAME } from '../config.js';
+import { DAY_NAME, DAY_SHORT } from '../config.js';
 import { weekday, humanDate } from '../dates.js';
 import { findAt } from '../model.js';
 import { getState, dispatch } from '../store.js';
 import { esc, toast, colorClass, slotOf } from './helpers.js';
-import { iconCalendar, iconMapPin, iconUturnRight } from './icons.js';
+import { iconCalendar, iconMapPin } from './icons.js';
 import { openEditor } from './editor.js';
 import { gcalUrl } from './calendar.js';
 
 let pop = null;
+
+/** «Перенесена, обычно — вт, 27 октября, 08:00»: исходные день, дата и время пары по правилу. */
+function movedFrom(o) {
+  const rule = getState().rules.find((r) => r.id === o.ruleId);
+  const day = DAY_SHORT[weekday(o.orig)].toLowerCase();
+  return `Перенесена, обычно — ${day}, ${humanDate(o.orig)}, ${slotOf(rule.slot).start}`;
+}
 
 export function closePopover() {
   if (!pop) return;
@@ -39,7 +46,7 @@ export function openPopover(o, card) {
       <div class="popover__date">${day}, ${humanDate(o.date)}</div>
       <div class="popover__time">${sl.start}–${sl.end}</div>
       <div class="popover__subject">${esc(o.subject)}</div>
-      ${o.cancelled ? '<div class="popover__flag">Отменена</div>' : ''}${o.moved ? `<div class="popover__moved">${iconUturnRight('popover__moved-icon')}Перенесена разово</div>` : ''}
+      ${o.cancelled ? '<div class="popover__flag">Отменена</div>' : ''}${o.moved ? `<div class="popover__moved">${movedFrom(o)}</div>` : ''}
     </div>
     <div class="popover__room" id="pRoom"></div>
     <div class="popover__actions">
