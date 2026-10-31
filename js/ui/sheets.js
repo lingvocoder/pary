@@ -25,7 +25,7 @@ export function askScope(o, title, note) {
   if (o.type === 'once') return Promise.resolve('one');
   return new Promise((resolve) => {
     const { root, scrim, close } = openSheet(
-      `<h2 class="sheet__title">${esc(title)}</h2>${note ? `<p class="sheet__note">${esc(note)}</p>` : ''}
+      `<div class="sheet__header"><h2 class="sheet__title">${esc(title)}</h2>${note ? `<p class="sheet__note">${esc(note)}</p>` : ''}</div>
       <button class="scope-option" data-v="one"><b class="scope-option__title">Только ${humanDate(o.orig)}</b><small class="scope-option__hint">Остальные недели не меняются</small></button>
       <button class="scope-option" data-v="future"><b class="scope-option__title">${humanDate(o.orig)} и все следующие недели</b><small class="scope-option__hint">Прошлые недели останутся как были</small></button>
       <button class="btn btn--plain" data-v="">Отмена</button>`,

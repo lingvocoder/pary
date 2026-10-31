@@ -6,6 +6,7 @@ import { getState, dispatch } from '../store.js';
 import { esc, toast, slotOf } from './helpers.js';
 import { openSheet, askScope } from './sheets.js';
 import { gcalUrl } from './calendar.js';
+import { iconCalendar } from './icons.js';
 
 /**
  * @param {Object|null} o       занятие или null для новой пары
@@ -42,11 +43,16 @@ export function openEditor(o, preset) {
         `<option value="${i + 1}"${v.slot === i + 1 ? ' selected' : ''}>${i + 1}-я, ${s.start}</option>`,
     )
     .join('');
+  // переключатель: <input role="switch"> внутри label — касание по всей строке
+  const switchRow = (title, description, id, checked) =>
+    `<label class="toggle"><span class="toggle__text"><span class="toggle__title">${title}</span><span class="toggle__description">${description}</span></span><span class="switch"><input class="switch__input" type="checkbox" role="switch" id="${id}"${checked ? ' checked' : ''}><span class="switch__knob" aria-hidden="true"></span></span></label>`;
   const { root, close } = openSheet(
     `
-    <h2 class="sheet__title">${isNew ? 'Новая пара' : 'Группа ' + esc(v.group)}</h2>
-    ${info ? `<p class="sheet__info">${esc(info)}</p>` : ''}
-    <div class="form-row form-row--group-course">
+    <div class="sheet__header">
+      <h2 class="sheet__title">${isNew ? 'Новая пара' : 'Группа ' + esc(v.group)}</h2>
+      ${info ? `<p class="sheet__note">${esc(info)}</p>` : ''}
+    </div>
+    <div class="form-row">
       <div class="field"><label class="field__label" for="eg">Группа</label><input class="field__input" type="text" id="eg" inputmode="numeric" autocomplete="off" value="${esc(v.group)}" placeholder="326"></div>
       <div class="field"><span class="field__label">Курс</span><div class="course-picker" id="ec">${[1, 2, 3, 4].map((c) => `<button class="course-picker__button" data-c="${c}" aria-pressed="${+v.course === c}">${c}</button>`).join('')}</div></div>
     </div>
@@ -54,18 +60,30 @@ export function openEditor(o, preset) {
       <div class="field"><label class="field__label" for="es">Предмет</label><input class="field__input" type="text" id="es" list="subjects" value="${esc(v.subject)}"><datalist id="subjects">${CONFIG.subjects.map((s) => `<option value="${esc(s)}">`).join('')}</datalist></div>
       <div class="field"><label class="field__label" for="er">Аудитория</label><input class="field__input" type="text" id="er" autocomplete="off" value="${esc(v.room)}" placeholder="например, 301"></div>
     </div>
-    <div class="form-row form-row--date-slot">
+    <div class="form-row">
       <div class="field"><label class="field__label" for="ed">Дата</label><input class="field__input" type="date" id="ed" value="${v.date}"></div>
       <div class="field"><label class="field__label" for="ep">Пара</label><select class="field__input" id="ep">${slots}</select></div>
     </div>
     <div class="field"><span class="field__label">Цвет</span><div class="color-picker" id="ecol">${CONFIG.palette.map((p) => `<button class="color-picker__swatch ${p.tint ? 'tint-' + p.tint : 'color-picker__swatch--default'}" data-col="${p.id}" aria-label="${p.name}" aria-pressed="${(v.color || '') === p.id}"></button>`).join('')}</div></div>
     ${
       isNew
-        ? `<label class="toggle"><span><span class="toggle__title">Каждую неделю</span><span class="toggle__description">Иначе пара будет только в эту дату</span></span><input class="toggle__input" type="checkbox" id="erep" checked></label>`
-        : `<label class="toggle"><span><span class="toggle__title">Отменена</span><span class="toggle__description">${rule ? `Только ${humanDate(o.orig)}. ` : ''}Пара останется в сетке размытой.</span></span><input class="toggle__input" type="checkbox" id="eoff"${v.cancelled ? ' checked' : ''}></label>`
+        ? switchRow(
+            'Каждую неделю',
+            'Иначе пара будет только в эту дату',
+            'erep',
+            true,
+          )
+        : switchRow(
+            'Отменена',
+            `${rule ? `Только ${humanDate(o.orig)}. ` : ''}Пара останется в сетке размытой.`,
+            'eoff',
+            v.cancelled,
+          )
     }
-    <button class="btn btn--primary" id="esave">${isNew ? 'Добавить' : 'Сохранить'}</button>
-    ${isNew ? '' : '<div class="button-pair"><button class="btn btn--secondary" id="ecal">В Google Календарь</button><button class="btn btn--danger-text" id="edel">Удалить пару</button></div>'}`,
+    <div class="sheet__actions">
+      <button class="btn btn--primary" id="esave">${isNew ? 'Добавить' : 'Сохранить'}</button>
+      ${isNew ? '' : `<div class="button-pair"><button class="btn btn--secondary" id="ecal">${iconCalendar('btn__icon')}В календарь</button><button class="btn btn--danger-text" id="edel">Удалить пару</button></div>`}
+    </div>`,
     isNew ? 'Новая пара' : 'Группа ' + v.group,
   );
 

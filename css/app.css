@@ -9,6 +9,14 @@
 
 @font-face {
   font-family: 'Golos Text';
+  font-weight: 500;
+  font-display: swap;
+  src: url(../fonts/golos-text-cyrillic-500-normal.woff2) format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+
+@font-face {
+  font-family: 'Golos Text';
   font-weight: 600;
   font-display: swap;
   src: url(../fonts/golos-text-cyrillic-600-normal.woff2) format('woff2');
@@ -36,6 +44,17 @@
   font-weight: 400;
   font-display: swap;
   src: url(../fonts/golos-text-latin-400-normal.woff2) format('woff2');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+    U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Golos Text';
+  font-weight: 500;
+  font-display: swap;
+  src: url(../fonts/golos-text-latin-500-normal.woff2) format('woff2');
   unicode-range:
     U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
     U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
@@ -162,7 +181,8 @@
   --color-violet-600: oklch(54.1% 0.281 293.009);
   --color-violet-700: oklch(49.1% 0.27 292.581);
 
-  /* тени Tailwind: shadow-sm, shadow-lg, shadow-xl */
+  /* тени Tailwind: shadow-xs, shadow-sm, shadow-lg, shadow-xl */
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
   --shadow-lg:
     0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
@@ -231,6 +251,9 @@
   --cancelled-bg: var(--color-gray-50);
   --cancelled-stripe: var(--color-gray-300);
   --cancelled-ring: var(--color-gray-300);
+
+  /* выключенный переключатель (в образце gray-200, его нет в шкале — ближайшая gray-100) */
+  --switch-off: var(--color-gray-100);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -260,6 +283,8 @@
     --cancelled-bg: var(--color-gray-900);
     --cancelled-stripe: var(--color-gray-700);
     --cancelled-ring: var(--color-gray-700);
+
+    --switch-off: oklch(from var(--color-white) l c h / 5%);
   }
 }
 
@@ -1015,11 +1040,11 @@ button {
 .sheet {
   position: fixed;
   inset: 0;
-  background: var(--scrim);
   z-index: 60;
   display: flex;
   align-items: flex-end;
   justify-content: center;
+  background: var(--scrim);
   opacity: 0;
   transition: opacity 0.18s;
 }
@@ -1029,19 +1054,20 @@ button {
 }
 
 .sheet__panel {
-  background: var(--surface);
-  box-shadow: var(--elevation-xl);
-  width: 100%;
-  max-width: 560px;
-  border-radius: 18px 18px 0 0;
-  padding: 8px 16px calc(20px + env(safe-area-inset-bottom));
-  max-height: 92dvh;
-  overflow: auto;
-  transform: translateY(24px);
-  transition: transform 0.2s;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-4);
+  width: 100%;
+  max-width: 560px;
+  max-height: 92dvh;
+  overflow: auto;
+  padding: var(--space-2) var(--space-4)
+    calc(var(--space-6) + env(safe-area-inset-bottom));
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  background: var(--surface);
+  box-shadow: var(--elevation-xl);
+  transform: translateY(24px);
+  transition: transform 0.2s;
 }
 
 .sheet--open .sheet__panel {
@@ -1051,112 +1077,143 @@ button {
 /* полоска-ручка сверху панели */
 .sheet__grab {
   align-self: center;
-  width: 40px;
+  width: 36px;
   height: 4px;
   border-radius: 2px;
   background: var(--field-border);
-  margin: 2px 0;
+}
+
+/* заголовок и пояснение под ним — вплотную */
+.sheet__header {
+  display: flex;
+  flex-direction: column;
 }
 
 .sheet__title {
   margin: 0;
-  font-size: 19px;
+  font-size: var(--text-base);
+  line-height: var(--text-base--line-height);
+  font-weight: 600;
 }
 
 .sheet__note {
-  margin: -4px 0 0;
-  font-size: 13.5px;
-  color: var(--text-muted);
-}
-
-.sheet__info {
   margin: 0;
-  font-size: 13px;
-  line-height: 1.4;
+  font-size: var(--text-sm);
+  line-height: var(--text-sm--line-height);
   color: var(--text-muted);
-  background: var(--page);
-  border-radius: 10px;
-  padding: 9px 12px;
 }
 
-/* ---------- поле формы: подпись + ввод ---------- */
+/* главная кнопка и ряд второстепенных под ней */
+.sheet__actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/* ---------- поле формы: подпись над полем ---------- */
 .field {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: var(--space-2);
   min-width: 0;
 }
 
 .field__label {
-  font-size: 12.5px;
-  color: var(--text-muted);
+  font-size: var(--text-sm);
+  line-height: 24px;
+  font-weight: 500;
 }
 
 .field__input {
   width: 100%;
   height: 44px;
-  font-size: 16px;
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius-md);
   background: var(--field-bg);
-  border: 1px solid var(--field-border);
-  border-radius: 10px;
-  padding: 0 12px;
+  box-shadow: inset 0 0 0 1px var(--field-border);
+  font-size: var(--text-base);
+}
+
+.field__input:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
 }
 
 /* ---------- два поля в строку ---------- */
 .form-row {
   display: grid;
-  grid-template-columns: 1.6fr 1fr;
-  gap: 12px;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4) var(--space-3);
 }
 
-.form-row--group-course {
-  grid-template-columns: 1fr auto;
-  align-items: end;
-}
-
-.form-row--date-slot {
-  grid-template-columns: 1.2fr 1fr;
-}
-
-/* ---------- выбор курса: 1–4 ---------- */
+/* ---------- выбор курса: группа из 4 кнопок ---------- */
 .course-picker {
   display: flex;
-  gap: 6px;
+  border-radius: var(--radius-md);
+  background: var(--btn-secondary-bg);
+  outline: 1px solid var(--field-border);
+  outline-offset: -1px;
 }
 
 .course-picker__button {
-  width: 44px;
+  flex: 1;
   height: 44px;
-  border-radius: 50%;
-  border: 1px solid var(--field-border);
-  background: var(--btn-secondary-bg);
-  font-size: 15px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: var(--text-sm);
+  line-height: var(--text-sm--line-height);
+  font-weight: 600;
+}
+
+/* тонкая линия между кнопками */
+.course-picker__button + .course-picker__button {
+  border-left: 1px solid var(--field-border);
+}
+
+.course-picker__button:first-child {
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
+}
+
+.course-picker__button:last-child {
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
 }
 
 .course-picker__button[aria-pressed='true'] {
   background: var(--accent);
-  border-color: var(--accent);
   color: var(--on-fill);
 }
 
-/* ---------- выбор цвета пары ---------- */
+/* ---------- выбор цвета пары: кружок 32 в кнопке 44 ---------- */
 .color-picker {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  /* кнопки шире кружков на 6 px с каждой стороны — первый кружок встаёт по краю полей */
+  margin: 0 -6px;
 }
 
 .color-picker__swatch {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: 0;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
   padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+}
+
+.color-picker__swatch::before {
+  content: '';
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
   background: var(--swatch);
 }
 
 /* «Как у курса» — круг из всех четырёх цветов курсов */
-.color-picker__swatch--default {
+.color-picker__swatch--default::before {
   background: conic-gradient(
     var(--color-sky-500) 0 25%,
     var(--color-emerald-500) 0 50%,
@@ -1165,38 +1222,80 @@ button {
   );
 }
 
-.color-picker__swatch[aria-pressed='true'] {
-  outline: 2px solid var(--focus-ring);
-  outline-offset: 2px;
+.color-picker__swatch[aria-pressed='true']::before {
+  box-shadow:
+    0 0 0 2px var(--surface),
+    0 0 0 4px var(--focus-ring);
 }
 
-/* ---------- переключатель: текст слева, галочка справа ---------- */
+/* ---------- строка с переключателем: текст слева, переключатель справа ---------- */
 .toggle {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding-top: 10px;
-  border-top: 1px solid var(--divider);
+  gap: var(--space-4);
+  min-height: 44px;
+}
+
+.toggle__text {
+  display: flex;
+  flex-direction: column;
 }
 
 .toggle__title {
-  display: block;
-  font-size: 15px;
+  font-size: var(--text-sm);
+  line-height: 24px;
+  font-weight: 500;
 }
 
 .toggle__description {
-  display: block;
-  font-size: 12px;
+  font-size: var(--text-sm);
+  line-height: var(--text-sm--line-height);
   color: var(--text-muted);
-  margin-top: 2px;
 }
 
-.toggle__input {
-  width: 24px;
-  height: 24px;
-  accent-color: var(--accent);
+/* ---------- переключатель 44×24 (role="switch") ---------- */
+.switch {
+  position: relative;
   flex: none;
+  width: 44px;
+  height: 24px;
+}
+
+/* сам input — дорожка: так работают .checked, клавиатура и фокус */
+.switch__input {
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  border-radius: 999px;
+  background: var(--switch-off);
+  box-shadow: inset 0 0 0 1px var(--field-border);
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.switch__input:checked {
+  background: var(--accent);
+  box-shadow: none;
+}
+
+.switch__knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--color-white);
+  box-shadow: var(--shadow-xs);
+  pointer-events: none;
+  transition: transform 0.2s;
+}
+
+.switch__input:checked + .switch__knob {
+  transform: translateX(20px);
 }
 
 /* ---------- кнопка ---------- */
@@ -1264,28 +1363,31 @@ button {
 .button-pair {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  gap: var(--space-3);
 }
 
 /* ---------- вариант в вопросе «только эта дата или дальше» ---------- */
 .scope-option {
-  text-align: left;
-  border: 1px solid var(--field-border);
-  background: var(--btn-secondary-bg);
-  border-radius: 12px;
-  padding: 14px 16px;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
+  padding: var(--space-3) var(--space-4);
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: var(--btn-secondary-bg);
+  box-shadow: inset 0 0 0 1px var(--field-border);
+  text-align: left;
 }
 
 .scope-option__title {
-  font-size: 16px;
+  font-size: var(--text-sm);
+  line-height: var(--text-sm--line-height);
   font-weight: 600;
 }
 
 .scope-option__hint {
-  font-size: 13px;
+  font-size: var(--text-sm);
+  line-height: var(--text-sm--line-height);
   color: var(--text-muted);
 }
 
