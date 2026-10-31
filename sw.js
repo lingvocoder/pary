@@ -13,6 +13,7 @@ const FILES = [
   './js/model.js',
   './js/store.js',
   './js/ui/helpers.js',
+  './js/ui/icons.js',
   './js/ui/state.js',
   './js/ui/sheets.js',
   './js/ui/calendar.js',

@@ -18,6 +18,7 @@ import {
 import { weekOccurrences, nextPair } from '../model.js';
 import { getState } from '../store.js';
 import { $, esc, colorClass, slotOf } from './helpers.js';
+import { iconEllipsis, iconXMark, iconUturnRight } from './icons.js';
 import { ui, thisWeek } from './state.js';
 import { closePopover } from './popover.js';
 import { openEditor } from './editor.js';
@@ -36,8 +37,7 @@ export function render() {
 
 export function renderHero() {
   const n = nextPair(getState(), new Date());
-  // Heroicons: ellipsis-horizontal, outline 24
-  const menu = `<button class="icon-btn" id="menu" aria-label="Меню"><svg class="icon-btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM12.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM18.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z"/></svg></button>`;
+  const menu = `<button class="icon-btn" id="menu" aria-label="Меню">${iconEllipsis('icon-btn__icon')}</button>`;
   if (!n) {
     $('#hero').innerHTML =
       `<div class="hero__info"><span class="hero__label">Следующая пара</span><span class="hero__empty">В ближайшие 4 недели пар нет</span></div>${menu}`;
@@ -79,10 +79,6 @@ function renderRange() {
   $('#tod').disabled = ui.week === thisWeek();
 }
 
-// значки в углу карточки — Heroicons micro 16: x-mark (отменена), arrow-uturn-right (перенесена)
-const ICON_CANCELLED = `<svg class="card__mark card__mark--cancelled" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z"/></svg>`;
-const ICON_MOVED = `<svg class="card__mark card__mark--moved" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M3.5 9.75A2.75 2.75 0 0 1 6.25 7h5.19L9.22 9.22a.75.75 0 1 0 1.06 1.06l3.5-3.5a.75.75 0 0 0 0-1.06l-3.5-3.5a.75.75 0 1 0-1.06 1.06l2.22 2.22H6.25a4.25 4.25 0 0 0 0 8.5h1a.75.75 0 0 0 0-1.5h-1A2.75 2.75 0 0 1 3.5 9.75Z" clip-rule="evenodd"/></svg>`;
-
 function cardHtml(o) {
   const cls = [
     'card',
@@ -94,7 +90,7 @@ function cardHtml(o) {
   return `<div class="${cls}" data-id="${esc(o.id)}" role="button" tabindex="0"
     aria-label="Группа ${esc(o.group)}, ${esc(o.subject)}${o.cancelled ? ', отменена' : ''}">
     <div class="card__body"><b class="card__group">${esc(o.group)}</b>${room}</div>
-    ${o.cancelled ? ICON_CANCELLED : ''}${o.moved ? ICON_MOVED : ''}</div>`;
+    ${o.cancelled ? iconXMark('card__mark card__mark--cancelled') : ''}${o.moved ? iconUturnRight('card__mark card__mark--moved') : ''}</div>`;
 }
 
 function renderGrid() {

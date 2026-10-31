@@ -874,113 +874,141 @@ button {
 .popover {
   position: fixed;
   z-index: 41;
-  width: min(300px, calc(100vw - 24px));
-  background: var(--surface);
-  box-shadow: var(--elevation-lg);
-  border-radius: 14px;
-  padding: 14px 14px 12px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-}
-
-/* уголок-стрелка к карточке: сверху или снизу подсказки */
-.popover__tip {
-  position: absolute;
-  width: 14px;
-  height: 14px;
+  gap: var(--space-3);
+  width: min(300px, calc(100vw - 32px));
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
   background: var(--surface);
-  transform: rotate(45deg);
-}
-
-.popover__tip--up {
-  top: -8px;
-}
-
-.popover__tip--down {
-  bottom: -8px;
-  transform: rotate(225deg);
+  box-shadow: var(--elevation-lg);
 }
 
 .popover__head {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .popover__chip {
-  font-size: 16px;
-  padding: 2px 9px;
-  border-radius: 7px;
+  padding: 2px var(--space-2);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm--line-height);
 }
 
-/* «3 курс, ЛР» рядом с бейджем */
+/* «3 курс · ЛР» рядом с бейджем */
 .popover__meta {
-  font-size: 13px;
+  font-size: var(--text-sm);
+  line-height: var(--text-sm--line-height);
   color: var(--text-muted);
 }
 
-.popover__when {
-  font-size: 16px;
-  font-weight: 700;
+/* дата → время → предмет, без отступов между строками */
+.popover__details {
+  display: flex;
+  flex-direction: column;
+}
+
+.popover__date {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm--line-height);
+  color: var(--text-muted);
+}
+
+.popover__time {
+  font-size: var(--text-lg);
+  line-height: var(--text-lg--line-height);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 
 .popover__subject {
-  font-size: 15px;
-  margin-top: 3px;
+  font-size: var(--text-sm);
+  line-height: var(--text-sm--line-height);
   color: var(--text-subject);
 }
 
-/* «↪ перенесена разово» под предметом */
-.popover__moved {
-  font-size: 13px;
-  margin-top: 3px;
-  color: var(--text-muted);
-}
-
 .popover__flag {
-  font-size: 13px;
-  font-weight: 700;
+  font-size: var(--text-sm);
+  line-height: var(--text-sm--line-height);
+  font-weight: 600;
   color: var(--danger-text);
 }
 
-/* строка аудитории: текст + кнопка или поле + «Готово» */
-.popover__room {
+.popover__moved {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  background: var(--page);
-  border-radius: 10px;
-  padding: 4px 4px 4px 12px;
-  min-height: 44px;
-}
-
-.popover__room-label {
-  font-size: 14px;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm--line-height);
   color: var(--text-muted);
 }
 
-/* рамку фокуса не рисуем: поле и так выделено фоном строки */
+.popover__moved-icon {
+  flex: none;
+  width: 16px;
+  height: 16px;
+}
+
+/* строка аудитории без плашки: значок, текст, ссылка «Указать» */
+.popover__room {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+}
+
+.popover__room-icon {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  color: var(--icon);
+}
+
+.popover__room-label {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--text-sm);
+  line-height: var(--text-sm--line-height);
+  color: var(--text-muted);
+}
+
+/* поле ввода аудитории — как поле формы */
 .popover__room-input {
   flex: 1;
   min-width: 0;
+  height: 44px;
+  padding: 0 var(--space-3);
   border: 0;
-  background: transparent;
-  font-size: 16px;
-  padding: 6px 0;
-  outline: none;
+  border-radius: var(--radius-md);
+  background: var(--field-bg);
+  box-shadow: inset 0 0 0 1px var(--field-border);
+  font-size: var(--text-base);
 }
 
-.popover__room-button {
-  height: 36px;
-  padding: 0 12px;
+.popover__room-input:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+
+/* «Указать» / «Изменить» / «Готово» — ссылка, зона касания 44 px */
+.popover__room-link {
+  flex: none;
+  height: 44px;
+  padding: 0 0 0 var(--space-2);
   border: 0;
-  border-radius: 8px;
-  background: var(--surface);
+  background: transparent;
   color: var(--accent-text);
-  font-size: 13.5px;
+  font-size: var(--text-sm);
+  line-height: var(--text-sm--line-height);
   font-weight: 600;
+}
+
+/* кнопки во всю ширину, одна под другой */
+.popover__actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
 }
 
 /* ---------- шторка снизу: затемнение + панель ---------- */
@@ -1172,64 +1200,64 @@ button {
 }
 
 /* ---------- кнопка ---------- */
+/* Без модификатора — текстовая кнопка (третьестепенное действие, как ссылка). */
 .btn {
-  height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  height: 44px;
+  padding: 0 var(--space-3);
   border: 0;
-  border-radius: 12px;
-  font-size: 16px;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm--line-height);
   font-weight: 600;
 }
 
+/* иконка 20 px слева от текста, приглушена */
+.btn__icon {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  color: var(--icon);
+}
+
+/* главное действие — заливка */
 .btn--primary {
   background: var(--accent);
   color: var(--on-fill);
 }
 
-/* красная заливка — для необратимых действий («Да, сбросить правки») */
+/* второстепенное — светлый фон и обводка */
+.btn--secondary {
+  background: var(--btn-secondary-bg);
+  box-shadow: inset 0 0 0 1px var(--field-border);
+}
+
+/* второстепенное, но разрушающее: «Отменить пару» */
+.btn--danger-outline {
+  background: var(--btn-secondary-bg);
+  box-shadow: inset 0 0 0 1px var(--field-border);
+  color: var(--danger-text);
+}
+
+/* красная заливка — только в подтверждении, где удаление и есть главное */
 .btn--danger {
   background: var(--danger-fill);
   color: var(--on-fill);
 }
 
-.btn--secondary {
-  background: var(--btn-secondary-bg);
-  border: 1px solid var(--field-border);
-  font-size: 14.5px;
-  height: 46px;
-}
-
-/* красный текст без фона и рамки */
+/* текстовая красная: «Удалить пару» */
 .btn--danger-text {
-  background: transparent;
   color: var(--danger-text);
-  font-size: 14.5px;
-  height: 46px;
 }
 
+/* текстовая приглушённая: «Отмена» */
 .btn--plain {
-  background: transparent;
   color: var(--text-muted);
-}
-
-/* размер поменьше — для подсказки по тапу */
-.btn--compact {
-  height: 44px;
-  font-size: 15px;
-  border-radius: 11px;
-}
-
-/* обводка на фоне панели; идут после --compact, чтобы их шрифт 14px победил */
-.btn--outline {
-  background: var(--btn-secondary-bg);
-  border: 1px solid var(--field-border);
-  font-size: 14px;
-}
-
-.btn--danger-outline {
-  background: var(--btn-secondary-bg);
-  border: 1px solid var(--field-border);
-  color: var(--danger-text);
-  font-size: 14px;
 }
 
 /* две кнопки рядом поровну */
