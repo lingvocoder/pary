@@ -1,6 +1,6 @@
 /* Настройки. Всё, что зависит от вуза и факультета, живёт здесь, а не в коде. */
 
-export const APP_VERSION = '0.3.5';
+export const APP_VERSION = '0.3.6';
 export const STORAGE_KEY = 'pary'; // текущее хранилище
 export const LEGACY_KEY = 'pary.v1'; // хранилище прототипа 0.1
 export const PREFS_KEY = 'pary.prefs'; // настройки интерфейса, не данные
