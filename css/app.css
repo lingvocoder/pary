@@ -1151,13 +1151,15 @@ button {
   display: none;
 }
 
-/* «Предмет», «Пара», «Дата» — открывают системный выбор: своя стрелка
-   вместо браузерной, chevron-down поверх справа */
+/* «Предмет», «Пара», «Дата» — открывают системный выбор. Вид браузера
+   выключен целиком (на Android стрелка — часть самого поля, значок не спрятать),
+   вместо него наш chevron-down справа. Одно правило для списка и даты. */
 .field__picker {
   position: relative;
 }
 
-.field__input--select {
+.field__picker .field__input {
+  -webkit-appearance: none;
   appearance: none;
   padding-right: 40px;
   overflow: hidden;
@@ -1165,26 +1167,13 @@ button {
   white-space: nowrap;
 }
 
-.field__input--date {
-  position: relative;
-  padding-right: 40px;
-}
-
-/* системный значок календаря — прозрачный и на всё поле: тап в любом месте
-   открывает календарь, а видна только наша стрелка */
-.field__input--date::-webkit-calendar-picker-indicator {
-  position: absolute;
-  inset: 0;
-  width: auto;
-  height: auto;
-  margin: 0;
-  padding: 0;
-  opacity: 0;
-  cursor: pointer;
+/* значок календаря в Chrome на компьютере; календарь открывает showPicker() по клику */
+.field__picker .field__input::-webkit-calendar-picker-indicator {
+  display: none;
 }
 
 /* на Android дата по умолчанию по центру поля — как у остальных полей, слева */
-.field__input--date::-webkit-date-and-time-value {
+.field__picker .field__input::-webkit-date-and-time-value {
   text-align: left;
 }
 
