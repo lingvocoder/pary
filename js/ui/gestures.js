@@ -1,8 +1,8 @@
 /* Касания по сетке:
    тап по паре — подсказка; удержание 280 мс — перетаскивание; тап по пустой клетке — новая пара. */
-import { DAY_SHORT, DAY_NAME, DAY_TO } from '../config.js';
+import { CONFIG, DAY_SHORT, DAY_NAME, DAY_TO } from '../config.js';
 import { weekday, humanDate } from '../dates.js';
-import { busyAt, isPastSlot } from '../model.js';
+import { can, canPlace, isPastSlot, isHoliday } from '../model.js';
 import { getState, dispatch } from '../store.js';
 import { toast, stickyToast, hideToast, slotOf } from './helpers.js';
 import { askScope } from './sheets.js';
@@ -21,7 +21,6 @@ const CELL = '.week-grid__cell';
 const CELL_TARGET = 'week-grid__cell--target';
 const CELL_BUSY = 'week-grid__cell--busy';
 const CELL_PAST = 'week-grid__cell--past';
-const PAST_TEXT = 'Прошедшее время — сюда нельзя';
 
 let drag = null,
   press = null,
@@ -49,21 +48,34 @@ function startDrag(card, x, y) {
   if (!o) return;
   closePopover();
   markHintLearned('hold');
+  // начавшуюся, прошедшую или отменённую пару не переносим: только тост, без вибрации
+  const allowed = can('move', o, new Date(), getState(), CONFIG.holidays);
+  if (!allowed.ok) {
+    toast(allowed.reason, 'error');
+    return;
+  }
   const g = card.cloneNode(true);
   g.classList.add('card--ghost');
   g.classList.remove('card--selected');
   document.body.appendChild(g);
   card.classList.add('card--lifted');
-  // прошедшие клетки заштрихованы, пока идёт перенос
+  // прошедшие клетки и дни-праздники заштрихованы, пока идёт перенос
   const now = new Date();
   document.querySelectorAll(CELL).forEach((c) => {
-    if (isPastSlot(c.dataset.date, +c.dataset.slot, now))
+    if (
+      isPastSlot(c.dataset.date, +c.dataset.slot, now) ||
+      isHoliday(c.dataset.date, CONFIG.holidays)
+    )
       c.classList.add(CELL_PAST);
   });
   drag = { card, o, ghost: g, target: null };
   moveDrag(x, y);
   if (navigator.vibrate) navigator.vibrate(12);
 }
+
+/** Можно ли перенести пару o в клетку: спрашиваем модель с текущим временем. */
+const placeCheck = (date, slot, o) =>
+  canPlace('move', date, slot, new Date(), getState(), CONFIG.holidays, o.id);
 
 function moveDrag(x, y) {
   drag.ghost.style.left = x + 'px';
@@ -79,20 +91,15 @@ function moveDrag(x, y) {
   const date = c.dataset.date,
     slot = +c.dataset.slot;
   c.classList.add(CELL_TARGET);
-  // порядок проверок: своя клетка → прошедшее время → занято → можно
+  // сначала своя клетка, остальное решает модель: праздник → прошлое → занято
   if (date === drag.o.date && slot === drag.o.slot) {
     stickyToast('Отпусти здесь, чтобы ничего не менять');
     return;
   }
-  if (isPastSlot(date, slot, new Date())) {
-    c.classList.add(CELL_BUSY); // та же рамка, что над занятой клеткой
-    stickyToast(PAST_TEXT);
-    return;
-  }
-  const b = busyAt(getState(), date, slot, drag.o.id);
-  if (b) {
-    c.classList.add(CELL_BUSY);
-    stickyToast(`Слот занят группой ${b.group}`);
+  const place = placeCheck(date, slot, drag.o);
+  if (!place.ok) {
+    c.classList.add(CELL_BUSY); // красная рамка — для любой причины
+    stickyToast(place.reason);
     return;
   }
   stickyToast(
@@ -114,14 +121,10 @@ async function endDrag() {
   const date = target.dataset.date,
     slot = +target.dataset.slot;
   if (date === o.date && slot === o.slot) return;
-  // отпустили над прошедшим временем — карточка остаётся на месте
-  if (isPastSlot(date, slot, new Date())) {
-    toast(PAST_TEXT, 'error');
-    return;
-  }
-  const b = busyAt(getState(), date, slot, o.id);
-  if (b) {
-    toast(`Слот занят группой ${b.group}`, 'error');
+  // отпустили там, куда нельзя, — карточка остаётся на месте
+  const place = placeCheck(date, slot, o);
+  if (!place.ok) {
+    toast(place.reason, 'error');
     return;
   }
   const rule =
