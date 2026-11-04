@@ -261,9 +261,9 @@ const slotTimes = (date, slot) => ({
   end: atTime(date, CONFIG.slots[slot - 1].end),
 });
 
-/** Идёт ли пара прямо сейчас: не отменена и начало ≤ now < конец. */
-export function isOngoing(o, now) {
-  if (o.cancelled) return false;
+/** Идёт ли пара прямо сейчас: не отменена, не в праздник и начало ≤ now < конец. */
+export function isOngoing(o, now, holidays = []) {
+  if (o.cancelled || isHoliday(o.date, holidays)) return false;
   const { start, end } = slotTimes(o.date, o.slot);
   return start <= now && now < end;
 }

@@ -266,7 +266,22 @@ export function initGestures(week) {
     if (e.target.closest('.card')) return;
     const c = e.target.closest(CELL);
     if (!c) return;
-    openEditor(null, { date: c.dataset.date, slot: +c.dataset.slot });
+    const date = c.dataset.date,
+      slot = +c.dataset.slot;
+    // куда добавить нельзя (праздник) — редактор не открываем, модель говорит почему
+    const place = canPlace(
+      'addOnce',
+      date,
+      slot,
+      new Date(),
+      getState(),
+      CONFIG.holidays,
+    );
+    if (!place.ok) {
+      toast(place.reason, 'error');
+      return;
+    }
+    openEditor(null, { date, slot });
   });
   week.addEventListener('keydown', (e) => {
     if (

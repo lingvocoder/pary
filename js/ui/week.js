@@ -15,7 +15,13 @@ import {
   atTime,
   humanDate,
 } from '../dates.js';
-import { weekOccurrences, nextPair, isOngoing, countPairs } from '../model.js';
+import {
+  weekOccurrences,
+  nextPair,
+  isOngoing,
+  isHoliday,
+  countPairs,
+} from '../model.js';
 import { getState, getPref, setPref } from '../store.js';
 import { $, esc, colorClass, slotOf, plural } from './helpers.js';
 import {
@@ -127,15 +133,21 @@ function isNowSlot(slot, now) {
 // зелёная точка «идёт сейчас» в углу карточки
 const LIVE_DOT = '<span class="card__live" aria-hidden="true"></span>';
 
-const cardLabel = (o, live) =>
-  `Группа ${o.group}, ${o.subject}${o.cancelled ? ', отменена' : ''}${o.moved ? ', перенесена' : ''}${live ? ', идёт сейчас' : ''}`;
+const cardLabel = (o, live) => {
+  const holiday = isHoliday(o.date, CONFIG.holidays);
+  return `Группа ${o.group}, ${o.subject}${holiday ? ', праздник' : o.cancelled ? ', отменена' : ''}${o.moved ? ', перенесена' : ''}${live ? ', идёт сейчас' : ''}`;
+};
 
 function cardHtml(o) {
-  const live = isOngoing(o, new Date());
+  const live = isOngoing(o, new Date(), CONFIG.holidays);
+  // пара в праздник размыта, как отменённая, но без крестика: её не отменяли
+  const holiday = isHoliday(o.date, CONFIG.holidays);
+  const cancelled = o.cancelled && !holiday;
   const cls = [
     'card',
     colorClass(o),
-    o.cancelled ? 'card--cancelled' : '',
+    holiday ? 'card--holiday' : '',
+    cancelled ? 'card--cancelled' : '',
     o.moved ? 'card--moved' : '',
   ].join(' ');
   // под номером группы — аудитория, если известна
@@ -143,7 +155,7 @@ function cardHtml(o) {
   return `<div class="${cls}" data-id="${esc(o.id)}" role="button" tabindex="0"
     aria-label="${esc(cardLabel(o, live))}">
     <div class="card__body"><b class="card__group">${esc(o.group)}</b>${room}</div>
-    ${o.cancelled ? iconXMark('card__mark card__mark--cancelled') : ''}${live ? LIVE_DOT : ''}</div>`;
+    ${cancelled ? iconXMark('card__mark card__mark--cancelled') : ''}${live ? LIVE_DOT : ''}</div>`;
 }
 
 function renderGrid() {
@@ -152,7 +164,8 @@ function renderGrid() {
   let h = '<div class="week-grid__corner"></div>';
   for (let i = 0; i < 6; i++) {
     const d = addDays(ui.week, i);
-    h += `<div class="week-grid__day${d === today ? ' week-grid__day--today' : ''}"><span class="week-grid__day-name">${DAY_SHORT[i]}</span><span class="week-grid__day-num">${fromIso(d).getDate()}</span></div>`;
+    const dayMods = `${d === today ? ' week-grid__day--today' : ''}${isHoliday(d, CONFIG.holidays) ? ' week-grid__day--holiday' : ''}`;
+    h += `<div class="week-grid__day${dayMods}"><span class="week-grid__day-name">${DAY_SHORT[i]}</span><span class="week-grid__day-num">${fromIso(d).getDate()}</span></div>`;
   }
   CONFIG.slots.forEach((sl, si) => {
     const n = si + 1,
@@ -205,7 +218,7 @@ export function refreshNow() {
   grid.querySelectorAll('.card').forEach((card) => {
     const o = ui.occ.find((x) => x.id === card.dataset.id);
     if (!o) return;
-    const live = isOngoing(o, now),
+    const live = isOngoing(o, now, CONFIG.holidays),
       dot = card.querySelector('.card__live');
     if (live && !dot) card.insertAdjacentHTML('beforeend', LIVE_DOT);
     if (!live && dot) dot.remove();

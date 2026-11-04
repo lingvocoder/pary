@@ -673,6 +673,18 @@ button {
   color: var(--on-fill);
 }
 
+/* праздник: название и число красные */
+.week-grid__day--holiday .week-grid__day-name,
+.week-grid__day--holiday .week-grid__day-num {
+  color: var(--danger-text);
+}
+
+/* сегодня и праздник: круг красный вместо основного цвета */
+.week-grid__day--today.week-grid__day--holiday .week-grid__day-num {
+  background: var(--danger-fill);
+  color: var(--on-fill);
+}
+
 /* левая колонка: номер пары и время начала */
 .week-grid__time {
   display: flex;
@@ -811,8 +823,10 @@ button {
   box-shadow: 0 0 0 3px oklch(from var(--live) l c h / 20%);
 }
 
-/* отменённая: штриховка и рамка из ступеней gray, текст размыт */
-.card--cancelled {
+/* отменённая и пара в праздник: штриховка и рамка из ступеней gray, текст размыт.
+   У отменённой ещё крестик, у праздника — нет: её не отменяли */
+.card--cancelled,
+.card--holiday {
   background:
     repeating-linear-gradient(
       -45deg,
@@ -823,7 +837,8 @@ button {
   box-shadow: inset 0 0 0 1px var(--cancelled-ring);
 }
 
-.card--cancelled .card__body {
+.card--cancelled .card__body,
+.card--holiday .card__body {
   filter: blur(1.6px);
   opacity: 0.55;
 }
