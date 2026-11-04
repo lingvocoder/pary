@@ -25,7 +25,7 @@ import {
   iconPlus,
 } from './icons.js';
 import { ui, thisWeek } from './state.js';
-import { closePopover } from './popover.js';
+import { closePopover, refreshPopover } from './popover.js';
 import { openEditor } from './editor.js';
 import { openMenu } from './menu.js';
 
@@ -211,4 +211,5 @@ export function refreshNow() {
     if (!live && dot) dot.remove();
     card.setAttribute('aria-label', cardLabel(o, live));
   });
+  refreshPopover(now);
 }

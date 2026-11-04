@@ -202,6 +202,7 @@
   --danger-fill: var(--color-red-600);
   --success: var(--color-green-400);
   --live: var(--color-green-500);
+  --live-text: var(--color-green-700);
   --past-stripe: var(--color-gray-200);
   --error: var(--color-red-400);
   --focus-ring: var(--color-indigo-600);
@@ -238,6 +239,7 @@
     --accent-text: var(--color-indigo-400);
     --danger-text: var(--color-red-400);
     --live: var(--color-green-400);
+    --live-text: var(--color-green-400);
     --past-stripe: oklch(from var(--color-white) l c h / 5%);
     --focus-ring: var(--color-indigo-400);
     --scrim: oklch(from var(--color-gray-950) l c h / 80%);
@@ -907,7 +909,9 @@ button {
   z-index: 41;
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  /* 8 px: у строки аудитории свои 12 px воздуха (высота 44), а самая длинная
+     подсказка должна быть не выше 306 px — тогда при экране 694 она всегда помещается */
+  gap: var(--space-2);
   width: min(300px, calc(100vw - 32px));
   padding: var(--space-4);
   border-radius: var(--radius-lg);
@@ -964,6 +968,11 @@ button {
   line-height: var(--text-sm--line-height);
   font-weight: 600;
   color: var(--danger-text);
+}
+
+/* «Идёт, до 17:00» — зелёным, как точка на карточке */
+.popover__flag--live {
+  color: var(--live-text);
 }
 
 .popover__moved {
@@ -1026,11 +1035,21 @@ button {
   font-weight: 600;
 }
 
-/* кнопки во всю ширину, одна под другой */
+/* кнопки в один ряд: текстовые делят ширину, значок календаря — квадрат 44 px */
 .popover__actions {
   display: flex;
-  flex-direction: column;
   gap: var(--space-2);
+}
+
+.popover__action {
+  flex: 1;
+  min-width: 0;
+}
+
+.popover__icon-action {
+  flex: none;
+  width: 44px;
+  padding: 0;
 }
 
 /* ---------- шторка снизу: затемнение + панель ---------- */
