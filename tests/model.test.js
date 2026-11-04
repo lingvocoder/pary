@@ -567,3 +567,23 @@ test('возврат отменённой пары в занятый слот н
   s = reduce(s, { type: 'setCancelled', occ: cancelled, value: false });
   assert.equal(JSON.stringify(s), before);
 });
+
+test('пара: held, если в слот уже поставили замену, — «Слот занят группой N»', () => {
+  let s = seed();
+  s = reduce(s, { type: 'setCancelled', occ: PAIR, value: true });
+  s = reduce(s, {
+    type: 'add',
+    pair: {
+      group: '999',
+      course: 1,
+      subject: 'ИКТ в лингвистике',
+      color: '',
+      room: '',
+      date: '2026-10-28',
+      slot: 6,
+      repeat: false,
+    },
+  });
+  const o = at(s, WEEK, '2026-10-28', 6).find((x) => x.cancelled);
+  assertRule(can('held', o, AFTER, s, []), 'Слот занят группой 999');
+});

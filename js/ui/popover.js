@@ -52,6 +52,15 @@ function actionsHtml(o, allow, ph, holiday) {
     buttons.push(
       '<button class="btn btn--secondary popover__action" id="pRestore">Вернуть</button>',
     );
+  // факт: у начавшейся и прошедшей пары — только отметка, состоялась ли она
+  if (allow('notHeld'))
+    buttons.push(
+      '<button class="btn btn--danger-outline popover__action" id="pNotHeld">Не состоялась</button>',
+    );
+  if (allow('held'))
+    buttons.push(
+      '<button class="btn btn--secondary popover__action" id="pHeld">Состоялась</button>',
+    );
   if (allow('calendar'))
     buttons.push(
       `<button class="btn btn--secondary popover__icon-action" id="pCal" aria-label="В календарь">${iconCalendar('btn__icon')}</button>`,
@@ -177,6 +186,19 @@ export function openPopover(o, card) {
     closePopover();
     dispatch({ type: 'setCancelled', occ: o, value: false });
     toast('Пара возвращена', 'success');
+  });
+  // тот же флаг cancelled, что у отмены: часы такую пару уже не считают
+  onClick('pNotHeld', () => {
+    if (!guard('notHeld')) return;
+    closePopover();
+    dispatch({ type: 'setCancelled', occ: o, value: true });
+    toast(`Отмечено: не состоялась, ${humanDate(o.date)}`, 'success');
+  });
+  onClick('pHeld', () => {
+    if (!guard('held')) return;
+    closePopover();
+    dispatch({ type: 'setCancelled', occ: o, value: false });
+    toast('Отмечено: состоялась', 'success');
   });
   onClick('pCal', () => {
     if (!guard('calendar')) return;

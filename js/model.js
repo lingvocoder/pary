@@ -441,7 +441,7 @@ const RULES = {
     holiday: HOLIDAY_PAIR,
     ongoing: 'Уже отмечено: состоялась',
     past: 'Уже отмечено: состоялась',
-    notHeld: true,
+    notHeld: true, // и ещё слот должен быть свободен — см. can()
     holidayDone: HOLIDAY_PAIR,
   },
   // группа, курс, предмет, цвет, дата, пара
@@ -496,7 +496,8 @@ export function can(op, o, now, s, holidays) {
   if (!RULES[op]) throw new Error('Неизвестная операция: ' + op);
   const rule = RULES[op][pairState(o, now, holidays)];
   if (rule !== true) return no(rule);
-  if (op === 'restore') {
+  // вернуть пару в сетку можно, только если её слот никто не занял
+  if (op === 'restore' || op === 'held') {
     const b = busyAt(s, o.date, o.slot, o.id, holidays);
     if (b) return no(`Слот занят группой ${b.group}`);
   }
