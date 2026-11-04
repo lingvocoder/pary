@@ -814,8 +814,8 @@ button {
 /* точка «идёт сейчас» в правом верхнем углу, с ореолом того же цвета; без анимации */
 .card__live {
   position: absolute;
-  top: 6px;
-  right: 6px;
+  top: 5px;
+  right: 5px;
   width: 8px;
   height: 8px;
   border-radius: 50%;
