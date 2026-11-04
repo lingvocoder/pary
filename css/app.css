@@ -1370,6 +1370,13 @@ button {
   transform: translateX(20px);
 }
 
+/* неактивный: «Каждую неделю» у пары задним числом */
+.switch__input:disabled,
+.switch__input:disabled + .switch__knob {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* ---------- кнопка ---------- */
 /* Без модификатора — текстовая кнопка (третьестепенное действие, как ссылка). */
 .btn {

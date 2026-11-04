@@ -1,7 +1,14 @@
 /* Редактор пары: новая или существующая. */
 import { CONFIG, DAY_NAME, DAY_IN } from '../config.js';
 import { weekday, humanDate } from '../dates.js';
-import { busyAt, findAt, isPastSlot, knownSubjects } from '../model.js';
+import {
+  can,
+  canPlace,
+  findAt,
+  isHoliday,
+  isPastSlot,
+  knownSubjects,
+} from '../model.js';
 import { getState, dispatch } from '../store.js';
 import { esc, toast, slotOf } from './helpers.js';
 import { openSheet, askScope } from './sheets.js';
@@ -11,6 +18,9 @@ import { iconCalendar, iconChevronDown } from './icons.js';
 // значение пункта «Другой…» в списке предметов — не название предмета
 const OTHER_SUBJECT = '__other__';
 
+const REPEAT_TEXT = 'Иначе пара будет только в эту дату';
+const REPEAT_PAST_TEXT = 'Задним числом — только разовая';
+
 /**
  * @param {Object|null} o       занятие или null для новой пары
  * @param {{date:string, slot:number}} [preset]  куда добавить новую
@@ -18,6 +28,15 @@ const OTHER_SUBJECT = '__other__';
 export function openEditor(o, preset) {
   const state = getState();
   const isNew = !o;
+  const holidays = CONFIG.holidays;
+  // начавшуюся и прошедшую пару не редактируем: это факт
+  if (!isNew) {
+    const r = can('edit', o, new Date(), state, holidays);
+    if (!r.ok) {
+      toast(r.reason, 'error');
+      return;
+    }
+  }
   const v = isNew
     ? {
         group: '',
@@ -87,12 +106,7 @@ export function openEditor(o, preset) {
     <div class="field"><span class="field__label">Цвет</span><div class="color-picker" id="ecol">${CONFIG.palette.map((p) => `<button class="color-picker__swatch ${p.tint ? 'tint-' + p.tint : 'color-picker__swatch--default'}" data-col="${p.id}" aria-label="${p.name}" aria-pressed="${(v.color || '') === p.id}"></button>`).join('')}</div></div>
     ${
       isNew
-        ? switchRow(
-            'Каждую неделю',
-            'Иначе пара будет только в эту дату',
-            'erep',
-            true,
-          )
+        ? switchRow('Каждую неделю', REPEAT_TEXT, 'erep', true)
         : switchRow(
             'Отменена',
             `${rule ? `Только ${humanDate(o.orig)}. ` : ''}Пара останется в сетке размытой.`,
@@ -102,7 +116,7 @@ export function openEditor(o, preset) {
     }
     <div class="sheet__actions">
       <button class="btn btn--primary" id="esave">${isNew ? 'Добавить' : 'Сохранить'}</button>
-      ${isNew ? '' : `<div class="button-pair"><button class="btn btn--secondary" id="ecal">${iconCalendar('btn__icon')}В календарь</button><button class="btn btn--danger-text" id="edel">Удалить пару</button></div>`}
+      ${isNew ? '' : `<div class="button-pair">${can('calendar', o, new Date(), state, holidays).ok ? `<button class="btn btn--secondary" id="ecal">${iconCalendar('btn__icon')}В календарь</button>` : ''}<button class="btn btn--danger-text" id="edel">Удалить пару</button></div>`}
     </div>`,
     isNew ? 'Новая пара' : 'Группа ' + v.group,
   );
@@ -151,6 +165,59 @@ export function openEditor(o, preset) {
     subjectSelect.value === OTHER_SUBJECT
       ? otherInput.value.trim()
       : subjectSelect.value;
+  // «Каждую неделю»: в начавшейся или прошедшей клетке — выключен и неактивен.
+  // Выбор пользователя запоминаем, чтобы вернуть его, если дату сдвинут вперёд.
+  if (isNew) {
+    const repeat = root.querySelector('#erep'),
+      repeatText = repeat
+        .closest('.toggle')
+        .querySelector('.toggle__description'),
+      slotSelect = root.querySelector('#ep');
+    let repeatWanted = repeat.checked;
+    repeat.onchange = () => (repeatWanted = repeat.checked);
+    const updateRepeat = () => {
+      const past =
+        !!dateInput.value &&
+        isPastSlot(dateInput.value, +slotSelect.value, new Date());
+      repeat.disabled = past;
+      repeat.checked = past ? false : repeatWanted;
+      repeatText.textContent = past ? REPEAT_PAST_TEXT : REPEAT_TEXT;
+    };
+    dateInput.addEventListener('change', updateRepeat);
+    slotSelect.addEventListener('change', updateRepeat);
+    updateRepeat();
+  }
+
+  /** Перед сохранением и удалением — проверка заново: пара могла начаться,
+      пока шторка была открыта. Нельзя — тост, шторка закрывается, данные не меняются. */
+  const stillAllowed = (op) => {
+    const r = can(op, o, new Date(), getState(), holidays);
+    if (r.ok) return true;
+    close();
+    toast(r.reason, 'error');
+    return false;
+  };
+  /** Можно ли поставить пару в клетку; про праздник — с датой в тексте. */
+  const placeAllowed = (kind, f, exceptId) => {
+    const r = canPlace(
+      kind,
+      f.date,
+      f.slot,
+      new Date(),
+      getState(),
+      holidays,
+      exceptId,
+    );
+    if (r.ok) return true;
+    toast(
+      isHoliday(f.date, holidays)
+        ? `${humanDate(f.date)} — праздник, пар нет`
+        : r.reason,
+      'error',
+    );
+    return false;
+  };
+
   const read = () => ({
     group: root.querySelector('#eg').value.trim(),
     course,
@@ -182,12 +249,8 @@ export function openEditor(o, preset) {
       return;
     }
     if (isNew) {
-      const b = busyAt(getState(), f.date, f.slot);
-      if (b) {
-        toast(`В этом слоте уже группа ${b.group}`, 'error');
-        return;
-      }
       f.repeat = root.querySelector('#erep').checked;
+      if (!placeAllowed(f.repeat ? 'addRepeat' : 'addOnce', f)) return;
       close();
       dispatch({ type: 'add', pair: f });
       toast(
@@ -203,22 +266,30 @@ export function openEditor(o, preset) {
       if (String(f[k]) !== String(o[k] ?? '')) changes[k] = f[k];
     if (f.date !== o.date) changes.date = f.date;
     if (f.slot !== o.slot) changes.slot = f.slot;
-    if ('date' in changes || 'slot' in changes) {
-      // переносить в прошлое нельзя; новую пару в прошлом добавить можно — это запись факта
-      if (isPastSlot(f.date, f.slot, new Date())) {
-        toast('Нельзя перенести в прошедшее время', 'error');
-        return;
-      }
-      const b = busyAt(getState(), f.date, f.slot, o.id);
-      if (b) {
-        toast(`В этом слоте уже группа ${b.group}`, 'error');
+    if (!stillAllowed('edit')) return;
+    // праздник, прошлое и занятость — только если пару ставят на новое место
+    const placeChanged = 'date' in changes || 'slot' in changes;
+    if (placeChanged && !placeAllowed('move', f, o.id)) return;
+    const off = root.querySelector('#eoff').checked;
+    // «Отменена» выключили — это «Вернуть»: в занятый слот нельзя.
+    // При переносе свободу нового слота уже проверил canPlace.
+    if (!off && o.cancelled && !placeChanged) {
+      const r = can('restore', o, new Date(), getState(), holidays);
+      if (!r.ok) {
+        toast(r.reason, 'error');
         return;
       }
     }
-    const off = root.querySelector('#eoff').checked;
+    if (off && !o.cancelled) {
+      const r = can('cancel', o, new Date(), getState(), holidays);
+      if (!r.ok) {
+        toast(r.reason, 'error');
+        return;
+      }
+    }
     if (Object.keys(changes).length) {
       const scope = await askScope(o, 'Сохранить изменения?');
-      if (!scope) return;
+      if (!scope || !stillAllowed('edit')) return;
       close();
       dispatch({ type: 'edit', occ: o, changes, scope });
       if (off !== o.cancelled) {
@@ -234,13 +305,16 @@ export function openEditor(o, preset) {
   };
   if (!isNew) {
     root.querySelector('#edel').onclick = async () => {
+      if (!stillAllowed('delete')) return;
       const scope = await askScope(o, `Удалить группу ${o.group}?`);
-      if (!scope) return;
+      if (!scope || !stillAllowed('delete')) return;
       close();
       dispatch({ type: 'delete', occ: o, scope });
       toast('Пара удалена', 'success');
     };
-    root.querySelector('#ecal').onclick = () =>
-      window.open(gcalUrl(o), '_blank', 'noopener');
+    const calendarButton = root.querySelector('#ecal');
+    if (calendarButton)
+      calendarButton.onclick = () =>
+        window.open(gcalUrl(o), '_blank', 'noopener');
   }
 }
