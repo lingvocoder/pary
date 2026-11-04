@@ -114,12 +114,13 @@ export function openEditor(o, preset) {
             v.cancelled,
           )
     }
-    <div class="sheet__actions">
-      <button class="btn btn--primary" id="esave">${isNew ? 'Добавить' : 'Сохранить'}</button>
-      ${isNew ? '' : `<div class="button-pair">${can('calendar', o, new Date(), state, holidays).ok ? `<button class="btn btn--secondary" id="ecal">${iconCalendar('btn__icon')}В календарь</button>` : ''}<button class="btn btn--danger-text" id="edel">Удалить пару</button></div>`}
-    </div>`,
+    ${isNew ? '' : `<div class="button-pair">${can('calendar', o, new Date(), state, holidays).ok ? `<button class="btn btn--secondary" id="ecal">${iconCalendar('btn__icon')}В календарь</button>` : ''}<button class="btn btn--danger-text" id="edel">Удалить пару</button></div>`}
+    <div class="sheet__footer"><button class="btn btn--primary" id="esave">${isNew ? 'Добавить' : 'Сохранить'}</button></div>`,
     isNew ? 'Новая пара' : 'Группа ' + v.group,
   );
+
+  // «Сохранить» закреплена внизу панели: нижний отступ даёт сама полоса с кнопкой
+  root.classList.add('sheet__panel--with-footer');
 
   let course = +v.course,
     color = v.color || '';
