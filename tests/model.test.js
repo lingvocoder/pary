@@ -532,3 +532,38 @@ test('клетка: перенос в свой же слот — не занят
 test('клетка: неизвестный вид — ошибка', () => {
   assert.throws(() => canPlace('fly', '2026-10-29', 3, NOON, seed(), []));
 });
+
+test('следующая пара: праздник пропускается', () => {
+  // четверг вечером; суббота 31.10 — праздник, значит следующая — вторник 3.11
+  const n = nextPair(seed(), new Date(2026, 9, 29, 19, 40), ['2026-10-31']);
+  assert.equal(n.date, '2026-11-03');
+  assert.equal(n.slot, 1);
+  assert.equal(n.group, '221');
+});
+
+test('занятый слот: пара в праздник место не занимает', () => {
+  assert.equal(busyAt(seed(), '2026-10-28', 6, null, ['2026-10-28']), null);
+  assert.equal(busyAt(seed(), '2026-10-28', 6, null, []).group, '323');
+});
+
+test('возврат отменённой пары в занятый слот ничего не меняет', () => {
+  let s = seed();
+  s = reduce(s, { type: 'setCancelled', occ: PAIR, value: true });
+  s = reduce(s, {
+    type: 'add',
+    pair: {
+      group: '999',
+      course: 1,
+      subject: 'ИКТ в лингвистике',
+      color: '',
+      room: '',
+      date: '2026-10-28',
+      slot: 6,
+      repeat: false,
+    },
+  });
+  const before = JSON.stringify(s);
+  const cancelled = at(s, WEEK, '2026-10-28', 6).find((x) => x.cancelled);
+  s = reduce(s, { type: 'setCancelled', occ: cancelled, value: false });
+  assert.equal(JSON.stringify(s), before);
+});

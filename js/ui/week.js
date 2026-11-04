@@ -59,7 +59,7 @@ export function render() {
 }
 
 function renderHero() {
-  const n = nextPair(getState(), new Date());
+  const n = nextPair(getState(), new Date(), CONFIG.holidays);
   const menu = `<button class="icon-btn" id="menu" aria-label="Меню">${iconEllipsis('icon-btn__icon')}</button>`;
   if (!n) {
     $('#hero').innerHTML =

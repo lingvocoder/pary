@@ -237,12 +237,12 @@ export function weekOccurrences(s, ws) {
   return out;
 }
 
-/** Ближайшая неотменённая пара, которая ещё не закончилась. */
-export function nextPair(s, now) {
+/** Ближайшая неотменённая пара не в праздник, которая ещё не закончилась. */
+export function nextPair(s, now, holidays = []) {
   const today = toIso(now);
   for (let w = 0; w < 4; w++) {
     const list = weekOccurrences(s, addDays(weekStart(today), 7 * w))
-      .filter((o) => !o.cancelled)
+      .filter((o) => !o.cancelled && !isHoliday(o.date, holidays))
       .map((o) => ({
         ...o,
         start: atTime(o.date, CONFIG.slots[o.slot - 1].start),
@@ -336,12 +336,16 @@ export function countPairs(s, from, to, now, holidays = []) {
   return { groups, held, total };
 }
 
-/** Кто уже занимает слот (отменённые не считаются). */
-export function busyAt(s, date, slot, exceptId) {
+/** Кто уже занимает слот. Отменённая пара и пара в праздник слот не держат. */
+export function busyAt(s, date, slot, exceptId, holidays = []) {
   return (
     weekOccurrences(s, weekStart(date)).find(
       (o) =>
-        o.date === date && o.slot === slot && !o.cancelled && o.id !== exceptId,
+        o.date === date &&
+        o.slot === slot &&
+        !o.cancelled &&
+        !isHoliday(o.date, holidays) &&
+        o.id !== exceptId,
     ) || null
   );
 }
@@ -493,7 +497,7 @@ export function can(op, o, now, s, holidays) {
   const rule = RULES[op][pairState(o, now, holidays)];
   if (rule !== true) return no(rule);
   if (op === 'restore') {
-    const b = busyAt(s, o.date, o.slot, o.id);
+    const b = busyAt(s, o.date, o.slot, o.id, holidays);
     if (b) return no(`Слот занят группой ${b.group}`);
   }
   return OK;
@@ -521,7 +525,7 @@ export function canPlace(kind, date, slot, now, s, holidays, exceptId) {
     if (kind === 'addRepeat')
       return no('Повторяющуюся пару нельзя начать в прошлом');
   }
-  const b = busyAt(s, date, slot, exceptId);
+  const b = busyAt(s, date, slot, exceptId, holidays);
   if (b)
     return no(
       kind === 'move'
@@ -642,6 +646,8 @@ function removeOccurrence(s, o, scope) {
 }
 
 function setCancelled(s, o, value) {
+  // вернуть в занятый слот нельзя: двух пар в одной клетке не бывает
+  if (!value && busyAt(s, o.date, o.slot, o.id)) return;
   if (o.type === 'once') {
     s.oneOffs.find((x) => x.id === o.id).cancelled = value;
     return;
