@@ -1,6 +1,6 @@
 """Эталонный разбор PDF расписания факультета (Python + pdfplumber).
 
-Не часть приложения: образец для переноса на JavaScript в версии 0.4.
+Не часть приложения: образец для переноса на JavaScript в версии 0.5.
 Описание алгоритма — docs/pdf-parser.md.
 
 Запуск:  pip install pdfplumber && python parse_schedule.py *.pdf > grid.json
