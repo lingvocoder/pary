@@ -304,6 +304,11 @@ export function openEditor(o, preset) {
         return;
       }
     }
+    // ничего не меняли — просто закрыть: сохранять нечего, и тост был бы неправдой
+    if (!Object.keys(changes).length && off === o.cancelled) {
+      close();
+      return;
+    }
     if (Object.keys(changes).length) {
       const scope = await askScope(o, 'Сохранить изменения?');
       if (!scope || !stillAllowed('edit')) return;
