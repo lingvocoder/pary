@@ -292,7 +292,4 @@ export function initGestures(week) {
       openCard(e.target);
     }
   });
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closePopover();
-  });
 }

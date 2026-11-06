@@ -7,6 +7,7 @@ import { esc, toast, colorClass, slotOf } from './helpers.js';
 import { iconCalendar, iconMapPin } from './icons.js';
 import { openEditor } from './editor.js';
 import { gcalUrl } from './calendar.js';
+import { addLayer, removeLayer } from './layers.js';
 
 let pop = null;
 
@@ -72,6 +73,7 @@ function actionsHtml(o, allow, ph, holiday) {
 
 export function closePopover() {
   if (!pop) return;
+  removeLayer(pop.layer);
   pop.catcher.remove();
   pop.el.remove();
   document
@@ -107,7 +109,7 @@ export function openPopover(o, card) {
     ${actionsHtml(o, allow, ph, holiday)}`;
   document.body.append(catcher, el);
   card.classList.add('card--selected');
-  pop = { el, catcher, o, phase: ph };
+  pop = { el, catcher, o, phase: ph, layer: addLayer(closePopover) };
 
   /** Перед действием — проверка заново: пара могла начаться, пока подсказка открыта. */
   const guard = (op) => {
