@@ -193,13 +193,16 @@
   --field-bg: var(--color-white);
   --field-border: var(--color-gray-300);
   --btn-secondary-bg: var(--color-white);
+  --btn-secondary-pressed: var(--color-gray-100);
   --divider: var(--color-gray-100);
   --today-col: var(--color-gray-50);
   --accent: var(--color-indigo-600);
+  --accent-pressed: var(--color-indigo-500);
   --accent-text: var(--color-indigo-600);
   --on-fill: var(--color-white);
   --danger-text: var(--color-red-600);
   --danger-fill: var(--color-red-600);
+  --danger-pressed: var(--color-red-500);
   --success: var(--color-green-400);
   --live: var(--color-green-500);
   --live-text: var(--color-green-700);
@@ -233,9 +236,11 @@
     --field-bg: oklch(from var(--color-white) l c h / 5%);
     --field-border: oklch(from var(--color-white) l c h / 10%);
     --btn-secondary-bg: oklch(from var(--color-white) l c h / 10%);
+    --btn-secondary-pressed: oklch(from var(--color-white) l c h / 20%);
     --divider: oklch(from var(--color-white) l c h / 6%);
     --today-col: oklch(from var(--color-white) l c h / 4%);
     --accent: var(--color-indigo-500);
+    --accent-pressed: var(--color-indigo-400);
     --accent-text: var(--color-indigo-400);
     --danger-text: var(--color-red-400);
     --live: var(--color-green-400);
@@ -1291,6 +1296,14 @@ button {
   color: var(--on-fill);
 }
 
+.course-picker__button:active {
+  background: var(--btn-secondary-pressed);
+}
+
+.course-picker__button[aria-pressed='true']:active {
+  background: var(--accent-pressed);
+}
+
 /* ---------- выбор цвета пары: кружок 32 в кнопке 44 ---------- */
 .color-picker {
   display: flex;
@@ -1476,6 +1489,19 @@ button {
   color: var(--text-muted);
 }
 
+/* нажатая: у всех кнопок, кроме двух с заливкой, — один фон */
+.btn:active:not(:disabled) {
+  background: var(--btn-secondary-pressed);
+}
+
+.btn--primary:active:not(:disabled) {
+  background: var(--accent-pressed);
+}
+
+.btn--danger:active:not(:disabled) {
+  background: var(--danger-pressed);
+}
+
 /* две кнопки рядом поровну */
 .button-pair {
   display: grid;
@@ -1554,6 +1580,10 @@ button {
   text-align: left;
 }
 
+.scope-option:active {
+  background: var(--btn-secondary-pressed);
+}
+
 .scope-option__title {
   font-size: var(--text-sm);
   line-height: var(--text-sm--line-height);
@@ -1581,6 +1611,10 @@ button {
   border: 0;
   background: transparent;
   text-align: left;
+}
+
+.menu-item:active {
+  background: var(--btn-secondary-pressed);
 }
 
 .menu-item + .menu-item {
