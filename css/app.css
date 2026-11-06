@@ -608,11 +608,6 @@ button {
 }
 
 /* «Сегодня» на текущей неделе */
-.week-nav__button:disabled {
-  color: var(--text-muted);
-  cursor: default;
-}
-
 .week-nav__button--arrow {
   width: 44px;
   padding: 0;
@@ -1487,6 +1482,13 @@ button {
 /* текстовая приглушённая: «Отмена» */
 .btn--plain {
   color: var(--text-muted);
+}
+
+/* неактивная — одна на всё приложение: и .btn, и «Сегодня» */
+.btn:disabled,
+.week-nav__button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* нажатая: у всех кнопок, кроме двух с заливкой, — один фон */

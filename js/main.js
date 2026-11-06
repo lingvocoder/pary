@@ -29,6 +29,9 @@ $('#tod').onclick = () => {
   ui.week = thisWeek();
   render();
 };
+// Пустой обработчик нужен ради :active: без него мобильный браузер может не показать
+// нажатое состояние, пока палец держит кнопку. passive — прокрутку он не тормозит.
+document.addEventListener('touchstart', () => {}, { passive: true });
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden) refreshNow();
 });
