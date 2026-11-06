@@ -5,6 +5,7 @@ import { $, toast } from './ui/helpers.js';
 import { ui, thisWeek } from './ui/state.js';
 import { render, refreshNow } from './ui/week.js';
 import { initGestures } from './ui/gestures.js';
+import { initLayers } from './ui/layers.js';
 import { initBackupInput } from './ui/menu.js';
 
 subscribe(render); // любое изменение данных → перерисовка
@@ -13,6 +14,7 @@ onSaveError(() =>
 );
 
 initGestures($('#week'));
+initLayers();
 initBackupInput();
 
 $('#prev').onclick = () => {
