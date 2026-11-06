@@ -33,6 +33,16 @@ export function plural(n, one, few, many) {
   return many;
 }
 
+/**
+ * Сколько пар в резервной копии на этой неделе: первая фраза вопроса перед заменой.
+ * @param {number} count
+ * @returns {string} «В копии на этой неделе — 6 пар» или «В копии на этой неделе пар нет»
+ */
+export function copyWeekSummary(count) {
+  if (!count) return 'В копии на этой неделе пар нет';
+  return `В копии на этой неделе — ${count} ${plural(count, 'пара', 'пары', 'пар')}`;
+}
+
 let toastTimer;
 
 /** Показывает уведомление; иконка — только если вид указан явно. */

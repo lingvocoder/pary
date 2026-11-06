@@ -1,8 +1,9 @@
 /* Меню: резервная копия, загрузка из копии, сброс. */
 import { APP_VERSION } from '../config.js';
 import { toIso } from '../dates.js';
+import { migrate, weekOccurrences } from '../model.js';
 import { getState, dispatch, isStorageOk } from '../store.js';
-import { $, toast } from './helpers.js';
+import { $, toast, copyWeekSummary } from './helpers.js';
 import { openSheet, askConfirm } from './sheets.js';
 import {
   iconArrowDownTray,
@@ -11,6 +12,7 @@ import {
   iconClock,
 } from './icons.js';
 import { openHours } from './hours.js';
+import { thisWeek } from './state.js';
 
 /** Пункт меню: иконка, название и пояснение. */
 const item = (action, icon, title, hint) =>
@@ -72,11 +74,22 @@ export function initBackupInput() {
     const f = e.target.files[0];
     e.target.value = '';
     if (!f) return;
+    // сначала проверка: чужой файл — ошибка, и никакого вопроса
+    let copy, summary;
     try {
-      dispatch({ type: 'load', data: JSON.parse(await f.text()) });
-      toast('Расписание загружено', 'success');
+      copy = migrate(JSON.parse(await f.text()));
+      summary = copyWeekSummary(weekOccurrences(copy, thisWeek()).length);
     } catch (_) {
       toast('Это не файл резервной копии расписания', 'error');
+      return;
     }
+    const ok = await askConfirm(
+      'Заменить расписание?',
+      `${summary}. Текущее расписание и все правки пропадут. Сначала можно скачать резервную копию.`,
+      'Да, заменить',
+    );
+    if (!ok) return;
+    dispatch({ type: 'load', data: copy });
+    toast('Расписание загружено', 'success');
   };
 }
