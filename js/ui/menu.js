@@ -3,7 +3,7 @@ import { APP_VERSION } from '../config.js';
 import { toIso } from '../dates.js';
 import { getState, dispatch, isStorageOk } from '../store.js';
 import { $, toast } from './helpers.js';
-import { openSheet } from './sheets.js';
+import { openSheet, askConfirm } from './sheets.js';
 import {
   iconArrowDownTray,
   iconArrowUpTray,
@@ -53,20 +53,11 @@ export function openMenu() {
       $('#file').click();
     } else if (a === 'reset') {
       close();
-      const ok = await new Promise((res) => {
-        const s = openSheet(
-          `<div class="sheet__header"><h2 class="sheet__title">Вернуть исходное расписание?</h2><p class="sheet__note">Все правки пропадут. Сначала можно скачать резервную копию.</p></div>
-          <div class="sheet__actions"><button class="btn btn--danger" data-v="1">Да, сбросить правки</button><button class="btn btn--plain" data-v="">Отмена</button></div>`,
-          'Сброс',
-        );
-        s.root.onclick = (ev) => {
-          const x = ev.target.closest('[data-v]');
-          if (x) {
-            s.close();
-            res(!!x.dataset.v);
-          }
-        };
-      });
+      const ok = await askConfirm(
+        'Вернуть исходное расписание?',
+        'Все правки пропадут. Сначала можно скачать резервную копию.',
+        'Да, сбросить правки',
+      );
       if (ok) {
         dispatch({ type: 'reset' });
         toast('Расписание сброшено', 'success');

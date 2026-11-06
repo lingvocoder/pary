@@ -30,6 +30,31 @@ export function openSheet(html, label, onDismiss) {
   return { root: scrim.querySelector('.sheet__panel'), scrim, close };
 }
 
+/**
+ * Подтверждение необратимого действия: красная кнопка и «Отмена».
+ * Затемнение, «Назад» и Esc работают как «Отмена».
+ * @param {string} title
+ * @param {string} note
+ * @param {string} confirmText  текст красной кнопки
+ * @returns {Promise<boolean>} true — подтвердили
+ */
+export function askConfirm(title, note, confirmText) {
+  return new Promise((resolve) => {
+    const finish = (answer) => {
+      close();
+      resolve(answer);
+    };
+    const { root, close } = openSheet(
+      `<div class="sheet__header"><h2 class="sheet__title">${esc(title)}</h2><p class="sheet__note">${esc(note)}</p></div>
+      <div class="sheet__actions"><button class="btn btn--danger" data-confirm>${esc(confirmText)}</button><button class="btn btn--plain" data-cancel>Отмена</button></div>`,
+      title,
+      () => finish(false),
+    );
+    root.querySelector('[data-confirm]').onclick = () => finish(true);
+    root.querySelector('[data-cancel]').onclick = () => finish(false);
+  });
+}
+
 /** Спрашивает «только эта дата или дальше». Возвращает 'one' | 'future' | null. */
 export function askScope(o, title, note) {
   if (o.type === 'once') return Promise.resolve('one');

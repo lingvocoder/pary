@@ -11,7 +11,7 @@ import {
 } from '../model.js';
 import { getState, dispatch } from '../store.js';
 import { esc, toast, slotOf } from './helpers.js';
-import { openSheet, askScope } from './sheets.js';
+import { openSheet, askScope, askConfirm } from './sheets.js';
 import { gcalUrl } from './calendar.js';
 import { iconCalendar, iconChevronDown } from './icons.js';
 
@@ -20,6 +20,22 @@ const OTHER_SUBJECT = '__other__';
 
 const REPEAT_TEXT = 'Иначе пара будет только в эту дату';
 const REPEAT_PAST_TEXT = 'Задним числом — только разовая';
+
+/**
+ * Что именно удалить. У повторяющейся — «эта дата или дальше», у разовой — подтверждение:
+ * вернуть её не получится.
+ * @returns {Promise<'one'|'future'|null>}
+ */
+async function askDeleteScope(o) {
+  if (o.type !== 'once') return askScope(o, `Удалить группу ${o.group}?`);
+  const when = `${DAY_NAME[weekday(o.date)]}, ${humanDate(o.date)}, ${slotOf(o.slot).start}`;
+  const confirmed = await askConfirm(
+    'Удалить пару?',
+    `Группа ${o.group}, ${when}. Разовая — вернуть не получится.`,
+    'Удалить пару',
+  );
+  return confirmed ? 'one' : null;
+}
 
 /**
  * @param {Object|null} o       занятие или null для новой пары
@@ -307,7 +323,7 @@ export function openEditor(o, preset) {
   if (!isNew) {
     root.querySelector('#edel').onclick = async () => {
       if (!stillAllowed('delete')) return;
-      const scope = await askScope(o, `Удалить группу ${o.group}?`);
+      const scope = await askDeleteScope(o);
       if (!scope || !stillAllowed('delete')) return;
       close();
       dispatch({ type: 'delete', occ: o, scope });
