@@ -6,7 +6,7 @@ import {
   weekStart,
   DAYS_PER_WEEK,
   SUNDAY,
-} from '../dates.js';
+} from '../domain/dates.js';
 
 /** Неделя «сейчас»; в воскресенье — уже следующая. */
 export const thisWeek = () => {

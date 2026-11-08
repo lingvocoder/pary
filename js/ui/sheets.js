@@ -1,7 +1,7 @@
 /* Шторки снизу и вопрос «только эта дата или дальше». */
 import { SHEET_CLOSE_MS } from '../config/interface.js';
 import { esc, hideToast } from './helpers.js';
-import { humanDate } from '../dates.js';
+import { humanDate } from '../domain/dates.js';
 import { addLayer, removeLayer } from './layers.js';
 
 /**

@@ -6,8 +6,9 @@ import {
   SCREEN_TOP_BOTTOM_GAP_PX,
 } from '../config/interface.js';
 import { WEEKDAYS_SHORT, WEEKDAYS } from '../lang/ru.js';
-import { weekday, humanDate } from '../dates.js';
-import { findAt, can, phase, isHoliday } from '../model.js';
+import { weekday, humanDate } from '../domain/dates.js';
+import { findAt, phase, isHoliday } from '../domain/lessons.js';
+import { can } from '../domain/rules.js';
 import { getState, dispatch } from '../store.js';
 import { esc, toast, colorClass, slotOf } from './helpers.js';
 import { iconCalendar, iconMapPin } from './icons.js';

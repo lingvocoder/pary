@@ -9,8 +9,9 @@ import {
   HOLD_VIBRATION_MS,
 } from '../config/interface.js';
 import { WEEKDAYS_SHORT, WEEKDAYS, WEEKDAYS_TO } from '../lang/ru.js';
-import { weekday, humanDate } from '../dates.js';
-import { can, canPlace, isPastSlot, isHoliday } from '../model.js';
+import { weekday, humanDate } from '../domain/dates.js';
+import { can, canPlace } from '../domain/rules.js';
+import { isPastSlot, isHoliday } from '../domain/lessons.js';
 import { getState, dispatch } from '../store.js';
 import { toast, stickyToast, hideToast, slotOf } from './helpers.js';
 import { askScope } from './sheets.js';

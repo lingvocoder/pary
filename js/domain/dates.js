@@ -1,5 +1,5 @@
 /* Даты — строки 'YYYY-MM-DD' без часовых поясов. Чистые функции. */
-import { MONTHS_GENITIVE } from './lang/ru.js';
+import { MONTHS_GENITIVE } from '../lang/ru.js';
 
 // Законы календаря: это не настройки, их не меняют.
 export const DAYS_PER_WEEK = 7;

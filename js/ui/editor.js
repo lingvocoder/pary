@@ -8,15 +8,10 @@ import {
   HOLIDAYS,
 } from '../config/university.js';
 import { WEEKDAYS, WEEKDAYS_IN } from '../lang/ru.js';
-import { weekday, humanDate, SUNDAY } from '../dates.js';
-import {
-  can,
-  canPlace,
-  findAt,
-  isHoliday,
-  isPastSlot,
-  knownSubjects,
-} from '../model.js';
+import { weekday, humanDate, SUNDAY } from '../domain/dates.js';
+import { can, canPlace } from '../domain/rules.js';
+import { findAt, isHoliday, isPastSlot } from '../domain/lessons.js';
+import { knownSubjects } from '../domain/forms.js';
 import { getState, dispatch } from '../store.js';
 import { esc, toast, slotOf } from './helpers.js';
 import { openSheet, askScope, askConfirm } from './sheets.js';

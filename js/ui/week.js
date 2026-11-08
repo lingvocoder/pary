@@ -23,14 +23,14 @@ import {
   humanDate,
   MS_PER_MINUTE,
   MINUTES_PER_HOUR,
-} from '../dates.js';
+} from '../domain/dates.js';
 import {
   weekOccurrences,
   nextPair,
   isOngoing,
   isHoliday,
-  countPairs,
-} from '../model.js';
+} from '../domain/lessons.js';
+import { countPairs } from '../domain/hours.js';
 import { getState, getPref, setPref } from '../store.js';
 import { $, esc, colorClass, slotOf } from './helpers.js';
 import {

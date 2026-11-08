@@ -1,8 +1,9 @@
 /* Меню: резервная копия, загрузка из копии, сброс. */
 import { APP_VERSION, BACKUP_FILE_PREFIX } from '../config/app.js';
 import { DOWNLOAD_URL_LIFETIME_MS } from '../config/interface.js';
-import { toIso } from '../dates.js';
-import { migrate, weekOccurrences } from '../model.js';
+import { toIso } from '../domain/dates.js';
+import { migrate } from '../domain/migrate.js';
+import { weekOccurrences } from '../domain/lessons.js';
 import { getState, dispatch, isStorageOk } from '../store.js';
 import { $, toast, copyWeekSummary } from './helpers.js';
 import { openSheet, askConfirm } from './sheets.js';

@@ -1,8 +1,8 @@
 /* Часы за семестр: сколько пар проведено и сколько по расписанию, по группам. */
 import { SEMESTER, HOLIDAYS, HOURS_PER_PAIR } from '../config/university.js';
 import { plural } from '../lang/ru.js';
-import { fromIso, humanDate } from '../dates.js';
-import { countPairs } from '../model.js';
+import { fromIso, humanDate } from '../domain/dates.js';
+import { countPairs } from '../domain/hours.js';
 import { getState } from '../store.js';
 import { esc, colorClass } from './helpers.js';
 import { iconClock } from './icons.js';
