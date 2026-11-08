@@ -18,12 +18,12 @@ import { isPastSlot, isHoliday, findRule } from '../domain/lessons.js';
 import { OPERATION, PLACE_KIND, can, canPlace } from '../domain/rules.js';
 import { ACTION } from '../domain/changes.js';
 import { getState, dispatch } from '../store/store.js';
-import { toast, stickyToast, hideToast } from './helpers.js';
+import { toast, stickyToast, hideToast, TOAST_KIND } from './toast.js';
 import { askScope } from './sheets.js';
-import { ui } from './state.js';
+import { screenState } from './screen-state.js';
 import { openPopover, closePopover } from './popover.js';
 import { openEditor } from './editor.js';
-import { markHintLearned } from './week.js';
+import { markHintLearned, GESTURE } from './week-screen.js';
 
 // классы, которые читает и переключает перенос
 const CELL = '.week-grid__cell';
@@ -34,7 +34,7 @@ const CELL_PAST = 'week-grid__cell--past';
 let drag = null,
   press = null,
   lastTouch = 0;
-const occById = (id) => ui.occ.find((o) => o.id === id);
+const occById = (id) => screenState.lessons.find((o) => o.id === id);
 const cellAt = (x, y) => {
   const el = document.elementFromPoint(x, y);
   return el && el.closest(CELL);
@@ -43,7 +43,7 @@ const openCard = (card) => {
   const o = occById(card.dataset.id);
   if (!o) return;
   openPopover(o, card);
-  markHintLearned('tap');
+  markHintLearned(GESTURE.TAP);
 };
 const cancelPress = () => {
   if (press) {
@@ -56,7 +56,7 @@ function startDrag(card, x, y) {
   const o = occById(card.dataset.id);
   if (!o) return;
   closePopover();
-  markHintLearned('hold');
+  markHintLearned(GESTURE.HOLD);
   // начавшуюся, прошедшую или отменённую пару не переносим: только тост, без вибрации
   const allowed = can({
     operation: OPERATION.MOVE,
@@ -66,7 +66,7 @@ function startDrag(card, x, y) {
     holidays: HOLIDAYS,
   });
   if (!allowed.ok) {
-    toast(allowed.reason, 'error');
+    toast(allowed.reason, TOAST_KIND.ERROR);
     return;
   }
   const g = card.cloneNode(true);
@@ -145,7 +145,7 @@ async function endDrag() {
   // отпустили там, куда нельзя, — карточка остаётся на месте
   const place = placeCheck(date, slot, o);
   if (!place.ok) {
-    toast(place.reason, 'error');
+    toast(place.reason, TOAST_KIND.ERROR);
     return;
   }
   const rule = findRule(getState(), o.ruleId) || null;
@@ -156,7 +156,7 @@ async function endDrag() {
   );
   if (!scope) return;
   dispatch({ type: ACTION.EDIT, lesson: o, changes: { date, slot }, scope });
-  toast(formatMovedToast(date, slot), 'success');
+  toast(formatMovedToast(date, slot), TOAST_KIND.SUCCESS);
 }
 
 /** Подключает все обработчики к контейнеру недели. */
@@ -295,7 +295,7 @@ export function initGestures(week) {
       holidays: HOLIDAYS,
     });
     if (!place.ok) {
-      toast(place.reason, 'error');
+      toast(place.reason, TOAST_KIND.ERROR);
       return;
     }
     openEditor(null, { date, slot });

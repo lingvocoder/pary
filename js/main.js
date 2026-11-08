@@ -3,32 +3,38 @@ import { CLOCK_REFRESH_MS } from './config/interface.js';
 import { addDays, DAYS_PER_WEEK } from './domain/dates.js';
 import { subscribe, onSaveError } from './store/store.js';
 import { $ } from './ui/dom.js';
-import { toast } from './ui/helpers.js';
-import { ui, thisWeek } from './ui/state.js';
-import { render, refreshNow } from './ui/week.js';
+import { toast, TOAST_KIND } from './ui/toast.js';
+import { screenState, currentWeekStart } from './ui/screen-state.js';
+import { render, refreshNow } from './ui/week-screen.js';
 import { initGestures } from './ui/gestures.js';
 import { initLayers } from './ui/layers.js';
 import { initBackupInput } from './ui/menu.js';
 
 subscribe(render); // любое изменение данных → перерисовка
 onSaveError(() =>
-  toast('Не получается сохранить: правки пропадут после закрытия', 'error'),
+  toast(
+    'Не получается сохранить: правки пропадут после закрытия',
+    TOAST_KIND.ERROR,
+  ),
 );
 
 initGestures($('#week'));
 initLayers();
 initBackupInput();
 
-$('#prev').onclick = () => {
-  ui.week = addDays(ui.week, -DAYS_PER_WEEK);
+$('#week-prev').onclick = () => {
+  screenState.weekStartDate = addDays(
+    screenState.weekStartDate,
+    -DAYS_PER_WEEK,
+  );
   render();
 };
-$('#next').onclick = () => {
-  ui.week = addDays(ui.week, DAYS_PER_WEEK);
+$('#week-next').onclick = () => {
+  screenState.weekStartDate = addDays(screenState.weekStartDate, DAYS_PER_WEEK);
   render();
 };
-$('#tod').onclick = () => {
-  ui.week = thisWeek();
+$('#week-today').onclick = () => {
+  screenState.weekStartDate = currentWeekStart();
   render();
 };
 // Пустой обработчик нужен ради :active: без него мобильный браузер может не показать

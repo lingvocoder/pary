@@ -8,11 +8,11 @@ import { ACTION } from '../domain/changes.js';
 import { migrate } from '../domain/migrate.js';
 import { getState, dispatch, isStorageOk } from '../store/store.js';
 import { $ } from './dom.js';
-import { toast } from './helpers.js';
+import { toast, TOAST_KIND } from './toast.js';
 import { openSheet, askConfirm } from './sheets.js';
 import { openHours } from './hours.js';
 import { menuView } from './views/menu.js';
-import { thisWeek } from './state.js';
+import { currentWeekStart } from './screen-state.js';
 
 export function openMenu() {
   const { root, close } = openSheet(
@@ -41,10 +41,10 @@ export function openMenu() {
         DOWNLOAD_URL_LIFETIME_MS,
       );
       close();
-      toast('Копия скачана', 'success');
+      toast('Копия скачана', TOAST_KIND.SUCCESS);
     } else if (a === 'import') {
       close();
-      $('#file').click();
+      $('#backup-file').click();
     } else if (a === 'reset') {
       close();
       const ok = await askConfirm(
@@ -54,7 +54,7 @@ export function openMenu() {
       );
       if (ok) {
         dispatch({ type: ACTION.RESET });
-        toast('Расписание сброшено', 'success');
+        toast('Расписание сброшено', TOAST_KIND.SUCCESS);
       }
     }
   };
@@ -62,7 +62,7 @@ export function openMenu() {
 
 /** Скрытое поле выбора файла для «Загрузить из копии». */
 export function initBackupInput() {
-  $('#file').onchange = async (e) => {
+  $('#backup-file').onchange = async (e) => {
     const f = e.target.files[0];
     e.target.value = '';
     if (!f) return;
@@ -70,9 +70,9 @@ export function initBackupInput() {
     let copy, copyWeekCount;
     try {
       copy = migrate(JSON.parse(await f.text()));
-      copyWeekCount = weekLessons(copy, thisWeek()).length;
+      copyWeekCount = weekLessons(copy, currentWeekStart()).length;
     } catch (_) {
-      toast('Это не файл резервной копии расписания', 'error');
+      toast('Это не файл резервной копии расписания', TOAST_KIND.ERROR);
       return;
     }
     const ok = await askConfirm(
@@ -82,6 +82,6 @@ export function initBackupInput() {
     );
     if (!ok) return;
     dispatch({ type: ACTION.LOAD, backup: copy });
-    toast('Расписание загружено', 'success');
+    toast('Расписание загружено', TOAST_KIND.SUCCESS);
   };
 }

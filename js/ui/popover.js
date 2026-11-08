@@ -22,7 +22,7 @@ import {
 import { OPERATION, can, lessonState } from '../domain/rules.js';
 import { ACTION, roomChangeScope } from '../domain/changes.js';
 import { getState, dispatch } from '../store/store.js';
-import { toast } from './helpers.js';
+import { toast, TOAST_KIND } from './toast.js';
 import { lessonColorClass } from './views/color.js';
 import { openEditor } from './editor.js';
 import { addLayer, removeLayer } from './layers.js';
@@ -105,7 +105,7 @@ export function openPopover(o, card) {
     const r = check(op);
     if (r.ok) return true;
     closePopover();
-    toast(r.reason, 'error');
+    toast(r.reason, TOAST_KIND.ERROR);
     return false;
   };
   const onClick = (id, handler) => {
@@ -140,7 +140,7 @@ export function openPopover(o, card) {
       if (!guard(OPERATION.ROOM)) return;
       const scope = roomChangeScope(o);
       dispatch({ type: ACTION.EDIT, lesson: o, changes: { room }, scope });
-      toast(formatRoomSaved(room, o, scope), 'success');
+      toast(formatRoomSaved(room, o, scope), TOAST_KIND.SUCCESS);
       const again = findLessonAt(getState(), o.date, o.slot),
         c =
           again &&
@@ -163,26 +163,26 @@ export function openPopover(o, card) {
     if (!guard(OPERATION.CANCEL)) return;
     closePopover();
     dispatch({ type: ACTION.SET_CANCELLED, lesson: o, isCancelled: true });
-    toast(formatCancelledToast(o), 'success');
+    toast(formatCancelledToast(o), TOAST_KIND.SUCCESS);
   });
   onClick('pRestore', () => {
     if (!guard(OPERATION.RESTORE)) return;
     closePopover();
     dispatch({ type: ACTION.SET_CANCELLED, lesson: o, isCancelled: false });
-    toast('Пара возвращена', 'success');
+    toast('Пара возвращена', TOAST_KIND.SUCCESS);
   });
   // тот же флаг cancelled, что у отмены: часы такую пару уже не считают
   onClick('pNotHeld', () => {
     if (!guard(OPERATION.NOT_HELD)) return;
     closePopover();
     dispatch({ type: ACTION.SET_CANCELLED, lesson: o, isCancelled: true });
-    toast(formatNotHeldToast(o), 'success');
+    toast(formatNotHeldToast(o), TOAST_KIND.SUCCESS);
   });
   onClick('pHeld', () => {
     if (!guard(OPERATION.HELD)) return;
     closePopover();
     dispatch({ type: ACTION.SET_CANCELLED, lesson: o, isCancelled: false });
-    toast('Отмечено: состоялась', 'success');
+    toast('Отмечено: состоялась', TOAST_KIND.SUCCESS);
   });
   onClick('pCal', () => {
     if (!guard(OPERATION.CALENDAR)) return;

@@ -4,7 +4,7 @@ import { iconEllipsis } from '../icons.js';
 import { formatHeroLabel, formatNoUpcoming } from '../../domain/texts.js';
 
 const menuButtonView = () =>
-  `<button class="icon-btn" id="menu" aria-label="Меню">${iconEllipsis('icon-btn__icon')}</button>`;
+  `<button class="icon-btn" id="menu-button" aria-label="Меню">${iconEllipsis('icon-btn__icon')}</button>`;
 
 /**
  * @param {{label: string, time: string, group: string, colorClass: string, details: string}|null} hero

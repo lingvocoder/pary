@@ -27,5 +27,5 @@ export function weekGridView(grid) {
         timeView(row) + row.cells.map((cell) => cellView(cell, row)).join(''),
     )
     .join('');
-  return `<div class="week-grid" id="grid"><div class="week-grid__corner"></div>${header}${rows}</div>`;
+  return `<div class="week-grid" id="week-grid"><div class="week-grid__corner"></div>${header}${rows}</div>`;
 }

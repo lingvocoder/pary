@@ -29,15 +29,15 @@
       <header class="hero" id="hero"></header>
       <nav class="week-nav" aria-label="Неделя">
         <div class="week-nav__heading">
-          <h2 class="week-nav__title" id="range"></h2>
+          <h2 class="week-nav__title" id="week-range"></h2>
           <!-- «6 пар · 12 ак. ч» за открытую неделю; при 0 пар скрыта -->
-          <p class="week-nav__summary" id="weekSummary" hidden></p>
+          <p class="week-nav__summary" id="week-summary" hidden></p>
         </div>
         <!-- группа ‹ Сегодня ›; иконки — Heroicons chevron-left/right, solid 20 -->
         <div class="week-nav__controls">
           <button
             class="week-nav__button week-nav__button--arrow"
-            id="prev"
+            id="week-prev"
             aria-label="Предыдущая неделя"
           >
             <svg
@@ -53,10 +53,10 @@
               />
             </svg>
           </button>
-          <button class="week-nav__button" id="tod">Сегодня</button>
+          <button class="week-nav__button" id="week-today">Сегодня</button>
           <button
             class="week-nav__button week-nav__button--arrow"
-            id="next"
+            id="week-next"
             aria-label="Следующая неделя"
           >
             <svg
@@ -75,13 +75,18 @@
         </div>
       </nav>
       <main id="week"></main>
-      <p class="page__hint" id="hint">
+      <p class="page__hint" id="gesture-hint">
         Нажми на пару, чтобы увидеть подробности. Удерживай, чтобы перенести.<br />Нажми
         на пустую клетку, чтобы добавить пару.
       </p>
     </div>
     <div class="toast" id="toast" role="status"></div>
-    <input type="file" id="file" accept="application/json,.json" hidden />
+    <input
+      type="file"
+      id="backup-file"
+      accept="application/json,.json"
+      hidden
+    />
     <script type="module" src="./js/main.js"></script>
   </body>
 </html>

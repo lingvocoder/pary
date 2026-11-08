@@ -22,7 +22,7 @@ import { countLessons } from '../domain/hours.js';
 import { getState } from '../store/store.js';
 import { getPref, setPref } from '../store/prefs.js';
 import { $ } from './dom.js';
-import { ui, thisWeek } from './state.js';
+import { screenState, currentWeekStart } from './screen-state.js';
 import { heroView } from './views/hero.js';
 import { liveDotView } from './views/card.js';
 import { weekGridView } from './views/week-grid.js';
@@ -34,15 +34,21 @@ import { openMenu } from './menu.js';
 
 // Подсказка внизу экрана — пока пользователь не сделал оба жеста: тап по паре и удержание.
 // Признаки хранятся в настройках (pary.prefs), поэтому подсказка не вернётся после перезапуска.
-const HINT_PREFS = { tap: 'hintTapLearned', hold: 'hintHoldLearned' };
+/** Жесты, которым учит подсказка. */
+export const GESTURE = Object.freeze({ TAP: 'tap', HOLD: 'hold' });
+const HINT_PREFS = {
+  [GESTURE.TAP]: 'hintTapLearned',
+  [GESTURE.HOLD]: 'hintHoldLearned',
+};
 
 function renderHint() {
   const learned =
-    getPref(HINT_PREFS.tap, false) && getPref(HINT_PREFS.hold, false);
-  $('#hint').hidden = !ui.occ.length || learned;
+    getPref(HINT_PREFS[GESTURE.TAP], false) &&
+    getPref(HINT_PREFS[GESTURE.HOLD], false);
+  $('#gesture-hint').hidden = !screenState.lessons.length || learned;
 }
 
-/** Отмечает, что жест освоен ('tap' или 'hold'); когда освоены оба — подсказка прячется. */
+/** Отмечает, что жест освоен (одно из GESTURE); когда освоены оба — подсказка прячется. */
 export function markHintLearned(gesture) {
   if (getPref(HINT_PREFS[gesture], false)) return;
   setPref(HINT_PREFS[gesture], true);
@@ -52,11 +58,11 @@ export function markHintLearned(gesture) {
 /** Перерисовать весь экран из текущего состояния. */
 export function render() {
   closePopover();
-  ui.occ = weekLessons(getState(), ui.week);
-  ui.today = toIso(new Date());
+  screenState.lessons = weekLessons(getState(), screenState.weekStartDate);
+  screenState.renderedDay = toIso(new Date());
   renderHero();
   renderRange();
-  if (ui.occ.length) renderGrid();
+  if (screenState.lessons.length) renderGrid();
   else renderEmpty();
   renderHint();
 }
@@ -76,29 +82,32 @@ function heroModel(now) {
 
 function renderHero() {
   $('#hero').innerHTML = heroView(heroModel(new Date()));
-  $('#menu').onclick = openMenu;
+  $('#menu-button').onclick = openMenu;
 }
 
 function renderRange() {
-  $('#range').textContent = formatWeekRange(ui.week);
+  $('#week-range').textContent = formatWeekRange(screenState.weekStartDate);
   // пар за неделю — по тем же правилам, что часы за семестр: без отменённых и праздников
   const { total } = countLessons({
     state: getState(),
-    from: ui.week,
-    to: addDays(ui.week, WORKDAYS_PER_WEEK - 1),
+    from: screenState.weekStartDate,
+    to: addDays(screenState.weekStartDate, WORKDAYS_PER_WEEK - 1),
     now: new Date(),
     holidays: HOLIDAYS,
   });
-  const summary = $('#weekSummary');
+  const summary = $('#week-summary');
   summary.hidden = !total;
   summary.textContent = formatWeekSummary(total);
   // «Сегодня» видна всегда, чтобы группа кнопок не прыгала; на текущей неделе — неактивна
-  $('#tod').disabled = ui.week === thisWeek();
+  $('#week-today').disabled = screenState.weekStartDate === currentWeekStart();
 }
 
 /** Номер пары, которая идёт сейчас, — только на текущей неделе. */
 function isNowSlot(slot, now) {
-  return ui.week === weekStart(toIso(now)) && currentSlot(now) === slot;
+  return (
+    screenState.weekStartDate === weekStart(toIso(now)) &&
+    currentSlot(now) === slot
+  );
 }
 
 const cardLabel = (lesson, isLive) =>
@@ -128,7 +137,8 @@ function cardModel(lesson, now) {
 function gridModel(now) {
   const today = toIso(now);
   const dates = [];
-  for (let i = 0; i < WORKDAYS_PER_WEEK; i++) dates.push(addDays(ui.week, i));
+  for (let i = 0; i < WORKDAYS_PER_WEEK; i++)
+    dates.push(addDays(screenState.weekStartDate, i));
   const days = dates.map((date, dayIndex) => ({
     name: WEEKDAYS_SHORT[dayIndex],
     number: fromIso(date).getDate(),
@@ -146,7 +156,7 @@ function gridModel(now) {
         date,
         isToday: date === today,
         // отменённые — после неотменённых: сверху та, что идёт
-        cards: ui.occ
+        cards: screenState.lessons
           .filter((lesson) => lesson.date === date && lesson.slot === slot)
           .sort((first, second) => first.cancelled - second.cancelled)
           .map((lesson) => cardModel(lesson, now)),
@@ -162,8 +172,11 @@ function renderGrid() {
 
 function renderEmpty() {
   $('#week').innerHTML = emptyWeekView();
-  $('#emptyAdd').onclick = () => {
-    const date = defaultNewLessonDate(ui.week, toIso(new Date()));
+  $('#empty-week-add').onclick = () => {
+    const date = defaultNewLessonDate(
+      screenState.weekStartDate,
+      toIso(new Date()),
+    );
     openEditor(null, { date, slot: 1 });
   };
 }
@@ -175,12 +188,12 @@ function renderEmpty() {
  */
 export function refreshNow() {
   const now = new Date();
-  if (toIso(now) !== ui.today) {
+  if (toIso(now) !== screenState.renderedDay) {
     render();
     return;
   }
   renderHero();
-  const grid = $('#grid');
+  const grid = $('#week-grid');
   if (!grid) return;
   grid.querySelectorAll('.week-grid__time').forEach((timeCell) => {
     timeCell.classList.toggle(
@@ -189,7 +202,9 @@ export function refreshNow() {
     );
   });
   grid.querySelectorAll('.card').forEach((card) => {
-    const lesson = ui.occ.find((candidate) => candidate.id === card.dataset.id);
+    const lesson = screenState.lessons.find(
+      (candidate) => candidate.id === card.dataset.id,
+    );
     if (!lesson) return;
     const isLive = isOngoing(lesson, now, HOLIDAYS);
     const dot = card.querySelector('.card__live');

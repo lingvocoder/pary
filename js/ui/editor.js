@@ -27,7 +27,7 @@ import {
   FORM_FIELD,
 } from '../domain/forms.js';
 import { getState, dispatch } from '../store/store.js';
-import { toast } from './helpers.js';
+import { toast, TOAST_KIND } from './toast.js';
 import { openSheet, askScope, askConfirm } from './sheets.js';
 import { editorView, OTHER_SUBJECT_OPTION } from './views/editor.js';
 
@@ -68,7 +68,7 @@ export function openEditor(o, preset) {
       holidays: holidays,
     });
     if (!r.ok) {
-      toast(r.reason, 'error');
+      toast(r.reason, TOAST_KIND.ERROR);
       return;
     }
   }
@@ -196,7 +196,7 @@ export function openEditor(o, preset) {
     });
     if (r.ok) return true;
     close();
-    toast(r.reason, 'error');
+    toast(r.reason, TOAST_KIND.ERROR);
     return false;
   };
   /** Можно ли поставить пару в клетку; про праздник — с датой в тексте. */
@@ -213,7 +213,7 @@ export function openEditor(o, preset) {
     if (r.ok) return true;
     toast(
       isHoliday(f.date, holidays) ? formatHolidayDate(f.date) : r.reason,
-      'error',
+      TOAST_KIND.ERROR,
     );
     return false;
   };
@@ -232,7 +232,7 @@ export function openEditor(o, preset) {
     const f = read();
     const validation = validateLessonForm(f);
     if (!validation.ok) {
-      toast(validation.reason, 'error');
+      toast(validation.reason, TOAST_KIND.ERROR);
       if (validation.field === FORM_FIELD.GROUP)
         root.querySelector('#eg').focus();
       if (validation.field === FORM_FIELD.SUBJECT) otherInput.focus();
@@ -249,7 +249,7 @@ export function openEditor(o, preset) {
         return;
       close();
       dispatch({ type: ACTION.ADD, newLesson: f });
-      toast(formatAddedToast(f), 'success');
+      toast(formatAddedToast(f), TOAST_KIND.SUCCESS);
       return;
     }
     const changes = diffLessonChanges(o, f);
@@ -269,7 +269,7 @@ export function openEditor(o, preset) {
         holidays: holidays,
       });
       if (!r.ok) {
-        toast(r.reason, 'error');
+        toast(r.reason, TOAST_KIND.ERROR);
         return;
       }
     }
@@ -282,7 +282,7 @@ export function openEditor(o, preset) {
         holidays: holidays,
       });
       if (!r.ok) {
-        toast(r.reason, 'error');
+        toast(r.reason, TOAST_KIND.ERROR);
         return;
       }
     }
@@ -310,7 +310,7 @@ export function openEditor(o, preset) {
       if (off !== o.cancelled)
         dispatch({ type: ACTION.SET_CANCELLED, lesson: o, isCancelled: off });
     }
-    toast('Сохранено', 'success');
+    toast('Сохранено', TOAST_KIND.SUCCESS);
   };
   if (!isNew) {
     root.querySelector('#edel').onclick = async () => {
@@ -319,7 +319,7 @@ export function openEditor(o, preset) {
       if (!scope || !stillAllowed(OPERATION.DELETE)) return;
       close();
       dispatch({ type: ACTION.DELETE, lesson: o, scope });
-      toast('Пара удалена', 'success');
+      toast('Пара удалена', TOAST_KIND.SUCCESS);
     };
     const calendarButton = root.querySelector('#ecal');
     if (calendarButton)
