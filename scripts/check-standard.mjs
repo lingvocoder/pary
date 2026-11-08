@@ -318,6 +318,53 @@ for (const file of listJsFiles(JS_DIR)) {
   }
 }
 
+// Имя из модуля проекта без импорта: в браузере это ReferenceError, а тесты домена его не видят.
+const exportedNames = new Set();
+for (const file of listJsFiles(JS_DIR))
+  for (const match of readFileSync(file, 'utf8').matchAll(
+    /^export\s+(?:async\s+)?(?:const|let|function)\s+([\w$]+)/gm,
+  ))
+    exportedNames.add(match[1]);
+
+for (const file of listJsFiles(JS_DIR)) {
+  const source = readFileSync(file, 'utf8');
+  const code = stripNonCode(source);
+  const known = new Set();
+  for (const match of source.matchAll(/^import\s*\{([^}]*)\}/gm))
+    for (const name of match[1].split(','))
+      known.add(
+        name
+          .split(/\s+as\s+/)
+          .pop()
+          .trim(),
+      );
+  for (const line of code.split('\n'))
+    for (const name of declaredNames(line)) known.add(name);
+  for (const match of code.matchAll(/\bfunction\s+([\w$]+)/g))
+    known.add(match[1]);
+  for (const match of code.matchAll(
+    /\b(?:const|let|var)\s*[{[]([^}\]]*)[}\]]/g,
+  ))
+    for (const name of match[1].split(','))
+      known.add(name.split(':').pop().replace(/=.*$/, '').trim());
+  const reported = new Set();
+  code.split('\n').forEach((line, index) => {
+    for (const match of line.matchAll(
+      /(?<![\w$.])([A-Za-z_$][\w$]*)(?!\s*:(?!:))/g,
+    )) {
+      const name = match[1];
+      if (!exportedNames.has(name) || known.has(name) || reported.has(name))
+        continue;
+      reported.add(name);
+      report(
+        file,
+        index + 1,
+        `«${name}» из модуля проекта используется без импорта`,
+      );
+    }
+  });
+}
+
 // FILES в sw.js против настоящей папки js/
 const serviceWorker = readFileSync(join(ROOT, 'sw.js'), 'utf8');
 const cachedFiles = [...serviceWorker.matchAll(/'\.\/([^']*)'/g)].map(
