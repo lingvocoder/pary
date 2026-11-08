@@ -6,7 +6,7 @@ import {
   formatSemesterNote,
 } from '../domain/texts.js';
 import { countLessons } from '../domain/hours.js';
-import { getState } from '../store.js';
+import { getState } from '../store/store.js';
 import { esc, colorClass } from './helpers.js';
 import { iconClock } from './icons.js';
 import { openSheet } from './sheets.js';

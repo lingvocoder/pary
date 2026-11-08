@@ -32,7 +32,7 @@ import {
   diffLessonChanges,
   FORM_FIELD,
 } from '../domain/forms.js';
-import { getState, dispatch } from '../store.js';
+import { getState, dispatch } from '../store/store.js';
 import { esc, toast } from './helpers.js';
 import { openSheet, askScope, askConfirm } from './sheets.js';
 import { iconCalendar, iconChevronDown } from './icons.js';

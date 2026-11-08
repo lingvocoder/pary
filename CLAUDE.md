@@ -33,7 +33,8 @@ PWA-расписание преподавателя КубГУ (факульте
 
 - `js/domain/` — предметная область, чистые функции. **Никогда не трогает `document`, `window`, `localStorage`.**
   Все изменения данных — только новые `case` в `reduce()` (`domain/changes.js`); `reduce` возвращает новое состояние (`structuredClone`).
-- `js/store.js` — единственная переменная `state`, `dispatch`, `subscribe`, сохранение в `localStorage` (ключ `pary`).
+- `js/store/store.js` — единственная переменная `state`, `dispatch`, `subscribe`, сохранение в `localStorage` (ключ `pary`).
+  Настройки интерфейса — `js/store/prefs.js` (ключ `pary.prefs`).
 - `js/ui/*` — читает состояние, рисует строками HTML, превращает касания в действия. Модель о UI не знает.
 - Правила «что можно с парой и что можно поставить в клетку» — только `can()` и `canPlace()` в `domain/rules.js`.
   Интерфейс их спрашивает и показывает `reason`, сам ничего не решает (план и факт — `docs/decisions.md`).

@@ -20,7 +20,7 @@ import {
 } from '../domain/lessons.js';
 import { OPERATION, can, lessonState } from '../domain/rules.js';
 import { ACTION, roomChangeScope } from '../domain/changes.js';
-import { getState, dispatch } from '../store.js';
+import { getState, dispatch } from '../store/store.js';
 import { esc, toast, colorClass } from './helpers.js';
 import { iconCalendar, iconMapPin } from './icons.js';
 import { openEditor } from './editor.js';

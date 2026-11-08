@@ -17,7 +17,7 @@ import {
 import { isPastSlot, isHoliday, findRule } from '../domain/lessons.js';
 import { OPERATION, PLACE_KIND, can, canPlace } from '../domain/rules.js';
 import { ACTION } from '../domain/changes.js';
-import { getState, dispatch } from '../store.js';
+import { getState, dispatch } from '../store/store.js';
 import { toast, stickyToast, hideToast } from './helpers.js';
 import { askScope } from './sheets.js';
 import { ui } from './state.js';

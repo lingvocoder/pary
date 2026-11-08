@@ -19,7 +19,8 @@ import {
   currentSlot,
 } from '../domain/lessons.js';
 import { countLessons } from '../domain/hours.js';
-import { getState, getPref, setPref } from '../store.js';
+import { getState } from '../store/store.js';
+import { getPref, setPref } from '../store/prefs.js';
 import { $, esc, colorClass, slotOf } from './helpers.js';
 import {
   iconEllipsis,

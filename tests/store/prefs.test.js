@@ -1,5 +1,5 @@
 // Тесты настроек интерфейса (getPref/setPref). Запуск: npm test.
-// store.js при импорте сразу читает localStorage, поэтому подмена ставится до import().
+// store/store.js при импорте сразу читает localStorage, поэтому подмена ставится до import().
 import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -17,8 +17,9 @@ Object.defineProperty(globalThis, 'localStorage', {
   writable: true,
 });
 
-const { getPref, setPref, getState } = await import('../js/store.js');
-const { PREFS_KEY, STORAGE_KEY } = await import('../js/config/app.js');
+const { getPref, setPref } = await import('../../js/store/prefs.js');
+const { getState } = await import('../../js/store/store.js');
+const { PREFS_KEY, STORAGE_KEY } = await import('../../js/config/app.js');
 
 beforeEach(() => memory.clear());
 

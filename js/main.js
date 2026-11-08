@@ -1,7 +1,7 @@
 /* Точка входа: связывает хранилище, отрисовку и обработчики. */
 import { CLOCK_REFRESH_MS } from './config/interface.js';
 import { addDays, DAYS_PER_WEEK } from './domain/dates.js';
-import { subscribe, onSaveError } from './store.js';
+import { subscribe, onSaveError } from './store/store.js';
 import { $, toast } from './ui/helpers.js';
 import { ui, thisWeek } from './ui/state.js';
 import { render, refreshNow } from './ui/week.js';
