@@ -36,4 +36,4 @@ export const hoursView = (hours) => `<div class="sheet__header">
       </tr></tfoot>
     </table>
     <p class="sheet__note">Проведено — пары, которые уже закончились. Отменённые и праздники не считаются.</p>
-    <div class="sheet__actions"><button class="btn btn--secondary" id="hoursClose">Закрыть</button></div>`;
+    <div class="sheet__actions"><button class="btn btn--secondary" id="hours-close">Закрыть</button></div>`;

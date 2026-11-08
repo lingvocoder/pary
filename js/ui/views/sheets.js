@@ -1,4 +1,5 @@
 /* Шторки: панель, подтверждение необратимого действия, вопрос «только эта дата или дальше». */
+import { SCOPE } from '../../domain/changes.js';
 import { esc } from '../dom.js';
 
 /** Панель шторки с ручкой сверху. */
@@ -20,6 +21,6 @@ export const confirmView = (confirm) =>
  */
 export const scopeQuestionView = (question) =>
   `<div class="sheet__header"><h2 class="sheet__title">${esc(question.title)}</h2>${question.note ? `<p class="sheet__note">${esc(question.note)}</p>` : ''}</div>
-      <button class="scope-option" data-v="one"><b class="scope-option__title">${question.thisDateOption}</b><small class="scope-option__hint">Остальные недели не меняются</small></button>
-      <button class="scope-option" data-v="future"><b class="scope-option__title">${question.fromDateOption}</b><small class="scope-option__hint">Прошлые недели останутся как были</small></button>
-      <button class="btn btn--plain" data-v="">Отмена</button>`;
+      <button class="scope-option" data-scope="${SCOPE.THIS_DATE}"><b class="scope-option__title">${question.thisDateOption}</b><small class="scope-option__hint">Остальные недели не меняются</small></button>
+      <button class="scope-option" data-scope="${SCOPE.FUTURE}"><b class="scope-option__title">${question.fromDateOption}</b><small class="scope-option__hint">Прошлые недели останутся как были</small></button>
+      <button class="btn btn--plain" data-scope="">Отмена</button>`;

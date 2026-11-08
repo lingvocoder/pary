@@ -8,29 +8,28 @@ import { openSheet } from './sheets.js';
 import { hoursView } from './views/hours.js';
 
 export function openHours() {
-  const { from, to } = SEMESTER;
-  const r = countLessons({
+  const report = countLessons({
     state: getState(),
-    from: from,
-    to: to,
+    from: SEMESTER.from,
+    to: SEMESTER.to,
     now: new Date(),
     holidays: HOLIDAYS,
   });
-  // бейдж — цвет курса, а не «важный» цвет отдельной пары
-  const groups = r.groups.map((g) => ({
-    group: g.group,
-    colorClass: lessonColorClass({ course: g.course }),
-    held: g.held,
-    total: g.total,
+  // бейдж — цвет курса, а не «важный» цвет отдельного занятия
+  const groups = report.groups.map((groupCount) => ({
+    group: groupCount.group,
+    colorClass: lessonColorClass({ course: groupCount.course }),
+    held: groupCount.held,
+    total: groupCount.total,
   }));
-  const s = openSheet(
+  const sheet = openSheet(
     hoursView({
       semesterNote: formatSemesterNote(SEMESTER),
       groups,
-      held: r.held,
-      total: r.total,
+      held: report.held,
+      total: report.total,
     }),
     'Часы за семестр',
   );
-  s.root.querySelector('#hoursClose').onclick = s.close;
+  sheet.root.querySelector('#hours-close').onclick = sheet.close;
 }

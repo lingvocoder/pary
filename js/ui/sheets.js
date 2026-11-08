@@ -3,6 +3,7 @@ import { SHEET_CLOSE_MS } from '../config/interface.js';
 import { hideToast } from './toast.js';
 import { formatThisDateOption, formatFromDateOption } from '../domain/texts.js';
 import { LESSON_KIND } from '../domain/lessons.js';
+import { SCOPE } from '../domain/changes.js';
 import { addLayer, removeLayer } from './layers.js';
 import {
   sheetPanelView,
@@ -31,8 +32,8 @@ export function openSheet(html, label, onDismiss) {
   };
   const dismiss = onDismiss || close;
   const layer = addLayer(dismiss);
-  scrim.addEventListener('click', (e) => {
-    if (e.target === scrim) dismiss();
+  scrim.addEventListener('click', (event) => {
+    if (event.target === scrim) dismiss();
   });
   return { root: scrim.querySelector('.sheet__panel'), scrim, close };
 }
@@ -61,30 +62,34 @@ export function askConfirm(title, note, confirmText) {
   });
 }
 
-/** Спрашивает «только эта дата или дальше». Возвращает 'one' | 'future' | null. */
-export function askScope(o, title, note) {
-  if (o.type === LESSON_KIND.ONE_OFF) return Promise.resolve('one');
+/**
+ * Спрашивает «только эта дата или дальше». Разовое занятие — сразу «только эта дата».
+ * @returns {Promise<string|null>} одно из SCOPE или null — «Отмена», затемнение, «Назад»
+ */
+export function askScope(lesson, title, note) {
+  if (lesson.type === LESSON_KIND.ONE_OFF)
+    return Promise.resolve(SCOPE.THIS_DATE);
   return new Promise((resolve) => {
+    let isAnswered = false;
+    const finish = (scope) => {
+      if (isAnswered) return;
+      isAnswered = true;
+      close();
+      resolve(scope || null);
+    };
     const { root, close } = openSheet(
       scopeQuestionView({
         title,
         note: note || '',
-        thisDateOption: formatThisDateOption(o.ruleDate),
-        fromDateOption: formatFromDateOption(o.ruleDate),
+        thisDateOption: formatThisDateOption(lesson.ruleDate),
+        fromDateOption: formatFromDateOption(lesson.ruleDate),
       }),
       title,
       () => finish(''),
     );
-    let done = false;
-    const finish = (v) => {
-      if (done) return;
-      done = true;
-      close();
-      resolve(v || null);
-    };
-    root.addEventListener('click', (e) => {
-      const b = e.target.closest('[data-v]');
-      if (b) finish(b.dataset.v);
+    root.addEventListener('click', (event) => {
+      const option = event.target.closest('[data-scope]');
+      if (option) finish(option.dataset.scope);
     });
   });
 }
