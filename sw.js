@@ -31,6 +31,7 @@ const FILES = [
   './js/ui/views/card.js',
   './js/ui/views/week-grid.js',
   './js/ui/views/empty-week.js',
+  './js/ui/views/popover.js',
   './js/ui/hours.js',
   './js/ui/geometry.js',
   './js/ui/icons.js',

@@ -3,6 +3,7 @@ import { HOLIDAYS } from '../config/university.js';
 import { calendarLink } from '../domain/calendar-link.js';
 import {
   formatLongDate,
+  formatGroupTitle,
   formatTimeRange,
   formatCourseAndType,
   formatMovedFrom,
@@ -21,13 +22,12 @@ import {
 import { OPERATION, can, lessonState } from '../domain/rules.js';
 import { ACTION, roomChangeScope } from '../domain/changes.js';
 import { getState, dispatch } from '../store/store.js';
-import { esc } from './dom.js';
 import { toast } from './helpers.js';
 import { lessonColorClass } from './views/color.js';
-import { iconCalendar, iconMapPin } from './icons.js';
 import { openEditor } from './editor.js';
 import { addLayer, removeLayer } from './layers.js';
 import { placePopover } from './geometry.js';
+import { popoverView, roomView, roomInputView } from './views/popover.js';
 
 let pop = null;
 
@@ -35,54 +35,6 @@ let pop = null;
 function movedFrom(o) {
   const rule = findRule(getState(), o.ruleId);
   return formatMovedFrom(o, rule);
-}
-
-/**
- * Строка-флаг под предметом: что с парой сейчас. Только показ — решает модель.
- * @returns {string} HTML или ''
- */
-function flagHtml(flag) {
-  if (!flag) return '';
-  const liveModifier = flag.isLive ? ' popover__flag--live' : '';
-  return `<div class="popover__flag${liveModifier}">${flag.text}</div>`;
-}
-
-/**
- * Кнопки в один ряд — только те, что разрешает модель.
- * «Вернуть» видна у любой будущей отменённой пары: если слот занят,
- * по нажатию модель ответит почему.
- */
-function actionsHtml(o, allow, ph, holiday) {
-  const buttons = [];
-  if (allow(OPERATION.EDIT))
-    buttons.push(
-      '<button class="btn btn--primary popover__action" id="pEdit">Изменить</button>',
-    );
-  if (allow(OPERATION.CANCEL))
-    buttons.push(
-      '<button class="btn btn--danger-outline popover__action" id="pCancel">Отменить</button>',
-    );
-  // «Вернуть» ничего не разрушает — обычная вторичная кнопка, без красного
-  if (o.cancelled && ph === 'future' && !holiday)
-    buttons.push(
-      '<button class="btn btn--secondary popover__action" id="pRestore">Вернуть</button>',
-    );
-  // факт: у начавшейся и прошедшей пары — только отметка, состоялась ли она
-  if (allow(OPERATION.NOT_HELD))
-    buttons.push(
-      '<button class="btn btn--danger-outline popover__action" id="pNotHeld">Не состоялась</button>',
-    );
-  if (allow(OPERATION.HELD))
-    buttons.push(
-      '<button class="btn btn--secondary popover__action" id="pHeld">Состоялась</button>',
-    );
-  if (allow(OPERATION.CALENDAR))
-    buttons.push(
-      `<button class="btn btn--secondary popover__icon-action" id="pCal" aria-label="В календарь">${iconCalendar('btn__icon')}</button>`,
-    );
-  return buttons.length
-    ? `<div class="popover__actions">${buttons.join('')}</div>`
-    : '';
 }
 
 export function closePopover() {
@@ -103,7 +55,7 @@ export function openPopover(o, card) {
   const el = document.createElement('section');
   el.className = 'popover';
   el.setAttribute('role', 'dialog');
-  el.setAttribute('aria-label', `Группа ${o.group}`);
+  el.setAttribute('aria-label', formatGroupTitle(o.group));
   const now = new Date(),
     ph = lessonPhase(o, now),
     holiday = isHoliday(o.date, HOLIDAYS);
@@ -124,15 +76,26 @@ export function openPopover(o, card) {
       state: getState(),
       holidays: HOLIDAYS,
     }).ok;
-  el.innerHTML = `<div class="popover__head"><span class="chip popover__chip ${lessonColorClass(o)}">${esc(o.group)}</span><span class="popover__meta">${esc(formatCourseAndType(o))}</span></div>
-    <div class="popover__details">
-      <div class="popover__date">${formatLongDate(o.date)}</div>
-      <div class="popover__time">${formatTimeRange(o.slot)}</div>
-      <div class="popover__subject">${esc(o.subject)}</div>
-      ${flagHtml(formatLessonFlag(lessonState(o, now, HOLIDAYS), o))}${o.moved ? `<div class="popover__moved">${movedFrom(o)}</div>` : ''}
-    </div>
-    <div class="popover__room" id="pRoom"></div>
-    ${actionsHtml(o, allow, ph, holiday)}`;
+  el.innerHTML = popoverView({
+    group: o.group,
+    colorClass: lessonColorClass(o),
+    meta: formatCourseAndType(o),
+    date: formatLongDate(o.date),
+    time: formatTimeRange(o.slot),
+    subject: o.subject,
+    flag: formatLessonFlag(lessonState(o, now, HOLIDAYS), o),
+    movedFrom: o.moved ? movedFrom(o) : '',
+    actions: {
+      edit: allow(OPERATION.EDIT),
+      cancel: allow(OPERATION.CANCEL),
+      // «Вернуть» видна у любой будущей отменённой пары: если слот занят,
+      // по нажатию модель ответит почему
+      restore: o.cancelled && ph === 'future' && !holiday,
+      notHeld: allow(OPERATION.NOT_HELD),
+      held: allow(OPERATION.HELD),
+      calendar: allow(OPERATION.CALENDAR),
+    },
+  });
   document.body.append(catcher, el);
   card.classList.add('card--selected');
   pop = { el, catcher, o, phase: ph, layer: addLayer(closePopover) };
@@ -154,15 +117,19 @@ export function openPopover(o, card) {
   const roomRow = el.querySelector('#pRoom');
   // у прошедшей пары аудитория — только текст, без «Указать»
   const showRoom = () => {
-    const link = allow(OPERATION.ROOM)
-      ? `<button class="popover__room-link">${o.room ? 'Изменить' : 'Указать'}</button>`
-      : '';
-    roomRow.innerHTML = `${iconMapPin('popover__room-icon')}<span class="popover__room-label">${esc(formatRoomLabel(o.room))}</span>${link}`;
+    roomRow.innerHTML = roomView({
+      label: formatRoomLabel(o.room),
+      linkText: allow(OPERATION.ROOM)
+        ? o.room
+          ? 'Изменить'
+          : 'Указать'
+        : null,
+    });
     const b = roomRow.querySelector('button');
     if (b) b.onclick = editRoom;
   };
   const editRoom = () => {
-    roomRow.innerHTML = `<input class="popover__room-input" type="text" aria-label="Аудитория" placeholder="например, 301" value="${esc(o.room)}" autocomplete="off"><button class="popover__room-link">Готово</button>`;
+    roomRow.innerHTML = roomInputView(o.room);
     const input = roomRow.querySelector('input');
     const done = () => {
       const room = input.value.trim();

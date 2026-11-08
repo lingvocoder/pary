@@ -109,6 +109,9 @@ export function formatCardLabel(lesson, { isHoliday, isLive }) {
 
 /* ---------- подсказка ---------- */
 
+/** «Группа 323»: заголовок подсказки и редактора. */
+export const formatGroupTitle = (group) => `Группа ${group}`;
+
 /** «Среда, 28 октября». */
 export const formatLongDate = (date) =>
   `${capitalize(WEEKDAYS[weekday(date)])}, ${humanDate(date)}`;

@@ -10,6 +10,7 @@ import {
   formatWeekSummary,
   formatCardLabel,
   formatLongDate,
+  formatGroupTitle,
   formatTimeRange,
   formatCourseAndType,
   formatMovedFrom,
@@ -116,6 +117,7 @@ test('карточка: подпись для диктора — праздни�
 
 test('подсказка: дата, время, курс, перенос, флаги, аудитория, тосты', () => {
   assert.equal(formatLongDate('2026-10-28'), 'Среда, 28 октября');
+  assert.equal(formatGroupTitle('323'), 'Группа 323');
   assert.equal(formatTimeRange(6), '15:40–17:00');
   assert.equal(formatCourseAndType(PAIR), '3 курс · ЛР');
   assert.equal(
