@@ -1,5 +1,5 @@
 /* Касания по сетке:
-   тап по паре — подсказка; удержание 280 мс — перетаскивание; тап по пустой клетке — новая пара. */
+   тап по занятию — подсказка; удержание 280 мс — перетаскивание; тап по пустой клетке — новое занятие. */
 import { HOLIDAYS } from '../config/university.js';
 import {
   LONG_PRESS_MS,
@@ -31,97 +31,127 @@ const CELL_TARGET = 'week-grid__cell--target';
 const CELL_BUSY = 'week-grid__cell--busy';
 const CELL_PAST = 'week-grid__cell--past';
 
-let drag = null,
-  press = null,
-  lastTouch = 0;
-const occById = (id) => screenState.lessons.find((o) => o.id === id);
-const cellAt = (x, y) => {
-  const el = document.elementFromPoint(x, y);
-  return el && el.closest(CELL);
-};
-const openCard = (card) => {
-  const o = occById(card.dataset.id);
-  if (!o) return;
-  openPopover(o, card);
-  markHintLearned(GESTURE.TAP);
-};
-const cancelPress = () => {
-  if (press) {
-    clearTimeout(press.timer);
-    press = null;
-  }
+/** Идёт перенос: какая карточка, какое занятие, её «призрак» под пальцем и клетка под ним. */
+let drag = null;
+/** Палец или мышь нажаты на карточке, но перенос ещё не начался. */
+let press = null;
+/** Когда было последнее касание: мышиные события сразу после него — эхо касания. */
+let lastTouchTime = 0;
+
+const lessonById = (id) =>
+  screenState.lessons.find((lesson) => lesson.id === id);
+
+const cellAt = (pointerX, pointerY) => {
+  const element = document.elementFromPoint(pointerX, pointerY);
+  return element && element.closest(CELL);
 };
 
-function startDrag(card, x, y) {
-  const o = occById(card.dataset.id);
-  if (!o) return;
+const isEchoOfTouch = () => Date.now() - lastTouchTime < TOUCH_MOUSE_GAP_MS;
+
+const openCard = (card) => {
+  const lesson = lessonById(card.dataset.id);
+  if (!lesson) return;
+  openPopover(lesson, card);
+  markHintLearned(GESTURE.TAP);
+};
+
+const cancelPress = () => {
+  if (!press) return;
+  clearTimeout(press.timer);
+  press = null;
+};
+
+/** Нажатие на карточку: через LONG_PRESS_MS без сдвига начинается перенос. Палец и мышь — одинаково. */
+function startPress(card, pointerX, pointerY, isMouse) {
+  press = {
+    card,
+    pointerX,
+    pointerY,
+    isMouse,
+    timer: setTimeout(() => {
+      if (!press) return;
+      const startedPress = press;
+      press = null;
+      startDrag(
+        startedPress.card,
+        startedPress.pointerX,
+        startedPress.pointerY,
+      );
+    }, LONG_PRESS_MS),
+  };
+}
+
+/** Можно ли перенести занятие в клетку: спрашиваем модель с текущим временем. */
+const checkPlace = (date, slot, lesson) =>
+  canPlace({
+    kind: PLACE_KIND.MOVE,
+    date,
+    slot,
+    now: new Date(),
+    state: getState(),
+    holidays: HOLIDAYS,
+    exceptLessonId: lesson.id,
+  });
+
+/** Прошедшие клетки и дни-праздники заштрихованы, пока идёт перенос. */
+function markUnavailableCells(now) {
+  document.querySelectorAll(CELL).forEach((cell) => {
+    const date = cell.dataset.date;
+    if (isPastSlot(date, +cell.dataset.slot, now) || isHoliday(date, HOLIDAYS))
+      cell.classList.add(CELL_PAST);
+  });
+}
+
+function startDrag(card, pointerX, pointerY) {
+  const lesson = lessonById(card.dataset.id);
+  if (!lesson) return;
   closePopover();
   markHintLearned(GESTURE.HOLD);
-  // начавшуюся, прошедшую или отменённую пару не переносим: только тост, без вибрации
-  const allowed = can({
+  // начавшееся, прошедшее или отменённое занятие не переносим: только тост, без вибрации
+  const answer = can({
     operation: OPERATION.MOVE,
-    lesson: o,
+    lesson,
     now: new Date(),
     state: getState(),
     holidays: HOLIDAYS,
   });
-  if (!allowed.ok) {
-    toast(allowed.reason, TOAST_KIND.ERROR);
+  if (!answer.ok) {
+    toast(answer.reason, TOAST_KIND.ERROR);
     return;
   }
-  const g = card.cloneNode(true);
-  g.classList.add('card--ghost');
-  g.classList.remove('card--selected');
-  document.body.appendChild(g);
+  const ghost = card.cloneNode(true);
+  ghost.classList.add('card--ghost');
+  ghost.classList.remove('card--selected');
+  document.body.appendChild(ghost);
   card.classList.add('card--lifted');
-  // прошедшие клетки и дни-праздники заштрихованы, пока идёт перенос
-  const now = new Date();
-  document.querySelectorAll(CELL).forEach((c) => {
-    if (
-      isPastSlot(c.dataset.date, +c.dataset.slot, now) ||
-      isHoliday(c.dataset.date, HOLIDAYS)
-    )
-      c.classList.add(CELL_PAST);
-  });
-  drag = { card, o, ghost: g, target: null };
-  moveDrag(x, y);
+  markUnavailableCells(new Date());
+  drag = { card, lesson, ghost, target: null };
+  moveDrag(pointerX, pointerY);
   if (navigator.vibrate) navigator.vibrate(HOLD_VIBRATION_MS);
 }
 
-/** Можно ли перенести пару o в клетку: спрашиваем модель с текущим временем. */
-const placeCheck = (date, slot, o) =>
-  canPlace({
-    kind: PLACE_KIND.MOVE,
-    date: date,
-    slot: slot,
-    now: new Date(),
-    state: getState(),
-    holidays: HOLIDAYS,
-    exceptLessonId: o.id,
-  });
-
-function moveDrag(x, y) {
-  drag.ghost.style.left = x + 'px';
-  drag.ghost.style.top = y + 'px';
-  const c = cellAt(x, y);
-  if (c === drag.target) return;
+function moveDrag(pointerX, pointerY) {
+  drag.ghost.style.left = pointerX + 'px';
+  drag.ghost.style.top = pointerY + 'px';
+  const cell = cellAt(pointerX, pointerY);
+  if (cell === drag.target) return;
   if (drag.target) drag.target.classList.remove(CELL_TARGET, CELL_BUSY);
-  drag.target = c;
-  if (!c) {
+  drag.target = cell;
+  if (!cell) {
     stickyToast('Веди к нужной клетке');
     return;
   }
-  const date = c.dataset.date,
-    slot = +c.dataset.slot;
-  c.classList.add(CELL_TARGET);
+  const date = cell.dataset.date;
+  const slot = +cell.dataset.slot;
+  cell.classList.add(CELL_TARGET);
   // сначала своя клетка, остальное решает модель: праздник → прошлое → занято
-  if (date === drag.o.date && slot === drag.o.slot) {
+  if (date === drag.lesson.date && slot === drag.lesson.slot) {
     stickyToast('Отпусти здесь, чтобы ничего не менять');
     return;
   }
-  const place = placeCheck(date, slot, drag.o);
+  const place = checkPlace(date, slot, drag.lesson);
   if (!place.ok) {
-    c.classList.add(CELL_BUSY); // красная рамка — для любой причины
+    cell.classList.add(CELL_BUSY); // красная рамка — для любой причины
     stickyToast(place.reason);
     return;
   }
@@ -129,167 +159,146 @@ function moveDrag(x, y) {
 }
 
 async function endDrag() {
-  const { o, ghost, card, target } = drag;
+  const { lesson, ghost, card, target } = drag;
   drag = null;
   ghost.remove();
   card.classList.remove('card--lifted');
   document
     .querySelectorAll('.' + CELL_PAST)
-    .forEach((c) => c.classList.remove(CELL_PAST));
+    .forEach((cell) => cell.classList.remove(CELL_PAST));
   hideToast();
   if (!target) return;
   target.classList.remove(CELL_TARGET, CELL_BUSY);
-  const date = target.dataset.date,
-    slot = +target.dataset.slot;
-  if (date === o.date && slot === o.slot) return;
+  const date = target.dataset.date;
+  const slot = +target.dataset.slot;
+  if (date === lesson.date && slot === lesson.slot) return;
   // отпустили там, куда нельзя, — карточка остаётся на месте
-  const place = placeCheck(date, slot, o);
+  const place = checkPlace(date, slot, lesson);
   if (!place.ok) {
     toast(place.reason, TOAST_KIND.ERROR);
     return;
   }
-  const rule = findRule(getState(), o.ruleId) || null;
+  const rule = findRule(getState(), lesson.ruleId) || null;
   const scope = await askScope(
-    o,
+    lesson,
     formatMoveQuestion(date, slot),
-    formatMoveNote(o, rule),
+    formatMoveNote(lesson, rule),
   );
   if (!scope) return;
-  dispatch({ type: ACTION.EDIT, lesson: o, changes: { date, slot }, scope });
+  dispatch({ type: ACTION.EDIT, lesson, changes: { date, slot }, scope });
   toast(formatMovedToast(date, slot), TOAST_KIND.SUCCESS);
 }
 
-/** Подключает все обработчики к контейнеру недели. */
-export function initGestures(week) {
+/** Палец: удержание, сдвиг (прокрутка или перенос), отпускание. */
+function initTouch(week) {
   week.addEventListener(
     'touchstart',
-    (e) => {
-      lastTouch = Date.now();
-      const card = e.target.closest('.card');
-      if (!card || e.touches.length > 1) return;
-      const t = e.touches[0];
-      press = {
-        card,
-        x: t.clientX,
-        y: t.clientY,
-        timer: setTimeout(() => {
-          if (press) {
-            const p = press;
-            press = null;
-            startDrag(p.card, p.x, p.y);
-          }
-        }, LONG_PRESS_MS),
-      };
+    (event) => {
+      lastTouchTime = Date.now();
+      const card = event.target.closest('.card');
+      if (!card || event.touches.length > 1) return;
+      const touch = event.touches[0];
+      startPress(card, touch.clientX, touch.clientY, false);
     },
     { passive: true },
   );
   document.addEventListener(
     'touchmove',
-    (e) => {
-      lastTouch = Date.now();
+    (event) => {
+      lastTouchTime = Date.now();
+      const touch = event.touches[0];
+      // во время переноса страница не прокручивается
       if (drag) {
-        e.preventDefault();
-        const t = e.touches[0];
-        moveDrag(t.clientX, t.clientY);
+        event.preventDefault();
+        moveDrag(touch.clientX, touch.clientY);
         return;
-      } // во время переноса страница не прокручивается
-      if (press) {
-        const t = e.touches[0];
-        if (
-          Math.hypot(t.clientX - press.x, t.clientY - press.y) > SCROLL_SLOP_PX
-        )
-          cancelPress();
       }
+      if (!press) return;
+      const distance = Math.hypot(
+        touch.clientX - press.pointerX,
+        touch.clientY - press.pointerY,
+      );
+      if (distance > SCROLL_SLOP_PX) cancelPress();
     },
     { passive: false },
   );
   document.addEventListener(
     'touchend',
-    (e) => {
-      lastTouch = Date.now();
+    (event) => {
+      lastTouchTime = Date.now();
       if (drag) {
-        e.preventDefault();
+        event.preventDefault();
         endDrag();
         return;
       }
-      if (press) {
-        const card = press.card;
-        cancelPress();
-        e.preventDefault();
-        openCard(card);
-      }
+      if (!press) return;
+      const card = press.card;
+      cancelPress();
+      event.preventDefault();
+      openCard(card);
     },
     { passive: false },
   );
   document.addEventListener('touchcancel', () => {
     cancelPress();
-    if (drag) {
-      drag.target = null;
-      endDrag();
-    }
+    if (!drag) return;
+    drag.target = null;
+    endDrag();
   });
-  week.addEventListener('contextmenu', (e) => {
-    if (e.target.closest('.card')) e.preventDefault();
+  week.addEventListener('contextmenu', (event) => {
+    if (event.target.closest('.card')) event.preventDefault();
   });
+}
 
-  // мышь — чтобы проверять на компьютере
-  week.addEventListener('mousedown', (e) => {
-    if (Date.now() - lastTouch < TOUCH_MOUSE_GAP_MS || e.button !== 0) return;
-    const card = e.target.closest('.card');
-    if (!card) return;
-    press = {
-      card,
-      x: e.clientX,
-      y: e.clientY,
-      mouse: true,
-      timer: setTimeout(() => {
-        if (press) {
-          const p = press;
-          press = null;
-          startDrag(p.card, p.x, p.y);
-        }
-      }, LONG_PRESS_MS),
-    };
+/** Мышь — чтобы проверять на компьютере. */
+function initMouse(week) {
+  week.addEventListener('mousedown', (event) => {
+    if (isEchoOfTouch() || event.button !== 0) return;
+    const card = event.target.closest('.card');
+    if (card) startPress(card, event.clientX, event.clientY, true);
   });
-  document.addEventListener('mousemove', (e) => {
-    if (Date.now() - lastTouch < TOUCH_MOUSE_GAP_MS) return;
+  document.addEventListener('mousemove', (event) => {
+    if (isEchoOfTouch()) return;
     if (drag) {
-      moveDrag(e.clientX, e.clientY);
+      moveDrag(event.clientX, event.clientY);
       return;
     }
-    if (
-      press &&
-      press.mouse &&
-      Math.hypot(e.clientX - press.x, e.clientY - press.y) > MOUSE_SLOP_PX
-    ) {
-      const p = press;
-      cancelPress();
-      startDrag(p.card, e.clientX, e.clientY);
-    }
+    if (!press || !press.isMouse) return;
+    const distance = Math.hypot(
+      event.clientX - press.pointerX,
+      event.clientY - press.pointerY,
+    );
+    if (distance <= MOUSE_SLOP_PX) return;
+    const card = press.card;
+    cancelPress();
+    startDrag(card, event.clientX, event.clientY);
   });
   document.addEventListener('mouseup', () => {
-    if (Date.now() - lastTouch < TOUCH_MOUSE_GAP_MS) return;
+    if (isEchoOfTouch()) return;
     if (drag) {
       endDrag();
       return;
     }
-    if (press && press.mouse) {
-      const card = press.card;
-      cancelPress();
-      openCard(card);
-    }
+    if (!press || !press.isMouse) return;
+    const card = press.card;
+    cancelPress();
+    openCard(card);
   });
-  week.addEventListener('click', (e) => {
-    if (e.target.closest('.card')) return;
-    const c = e.target.closest(CELL);
-    if (!c) return;
-    const date = c.dataset.date,
-      slot = +c.dataset.slot;
+}
+
+/** Тап по пустой клетке — новое занятие; Enter или пробел на карточке — подсказка. */
+function initTaps(week) {
+  week.addEventListener('click', (event) => {
+    if (event.target.closest('.card')) return;
+    const cell = event.target.closest(CELL);
+    if (!cell) return;
+    const date = cell.dataset.date;
+    const slot = +cell.dataset.slot;
     // куда добавить нельзя (праздник) — редактор не открываем, модель говорит почему
     const place = canPlace({
       kind: PLACE_KIND.ADD_ONE_OFF,
-      date: date,
-      slot: slot,
+      date,
+      slot,
       now: new Date(),
       state: getState(),
       holidays: HOLIDAYS,
@@ -300,13 +309,17 @@ export function initGestures(week) {
     }
     openEditor(null, { date, slot });
   });
-  week.addEventListener('keydown', (e) => {
-    if (
-      (e.key === 'Enter' || e.key === ' ') &&
-      e.target.classList.contains('card')
-    ) {
-      e.preventDefault();
-      openCard(e.target);
-    }
+  week.addEventListener('keydown', (event) => {
+    const isActivationKey = event.key === 'Enter' || event.key === ' ';
+    if (!isActivationKey || !event.target.classList.contains('card')) return;
+    event.preventDefault();
+    openCard(event.target);
   });
+}
+
+/** Подключает все обработчики к контейнеру недели. */
+export function initGestures(week) {
+  initTouch(week);
+  initMouse(week);
+  initTaps(week);
 }
