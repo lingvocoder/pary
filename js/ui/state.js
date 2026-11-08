@@ -1,10 +1,19 @@
 /* Состояние экрана (не данные!): какая неделя открыта и что на ней сейчас нарисовано. */
-import { toIso, addDays, weekday, weekStart } from '../dates.js';
+import {
+  toIso,
+  addDays,
+  weekday,
+  weekStart,
+  DAYS_PER_WEEK,
+  SUNDAY,
+} from '../dates.js';
 
 /** Неделя «сейчас»; в воскресенье — уже следующая. */
 export const thisWeek = () => {
   const t = toIso(new Date());
-  return weekday(t) === 6 ? addDays(weekStart(t), 7) : weekStart(t);
+  return weekday(t) === SUNDAY
+    ? addDays(weekStart(t), DAYS_PER_WEEK)
+    : weekStart(t);
 };
 
 export const ui = {

@@ -1,11 +1,18 @@
 /* Главный экран: следующая пара, заголовок недели, сетка или пустая неделя. */
 import {
-  CONFIG,
-  DAY_SHORT,
-  DAY_IN,
-  MONTH_GEN,
-  MONTH_SHORT,
-} from '../config.js';
+  SLOTS,
+  WORKDAYS_PER_WEEK,
+  HOLIDAYS,
+  HOURS_PER_PAIR,
+} from '../config/university.js';
+import { UPCOMING_WEEKS } from '../config/interface.js';
+import {
+  WEEKDAYS_SHORT,
+  WEEKDAYS_IN,
+  MONTHS_GENITIVE,
+  MONTHS_SHORT,
+  plural,
+} from '../lang/ru.js';
 import {
   toIso,
   fromIso,
@@ -14,6 +21,8 @@ import {
   weekStart,
   atTime,
   humanDate,
+  MS_PER_MINUTE,
+  MINUTES_PER_HOUR,
 } from '../dates.js';
 import {
   weekOccurrences,
@@ -23,7 +32,7 @@ import {
   countPairs,
 } from '../model.js';
 import { getState, getPref, setPref } from '../store.js';
-import { $, esc, colorClass, slotOf, plural } from './helpers.js';
+import { $, esc, colorClass, slotOf } from './helpers.js';
 import {
   iconEllipsis,
   iconXMark,
@@ -65,27 +74,27 @@ export function render() {
 }
 
 function renderHero() {
-  const n = nextPair(getState(), new Date(), CONFIG.holidays);
+  const n = nextPair(getState(), new Date(), HOLIDAYS);
   const menu = `<button class="icon-btn" id="menu" aria-label="Меню">${iconEllipsis('icon-btn__icon')}</button>`;
   if (!n) {
     $('#hero').innerHTML =
-      `<div class="hero__info"><span class="hero__label">Следующая пара</span><span class="hero__empty">В ближайшие 4 недели пар нет</span></div>${menu}`;
+      `<div class="hero__info"><span class="hero__label">Следующая пара</span><span class="hero__empty">В ближайшие ${UPCOMING_WEEKS} ${plural(UPCOMING_WEEKS, 'неделю', 'недели', 'недель')} пар нет</span></div>${menu}`;
   } else {
     const now = new Date(),
       going = n.start <= now;
     let when;
     if (going) when = `идёт сейчас, до ${slotOf(n.slot).end}`;
     else {
-      const mins = Math.round((n.start - now) / 60000),
+      const mins = Math.round((n.start - now) / MS_PER_MINUTE),
         today = toIso(now);
       if (n.date === today)
         when =
-          mins < 60
+          mins < MINUTES_PER_HOUR
             ? `сегодня, через ${mins} мин`
-            : `сегодня, через ${Math.floor(mins / 60)} ч ${mins % 60} мин`;
+            : `сегодня, через ${Math.floor(mins / MINUTES_PER_HOUR)} ч ${mins % MINUTES_PER_HOUR} мин`;
       else if (n.date === addDays(today, 1))
         when = `завтра, ${humanDate(n.date)}`;
-      else when = `${DAY_IN[weekday(n.date)]}, ${humanDate(n.date)}`;
+      else when = `${WEEKDAYS_IN[weekday(n.date)]}, ${humanDate(n.date)}`;
     }
     // аудитория — только если указана
     const room = n.room ? `, ауд. ${esc(n.room)}` : '';
@@ -99,22 +108,22 @@ function renderHero() {
 
 function renderRange() {
   const a = fromIso(ui.week),
-    b = fromIso(addDays(ui.week, 5));
+    b = fromIso(addDays(ui.week, WORKDAYS_PER_WEEK - 1));
   $('#range').textContent =
     a.getMonth() === b.getMonth()
-      ? `${a.getDate()}–${b.getDate()} ${MONTH_GEN[a.getMonth()]}`
-      : `${a.getDate()} ${MONTH_SHORT[a.getMonth()]} – ${b.getDate()} ${MONTH_SHORT[b.getMonth()]}`;
+      ? `${a.getDate()}–${b.getDate()} ${MONTHS_GENITIVE[a.getMonth()]}`
+      : `${a.getDate()} ${MONTHS_SHORT[a.getMonth()]} – ${b.getDate()} ${MONTHS_SHORT[b.getMonth()]}`;
   // пар за неделю — по тем же правилам, что часы за семестр: без отменённых и праздников
   const { total } = countPairs(
     getState(),
     ui.week,
-    addDays(ui.week, 5),
+    addDays(ui.week, WORKDAYS_PER_WEEK - 1),
     new Date(),
-    CONFIG.holidays,
+    HOLIDAYS,
   );
   const summary = $('#weekSummary');
   summary.hidden = !total;
-  summary.textContent = `${total} ${plural(total, 'пара', 'пары', 'пар')} · ${total * CONFIG.hoursPerPair} ак. ч`;
+  summary.textContent = `${total} ${plural(total, 'пара', 'пары', 'пар')} · ${total * HOURS_PER_PAIR} ак. ч`;
   // «Сегодня» видна всегда, чтобы группа кнопок не прыгала; на текущей неделе — неактивна
   $('#tod').disabled = ui.week === thisWeek();
 }
@@ -134,14 +143,14 @@ function isNowSlot(slot, now) {
 const LIVE_DOT = '<span class="card__live" aria-hidden="true"></span>';
 
 const cardLabel = (o, live) => {
-  const holiday = isHoliday(o.date, CONFIG.holidays);
+  const holiday = isHoliday(o.date, HOLIDAYS);
   return `Группа ${o.group}, ${o.subject}${holiday ? ', праздник' : o.cancelled ? ', отменена' : ''}${o.moved ? ', перенесена' : ''}${live ? ', идёт сейчас' : ''}`;
 };
 
 function cardHtml(o) {
-  const live = isOngoing(o, new Date(), CONFIG.holidays);
+  const live = isOngoing(o, new Date(), HOLIDAYS);
   // пара в праздник размыта, как отменённая, но без крестика: её не отменяли
-  const holiday = isHoliday(o.date, CONFIG.holidays);
+  const holiday = isHoliday(o.date, HOLIDAYS);
   const cancelled = o.cancelled && !holiday;
   const cls = [
     'card',
@@ -162,16 +171,16 @@ function renderGrid() {
   const now = new Date(),
     today = toIso(now);
   let h = '<div class="week-grid__corner"></div>';
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < WORKDAYS_PER_WEEK; i++) {
     const d = addDays(ui.week, i);
-    const dayMods = `${d === today ? ' week-grid__day--today' : ''}${isHoliday(d, CONFIG.holidays) ? ' week-grid__day--holiday' : ''}`;
-    h += `<div class="week-grid__day${dayMods}"><span class="week-grid__day-name">${DAY_SHORT[i]}</span><span class="week-grid__day-num">${fromIso(d).getDate()}</span></div>`;
+    const dayMods = `${d === today ? ' week-grid__day--today' : ''}${isHoliday(d, HOLIDAYS) ? ' week-grid__day--holiday' : ''}`;
+    h += `<div class="week-grid__day${dayMods}"><span class="week-grid__day-name">${WEEKDAYS_SHORT[i]}</span><span class="week-grid__day-num">${fromIso(d).getDate()}</span></div>`;
   }
-  CONFIG.slots.forEach((sl, si) => {
+  SLOTS.forEach((sl, si) => {
     const n = si + 1,
-      isLast = n === CONFIG.slots.length;
+      isLast = n === SLOTS.length;
     h += `<div class="week-grid__time${isLast ? ' week-grid__time--last' : ''}${isNowSlot(n, now) ? ' week-grid__time--now' : ''}" data-slot="${n}"><b class="week-grid__slot-num">${n}</b><span class="week-grid__slot-start">${sl.start}</span></div>`;
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < WORKDAYS_PER_WEEK; i++) {
       const d = addDays(ui.week, i);
       const here = ui.occ
         .filter((o) => o.date === d && o.slot === n)
@@ -190,7 +199,10 @@ function renderEmpty() {
     <button class="btn btn--primary empty-week__button" id="emptyAdd">${iconPlus('btn__icon')}Добавить пару</button></div>`;
   $('#emptyAdd').onclick = () => {
     const t = toIso(new Date());
-    const date = t >= ui.week && t <= addDays(ui.week, 5) ? t : ui.week;
+    const date =
+      t >= ui.week && t <= addDays(ui.week, WORKDAYS_PER_WEEK - 1)
+        ? t
+        : ui.week;
     openEditor(null, { date, slot: 1 });
   };
 }
@@ -218,7 +230,7 @@ export function refreshNow() {
   grid.querySelectorAll('.card').forEach((card) => {
     const o = ui.occ.find((x) => x.id === card.dataset.id);
     if (!o) return;
-    const live = isOngoing(o, now, CONFIG.holidays),
+    const live = isOngoing(o, now, HOLIDAYS),
       dot = card.querySelector('.card__live');
     if (live && !dot) card.insertAdjacentHTML('beforeend', LIVE_DOT);
     if (!live && dot) dot.remove();

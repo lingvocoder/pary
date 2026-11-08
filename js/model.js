@@ -3,8 +3,21 @@
    Ни одна не трогает страницу (document) и не сохраняет сама —
    поэтому модель проверяется тестами без браузера (tests/model.test.js)
    и переедет в TypeScript и React без изменений. */
-import { CONFIG, SCHEMA } from './config.js';
-import { toIso, addDays, weekday, weekStart, atTime } from './dates.js';
+import { SCHEMA } from './config/app.js';
+import {
+  SLOTS,
+  SEED_SUBJECT,
+  DEFAULT_LESSON_TYPE,
+} from './config/university.js';
+import { UPCOMING_WEEKS } from './config/interface.js';
+import {
+  toIso,
+  addDays,
+  weekday,
+  weekStart,
+  atTime,
+  DAYS_PER_WEEK,
+} from './dates.js';
 
 /**
  * Повторяющаяся пара: «каждую среду, 5-я пара».
@@ -14,7 +27,7 @@ import { toIso, addDays, weekday, weekStart, atTime } from './dates.js';
  * @property {number} course        1…4
  * @property {string} subject
  * @property {string} lessonType    'ЛР' | 'ПР' | 'ЛК'
- * @property {string} color         id из CONFIG.palette; '' — цвет курса
+ * @property {string} color         id из PALETTE; '' — цвет курса
  * @property {string} room          аудитория; '' — не указана
  * @property {number} weekday       0 = понедельник … 5 = суббота
  * @property {number} slot          номер пары, 1…9
@@ -84,13 +97,12 @@ const EDITABLE = ['group', 'course', 'subject', 'lessonType', 'color', 'room'];
 
 /** Исходное расписание на 29 октября 2026. @returns {State} */
 export function seed() {
-  const P = 'ПК первого ин. яз.';
   const rule = (id, group, course, wd, slot, from, source) => ({
     id,
     group,
     course,
-    subject: P,
-    lessonType: 'ЛР',
+    subject: SEED_SUBJECT,
+    lessonType: DEFAULT_LESSON_TYPE,
     color: '',
     room: '',
     weekday: wd,
@@ -100,7 +112,9 @@ export function seed() {
     teacher: '',
     source,
     importKey:
-      source === 'pdf' ? `${course}|${group}|${wd}|${slot}|${P}` : null,
+      source === 'pdf'
+        ? `${course}|${group}|${wd}|${slot}|${SEED_SUBJECT}`
+        : null,
   });
   return {
     schema: SCHEMA,
@@ -117,6 +131,14 @@ export function seed() {
   };
 }
 
+// Прототип 0.1 хранил данные по-другому — миграция переводит их в схему 2.
+/** Номер схемы, в которую переводит шаг миграции прототипа. Не путать с текущей SCHEMA. */
+const SCHEMA_V2 = 2;
+/** id пар, которые в прототипе 0.1 пришли из PDF факультета (остальные добавлены вручную). */
+const LEGACY_PDF_RULE_IDS = ['t1', 't2', 't4', 't5', 't6'];
+/** В прототипе вида занятия не было: все пары считались лабораторными. */
+const LEGACY_LESSON_TYPE = 'ЛР';
+
 /**
  * Приводит сохранённые данные любой версии к текущей схеме.
  * Сюда добавляется новый шаг каждый раз, когда меняется форма данных.
@@ -127,15 +149,14 @@ export function migrate(raw) {
   let s = raw;
   // v1 (прототип 0.1): tpl / ex / one, без аудитории и источника
   if (!s.schema && Array.isArray(s.tpl)) {
-    const fromPdf = ['t1', 't2', 't4', 't5', 't6'];
     s = {
-      schema: 2,
+      schema: SCHEMA_V2,
       rules: s.tpl.map((t) => ({
         id: t.id,
         group: t.group,
         course: +t.course,
         subject: t.subject,
-        lessonType: 'ЛР',
+        lessonType: LEGACY_LESSON_TYPE,
         color: t.color || '',
         room: '',
         weekday: t.weekday,
@@ -143,7 +164,7 @@ export function migrate(raw) {
         from: t.from,
         until: t.until || null,
         teacher: '',
-        source: fromPdf.includes(t.id) ? 'pdf' : 'manual',
+        source: LEGACY_PDF_RULE_IDS.includes(t.id) ? 'pdf' : 'manual',
         importKey: null,
       })),
       exceptions: s.ex || {},
@@ -154,7 +175,7 @@ export function migrate(raw) {
         group: o.group,
         course: +o.course,
         subject: o.subject,
-        lessonType: 'ЛР',
+        lessonType: LEGACY_LESSON_TYPE,
         color: o.color || '',
         room: '',
         cancelled: !!o.cancelled,
@@ -214,7 +235,7 @@ function occFromRule(r, date, e) {
  * @returns {Occurrence[]}
  */
 export function weekOccurrences(s, ws) {
-  const we = addDays(ws, 6),
+  const we = addDays(ws, DAYS_PER_WEEK - 1),
     inWeek = (d) => d >= ws && d <= we,
     out = [];
   for (const r of s.rules) {
@@ -240,13 +261,16 @@ export function weekOccurrences(s, ws) {
 /** Ближайшая неотменённая пара не в праздник, которая ещё не закончилась. */
 export function nextPair(s, now, holidays = []) {
   const today = toIso(now);
-  for (let w = 0; w < 4; w++) {
-    const list = weekOccurrences(s, addDays(weekStart(today), 7 * w))
+  for (let w = 0; w < UPCOMING_WEEKS; w++) {
+    const list = weekOccurrences(
+      s,
+      addDays(weekStart(today), DAYS_PER_WEEK * w),
+    )
       .filter((o) => !o.cancelled && !isHoliday(o.date, holidays))
       .map((o) => ({
         ...o,
-        start: atTime(o.date, CONFIG.slots[o.slot - 1].start),
-        end: atTime(o.date, CONFIG.slots[o.slot - 1].end),
+        start: atTime(o.date, SLOTS[o.slot - 1].start),
+        end: atTime(o.date, SLOTS[o.slot - 1].end),
       }))
       .filter((o) => o.end > now)
       .sort((a, b) => a.start - b.start);
@@ -257,8 +281,8 @@ export function nextPair(s, now, holidays = []) {
 
 /** Начало и конец слота в эту дату — объекты Date. */
 const slotTimes = (date, slot) => ({
-  start: atTime(date, CONFIG.slots[slot - 1].start),
-  end: atTime(date, CONFIG.slots[slot - 1].end),
+  start: atTime(date, SLOTS[slot - 1].start),
+  end: atTime(date, SLOTS[slot - 1].end),
 });
 
 /** Идёт ли пара прямо сейчас: не отменена, не в праздник и начало ≤ now < конец. */
@@ -305,7 +329,7 @@ export function countPairs(s, from, to, now, holidays = []) {
   let held = 0,
     total = 0;
   // неделя за неделей: weekOccurrences уже учитывает переносы между неделями
-  for (let ws = weekStart(from); ws <= to; ws = addDays(ws, 7)) {
+  for (let ws = weekStart(from); ws <= to; ws = addDays(ws, DAYS_PER_WEEK)) {
     for (const o of weekOccurrences(s, ws)) {
       if (o.date < from || o.date > to) continue;
       if (o.cancelled || holidays.includes(o.date)) continue;
@@ -367,7 +391,7 @@ export function phase(o, now) {
   return now < end ? 'ongoing' : 'past';
 }
 
-/** Праздник ли эта дата: список праздников приходит параметром (CONFIG.holidays). */
+/** Праздник ли эта дата: список праздников приходит параметром (HOLIDAYS). */
 export function isHoliday(date, holidays) {
   return holidays.includes(date);
 }
@@ -663,7 +687,7 @@ function addPair(s, f) {
     group: f.group,
     course: f.course,
     subject: f.subject,
-    lessonType: 'ЛР',
+    lessonType: DEFAULT_LESSON_TYPE,
     color: f.color,
     room: f.room || '',
     teacher: '',

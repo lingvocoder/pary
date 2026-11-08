@@ -1,5 +1,6 @@
 /* Меню: резервная копия, загрузка из копии, сброс. */
-import { APP_VERSION } from '../config.js';
+import { APP_VERSION, BACKUP_FILE_PREFIX } from '../config/app.js';
+import { DOWNLOAD_URL_LIFETIME_MS } from '../config/interface.js';
 import { toIso } from '../dates.js';
 import { migrate, weekOccurrences } from '../model.js';
 import { getState, dispatch, isStorageOk } from '../store.js';
@@ -43,11 +44,14 @@ export function openMenu() {
       });
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
-      link.download = `pary-${toIso(new Date())}.json`;
+      link.download = `${BACKUP_FILE_PREFIX}${toIso(new Date())}.json`;
       document.body.appendChild(link);
       link.click();
       link.remove();
-      setTimeout(() => URL.revokeObjectURL(link.href), 2000);
+      setTimeout(
+        () => URL.revokeObjectURL(link.href),
+        DOWNLOAD_URL_LIFETIME_MS,
+      );
       close();
       toast('Копия скачана', 'success');
     } else if (a === 'import') {

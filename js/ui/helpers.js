@@ -1,5 +1,12 @@
 /* Мелкие помощники интерфейса: поиск элементов, экранирование, уведомление, форматирование. */
-import { CONFIG } from '../config.js';
+import {
+  SLOTS,
+  COURSES,
+  DEFAULT_COURSE,
+  PALETTE,
+} from '../config/university.js';
+import { TOAST_DURATION_MS } from '../config/interface.js';
+import { plural } from '../lang/ru.js';
 import { iconCheckCircle, iconXCircle } from './icons.js';
 
 export const $ = (sel) => document.querySelector(sel);
@@ -14,24 +21,11 @@ export const esc = (v) =>
   );
 /** CSS-класс цвета пары: свой цвет «важной» пары (tint-red…) или цвет курса (course-1…4). */
 export const colorClass = (o) => {
-  const custom = CONFIG.palette.find((p) => p.id && p.id === o.color);
+  const custom = PALETTE.find((p) => p.id && p.id === o.color);
   if (custom) return 'tint-' + custom.tint;
-  return 'course-' + ([1, 2, 3, 4].includes(+o.course) ? +o.course : 3);
+  return 'course-' + (COURSES.includes(+o.course) ? +o.course : DEFAULT_COURSE);
 };
-export const slotOf = (n) => CONFIG.slots[n - 1];
-
-/**
- * Склонение после числа: plural(1, 'пара', 'пары', 'пар') → 'пара'.
- * 1, 21, 31… — one; 2–4, 22–24… — few; остальное и 11–14 — many.
- */
-export function plural(n, one, few, many) {
-  const last = n % 10,
-    lastTwo = n % 100;
-  if (lastTwo >= 11 && lastTwo <= 14) return many;
-  if (last === 1) return one;
-  if (last >= 2 && last <= 4) return few;
-  return many;
-}
+export const slotOf = (n) => SLOTS[n - 1];
 
 /**
  * Сколько пар в резервной копии на этой неделе: первая фраза вопроса перед заменой.
@@ -67,7 +61,7 @@ function showToast(msg, kind) {
  */
 export function toast(msg, kind) {
   showToast(msg, kind);
-  toastTimer = setTimeout(hideToast, 2600);
+  toastTimer = setTimeout(hideToast, TOAST_DURATION_MS);
 }
 
 /** Уведомление без иконки, которое не прячется само: подсказки во время переноса. */

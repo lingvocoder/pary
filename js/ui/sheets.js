@@ -1,4 +1,5 @@
 /* Шторки снизу и вопрос «только эта дата или дальше». */
+import { SHEET_CLOSE_MS } from '../config/interface.js';
 import { esc, hideToast } from './helpers.js';
 import { humanDate } from '../dates.js';
 import { addLayer, removeLayer } from './layers.js';
@@ -20,7 +21,7 @@ export function openSheet(html, label, onDismiss) {
   const close = () => {
     removeLayer(layer);
     scrim.classList.remove('sheet--open');
-    setTimeout(() => scrim.remove(), 180);
+    setTimeout(() => scrim.remove(), SHEET_CLOSE_MS);
   };
   const dismiss = onDismiss || close;
   const layer = addLayer(dismiss);

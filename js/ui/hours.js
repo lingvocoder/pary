@@ -1,9 +1,10 @@
 /* Часы за семестр: сколько пар проведено и сколько по расписанию, по группам. */
-import { CONFIG } from '../config.js';
+import { SEMESTER, HOLIDAYS, HOURS_PER_PAIR } from '../config/university.js';
+import { plural } from '../lang/ru.js';
 import { fromIso, humanDate } from '../dates.js';
 import { countPairs } from '../model.js';
 import { getState } from '../store.js';
-import { esc, colorClass, plural } from './helpers.js';
+import { esc, colorClass } from './helpers.js';
 import { iconClock } from './icons.js';
 import { openSheet } from './sheets.js';
 
@@ -11,12 +12,12 @@ const pairsWord = (n) => `${n} ${plural(n, 'пара', 'пары', 'пар')}`;
 
 /** Клетка таблицы: часы крупно, под ними — сколько это пар. */
 const amountCell = (pairs) =>
-  `<td class="hours-table__cell hours-table__cell--num"><span class="hours-table__value">${pairs * CONFIG.hoursPerPair} ч</span><span class="hours-table__count">${pairsWord(pairs)}</span></td>`;
+  `<td class="hours-table__cell hours-table__cell--num"><span class="hours-table__value">${pairs * HOURS_PER_PAIR} ч</span><span class="hours-table__count">${pairsWord(pairs)}</span></td>`;
 
 export function openHours() {
-  const { from, to } = CONFIG.semester;
-  const r = countPairs(getState(), from, to, new Date(), CONFIG.holidays);
-  const h = CONFIG.hoursPerPair;
+  const { from, to } = SEMESTER;
+  const r = countPairs(getState(), from, to, new Date(), HOLIDAYS);
+  const h = HOURS_PER_PAIR;
   const period = `${humanDate(from)} – ${humanDate(to)} ${fromIso(to).getFullYear()}`;
   // бейдж — цвет курса, а не «важный» цвет отдельной пары
   const rows = r.groups

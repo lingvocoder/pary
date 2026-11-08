@@ -1,6 +1,14 @@
 /* Касания по сетке:
    тап по паре — подсказка; удержание 280 мс — перетаскивание; тап по пустой клетке — новая пара. */
-import { CONFIG, DAY_SHORT, DAY_NAME, DAY_TO } from '../config.js';
+import { HOLIDAYS } from '../config/university.js';
+import {
+  LONG_PRESS_MS,
+  SCROLL_SLOP_PX,
+  MOUSE_SLOP_PX,
+  TOUCH_MOUSE_GAP_MS,
+  HOLD_VIBRATION_MS,
+} from '../config/interface.js';
+import { WEEKDAYS_SHORT, WEEKDAYS, WEEKDAYS_TO } from '../lang/ru.js';
 import { weekday, humanDate } from '../dates.js';
 import { can, canPlace, isPastSlot, isHoliday } from '../model.js';
 import { getState, dispatch } from '../store.js';
@@ -10,11 +18,6 @@ import { ui } from './state.js';
 import { openPopover, closePopover } from './popover.js';
 import { openEditor } from './editor.js';
 import { markHintLearned } from './week.js';
-
-const LONG_PRESS = 280; // мс удержания до начала переноса
-const SLOP = 10; // px: если палец сдвинулся раньше — это прокрутка, а не перенос
-const MOUSE_SLOP = 6; // px: сдвиг мыши, после которого начинается перенос
-const TOUCH_MOUSE_GAP = 800; // мс: мышиные события сразу после касания игнорируются
 
 // классы, которые читает и переключает перенос
 const CELL = '.week-grid__cell';
@@ -49,7 +52,7 @@ function startDrag(card, x, y) {
   closePopover();
   markHintLearned('hold');
   // начавшуюся, прошедшую или отменённую пару не переносим: только тост, без вибрации
-  const allowed = can('move', o, new Date(), getState(), CONFIG.holidays);
+  const allowed = can('move', o, new Date(), getState(), HOLIDAYS);
   if (!allowed.ok) {
     toast(allowed.reason, 'error');
     return;
@@ -64,18 +67,18 @@ function startDrag(card, x, y) {
   document.querySelectorAll(CELL).forEach((c) => {
     if (
       isPastSlot(c.dataset.date, +c.dataset.slot, now) ||
-      isHoliday(c.dataset.date, CONFIG.holidays)
+      isHoliday(c.dataset.date, HOLIDAYS)
     )
       c.classList.add(CELL_PAST);
   });
   drag = { card, o, ghost: g, target: null };
   moveDrag(x, y);
-  if (navigator.vibrate) navigator.vibrate(12);
+  if (navigator.vibrate) navigator.vibrate(HOLD_VIBRATION_MS);
 }
 
 /** Можно ли перенести пару o в клетку: спрашиваем модель с текущим временем. */
 const placeCheck = (date, slot, o) =>
-  canPlace('move', date, slot, new Date(), getState(), CONFIG.holidays, o.id);
+  canPlace('move', date, slot, new Date(), getState(), HOLIDAYS, o.id);
 
 function moveDrag(x, y) {
   drag.ghost.style.left = x + 'px';
@@ -103,7 +106,7 @@ function moveDrag(x, y) {
     return;
   }
   stickyToast(
-    `Отпусти, чтобы перенести ${DAY_TO[weekday(date)]}, ${slotOf(slot).start}`,
+    `Отпусти, чтобы перенести ${WEEKDAYS_TO[weekday(date)]}, ${slotOf(slot).start}`,
   );
 }
 
@@ -131,15 +134,15 @@ async function endDrag() {
     o.type === 'rule' && getState().rules.find((r) => r.id === o.ruleId);
   const scope = await askScope(
     o,
-    `Перенести ${DAY_TO[weekday(date)]}, ${slotOf(slot).start}?`,
+    `Перенести ${WEEKDAYS_TO[weekday(date)]}, ${slotOf(slot).start}?`,
     rule
-      ? `Группа ${o.group}, обычно ${DAY_NAME[rule.weekday]}, ${slotOf(rule.slot).start}`
+      ? `Группа ${o.group}, обычно ${WEEKDAYS[rule.weekday]}, ${slotOf(rule.slot).start}`
       : `Группа ${o.group}`,
   );
   if (!scope) return;
   dispatch({ type: 'edit', occ: o, changes: { date, slot }, scope });
   toast(
-    `Перенесено: ${DAY_SHORT[weekday(date)]} ${humanDate(date)}, ${slotOf(slot).start}`,
+    `Перенесено: ${WEEKDAYS_SHORT[weekday(date)]} ${humanDate(date)}, ${slotOf(slot).start}`,
     'success',
   );
 }
@@ -163,7 +166,7 @@ export function initGestures(week) {
             press = null;
             startDrag(p.card, p.x, p.y);
           }
-        }, LONG_PRESS),
+        }, LONG_PRESS_MS),
       };
     },
     { passive: true },
@@ -180,7 +183,9 @@ export function initGestures(week) {
       } // во время переноса страница не прокручивается
       if (press) {
         const t = e.touches[0];
-        if (Math.hypot(t.clientX - press.x, t.clientY - press.y) > SLOP)
+        if (
+          Math.hypot(t.clientX - press.x, t.clientY - press.y) > SCROLL_SLOP_PX
+        )
           cancelPress();
       }
     },
@@ -217,7 +222,7 @@ export function initGestures(week) {
 
   // мышь — чтобы проверять на компьютере
   week.addEventListener('mousedown', (e) => {
-    if (Date.now() - lastTouch < TOUCH_MOUSE_GAP || e.button !== 0) return;
+    if (Date.now() - lastTouch < TOUCH_MOUSE_GAP_MS || e.button !== 0) return;
     const card = e.target.closest('.card');
     if (!card) return;
     press = {
@@ -231,11 +236,11 @@ export function initGestures(week) {
           press = null;
           startDrag(p.card, p.x, p.y);
         }
-      }, LONG_PRESS),
+      }, LONG_PRESS_MS),
     };
   });
   document.addEventListener('mousemove', (e) => {
-    if (Date.now() - lastTouch < TOUCH_MOUSE_GAP) return;
+    if (Date.now() - lastTouch < TOUCH_MOUSE_GAP_MS) return;
     if (drag) {
       moveDrag(e.clientX, e.clientY);
       return;
@@ -243,7 +248,7 @@ export function initGestures(week) {
     if (
       press &&
       press.mouse &&
-      Math.hypot(e.clientX - press.x, e.clientY - press.y) > MOUSE_SLOP
+      Math.hypot(e.clientX - press.x, e.clientY - press.y) > MOUSE_SLOP_PX
     ) {
       const p = press;
       cancelPress();
@@ -251,7 +256,7 @@ export function initGestures(week) {
     }
   });
   document.addEventListener('mouseup', () => {
-    if (Date.now() - lastTouch < TOUCH_MOUSE_GAP) return;
+    if (Date.now() - lastTouch < TOUCH_MOUSE_GAP_MS) return;
     if (drag) {
       endDrag();
       return;
@@ -275,7 +280,7 @@ export function initGestures(week) {
       slot,
       new Date(),
       getState(),
-      CONFIG.holidays,
+      HOLIDAYS,
     );
     if (!place.ok) {
       toast(place.reason, 'error');

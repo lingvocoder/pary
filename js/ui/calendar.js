@@ -1,5 +1,5 @@
 /* Ссылка «Добавить в Google Календарь» для одного занятия. */
-import { CONFIG } from '../config.js';
+import { TIMEZONE } from '../config/university.js';
 import { slotOf } from './helpers.js';
 import { getState } from '../store.js';
 
@@ -10,7 +10,7 @@ export function gcalUrl(o) {
     action: 'TEMPLATE',
     text: `Гр. ${o.group}, ${o.subject}`,
     dates: `${d}T${sl.start.replace(':', '')}00/${d}T${sl.end.replace(':', '')}00`,
-    ctz: CONFIG.timezone,
+    ctz: TIMEZONE,
     details: `${o.course} курс, ${o.slot}-я пара`,
   });
   if (o.room) p.set('location', `ауд. ${o.room}`);

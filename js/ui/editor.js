@@ -1,6 +1,14 @@
 /* Редактор пары: новая или существующая. */
-import { CONFIG, DAY_NAME, DAY_IN } from '../config.js';
-import { weekday, humanDate } from '../dates.js';
+import {
+  SLOTS,
+  COURSES,
+  DEFAULT_COURSE,
+  SUBJECTS,
+  PALETTE,
+  HOLIDAYS,
+} from '../config/university.js';
+import { WEEKDAYS, WEEKDAYS_IN } from '../lang/ru.js';
+import { weekday, humanDate, SUNDAY } from '../dates.js';
 import {
   can,
   canPlace,
@@ -28,7 +36,7 @@ const REPEAT_PAST_TEXT = 'Задним числом — только разов�
  */
 async function askDeleteScope(o) {
   if (o.type !== 'once') return askScope(o, `Удалить группу ${o.group}?`);
-  const when = `${DAY_NAME[weekday(o.date)]}, ${humanDate(o.date)}, ${slotOf(o.slot).start}`;
+  const when = `${WEEKDAYS[weekday(o.date)]}, ${humanDate(o.date)}, ${slotOf(o.slot).start}`;
   const confirmed = await askConfirm(
     'Удалить пару?',
     `Группа ${o.group}, ${when}. Разовая — вернуть не получится.`,
@@ -44,7 +52,7 @@ async function askDeleteScope(o) {
 export function openEditor(o, preset) {
   const state = getState();
   const isNew = !o;
-  const holidays = CONFIG.holidays;
+  const holidays = HOLIDAYS;
   // начавшуюся и прошедшую пару не редактируем: это факт
   if (!isNew) {
     const r = can('edit', o, new Date(), state, holidays);
@@ -56,8 +64,8 @@ export function openEditor(o, preset) {
   const v = isNew
     ? {
         group: '',
-        course: 3,
-        subject: CONFIG.subjects[0],
+        course: DEFAULT_COURSE,
+        subject: SUBJECTS[0],
         room: '',
         color: '',
         date: preset.date,
@@ -73,16 +81,14 @@ export function openEditor(o, preset) {
   if (rule) {
     info = `Повторяется каждую неделю. ${rule.source === 'pdf' ? 'Из PDF факультета.' : 'Добавлена вручную.'}`;
     if (o.moved)
-      info += ` На этой неделе перенесена, обычно ${DAY_NAME[rule.weekday]}, ${slotOf(rule.slot).start}.`;
+      info += ` На этой неделе перенесена, обычно ${WEEKDAYS[rule.weekday]}, ${slotOf(rule.slot).start}.`;
   } else if (!isNew) info = 'Разовая пара.';
-  const slots = CONFIG.slots
-    .map(
-      (s, i) =>
-        `<option value="${i + 1}"${v.slot === i + 1 ? ' selected' : ''}>${i + 1}-я, ${s.start}</option>`,
-    )
-    .join('');
+  const slots = SLOTS.map(
+    (s, i) =>
+      `<option value="${i + 1}"${v.slot === i + 1 ? ' selected' : ''}>${i + 1}-я, ${s.start}</option>`,
+  ).join('');
   // предметы: из настроек, затем из данных; текущий — если его нет в списке; последним — «Другой…»
-  const subjects = knownSubjects(state, CONFIG.subjects);
+  const subjects = knownSubjects(state, SUBJECTS);
   if (v.subject && !subjects.includes(v.subject)) subjects.push(v.subject);
   const subjectOptions =
     subjects
@@ -108,7 +114,7 @@ export function openEditor(o, preset) {
     </div>
     <div class="form-row">
       <div class="field"><label class="field__label" for="eg">Группа</label><input class="field__input" type="text" id="eg" inputmode="numeric" autocomplete="off" value="${esc(v.group)}" placeholder="326"></div>
-      <div class="field"><span class="field__label">Курс</span><div class="course-picker" id="ec">${[1, 2, 3, 4].map((c) => `<button class="course-picker__button" data-c="${c}" aria-pressed="${+v.course === c}">${c}</button>`).join('')}</div></div>
+      <div class="field"><span class="field__label">Курс</span><div class="course-picker" id="ec">${COURSES.map((c) => `<button class="course-picker__button" data-c="${c}" aria-pressed="${+v.course === c}">${c}</button>`).join('')}</div></div>
     </div>
     <div class="form-row">
       <div class="field"><label class="field__label" for="es">Предмет</label>${select('es', subjectOptions)}</div>
@@ -119,7 +125,7 @@ export function openEditor(o, preset) {
       <div class="field"><label class="field__label" for="ed">Дата</label>${picker(`<input class="field__input" type="date" id="ed" value="${v.date}">`)}</div>
       <div class="field"><label class="field__label" for="ep">Пара</label>${select('ep', slots)}</div>
     </div>
-    <div class="field"><span class="field__label">Цвет</span><div class="color-picker" id="ecol">${CONFIG.palette.map((p) => `<button class="color-picker__swatch ${p.tint ? 'tint-' + p.tint : 'color-picker__swatch--default'}" data-col="${p.id}" aria-label="${p.name}" aria-pressed="${(v.color || '') === p.id}"></button>`).join('')}</div></div>
+    <div class="field"><span class="field__label">Цвет</span><div class="color-picker" id="ecol">${PALETTE.map((p) => `<button class="color-picker__swatch ${p.tint ? 'tint-' + p.tint : 'color-picker__swatch--default'}" data-col="${p.id}" aria-label="${p.name}" aria-pressed="${(v.color || '') === p.id}"></button>`).join('')}</div></div>
     ${
       isNew
         ? switchRow('Каждую неделю', REPEAT_TEXT, 'erep', true)
@@ -261,7 +267,7 @@ export function openEditor(o, preset) {
       toast('Выбери дату', 'error');
       return;
     }
-    if (weekday(f.date) === 6) {
+    if (weekday(f.date) === SUNDAY) {
       toast('В воскресенье пар нет, выбери другой день', 'error');
       return;
     }
@@ -272,7 +278,7 @@ export function openEditor(o, preset) {
       dispatch({ type: 'add', pair: f });
       toast(
         f.repeat
-          ? `Добавлено: ${DAY_IN[weekday(f.date)]}, ${slotOf(f.slot).start}, каждую неделю`
+          ? `Добавлено: ${WEEKDAYS_IN[weekday(f.date)]}, ${slotOf(f.slot).start}, каждую неделю`
           : `Добавлено: ${humanDate(f.date)}, ${slotOf(f.slot).start}`,
         'success',
       );

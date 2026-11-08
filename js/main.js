@@ -1,5 +1,6 @@
 /* Точка входа: связывает хранилище, отрисовку и обработчики. */
-import { addDays } from './dates.js';
+import { CLOCK_REFRESH_MS } from './config/interface.js';
+import { addDays, DAYS_PER_WEEK } from './dates.js';
 import { subscribe, onSaveError } from './store.js';
 import { $, toast } from './ui/helpers.js';
 import { ui, thisWeek } from './ui/state.js';
@@ -18,11 +19,11 @@ initLayers();
 initBackupInput();
 
 $('#prev').onclick = () => {
-  ui.week = addDays(ui.week, -7);
+  ui.week = addDays(ui.week, -DAYS_PER_WEEK);
   render();
 };
 $('#next').onclick = () => {
-  ui.week = addDays(ui.week, 7);
+  ui.week = addDays(ui.week, DAYS_PER_WEEK);
   render();
 };
 $('#tod').onclick = () => {
@@ -35,7 +36,7 @@ document.addEventListener('touchstart', () => {}, { passive: true });
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden) refreshNow();
 });
-setInterval(refreshNow, 30000); // «через 1 ч 10 мин», текущая пара и точки обновляются сами
+setInterval(refreshNow, CLOCK_REFRESH_MS); // «через 1 ч 10 мин», текущая пара и точки обновляются сами
 
 render();
 

@@ -18,7 +18,7 @@ Object.defineProperty(globalThis, 'localStorage', {
 });
 
 const { getPref, setPref, getState } = await import('../js/store.js');
-const { PREFS_KEY, STORAGE_KEY } = await import('../js/config.js');
+const { PREFS_KEY, STORAGE_KEY } = await import('../js/config/app.js');
 
 beforeEach(() => memory.clear());
 

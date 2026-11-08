@@ -1,6 +1,6 @@
 /* Хранилище. Состояние живёт в одной переменной и меняется только через dispatch.
    Кто хочет знать об изменениях — подписывается через subscribe (так же устроен React). */
-import { STORAGE_KEY, LEGACY_KEY, PREFS_KEY } from './config.js';
+import { STORAGE_KEY, LEGACY_STORAGE_KEY, PREFS_KEY } from './config/app.js';
 import { seed, migrate, reduce } from './model.js';
 
 let storageOk = true;
@@ -8,7 +8,7 @@ const listeners = new Set();
 let saveErrorHandler = () => {};
 
 function loadState() {
-  for (const key of [STORAGE_KEY, LEGACY_KEY]) {
+  for (const key of [STORAGE_KEY, LEGACY_STORAGE_KEY]) {
     try {
       const raw = localStorage.getItem(key);
       if (raw) return migrate(JSON.parse(raw));

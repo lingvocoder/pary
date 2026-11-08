@@ -1,5 +1,11 @@
 /* Подсказка по тапу на пару: подробности, аудитория, быстрые действия. */
-import { CONFIG, DAY_NAME, DAY_SHORT } from '../config.js';
+import { HOLIDAYS } from '../config/university.js';
+import {
+  POPOVER_GAP_PX,
+  SCREEN_EDGE_PX,
+  SCREEN_TOP_BOTTOM_GAP_PX,
+} from '../config/interface.js';
+import { WEEKDAYS_SHORT, WEEKDAYS } from '../lang/ru.js';
 import { weekday, humanDate } from '../dates.js';
 import { findAt, can, phase, isHoliday } from '../model.js';
 import { getState, dispatch } from '../store.js';
@@ -14,7 +20,7 @@ let pop = null;
 /** «Перенесена, обычно — вт, 27 октября, 08:00»: исходные день, дата и время пары по правилу. */
 function movedFrom(o) {
   const rule = getState().rules.find((r) => r.id === o.ruleId);
-  const day = DAY_SHORT[weekday(o.orig)].toLowerCase();
+  const day = WEEKDAYS_SHORT[weekday(o.orig)].toLowerCase();
   return `Перенесена, обычно — ${day}, ${humanDate(o.orig)}, ${slotOf(rule.slot).start}`;
 }
 
@@ -91,13 +97,13 @@ export function openPopover(o, card) {
   el.className = 'popover';
   el.setAttribute('role', 'dialog');
   el.setAttribute('aria-label', `Группа ${o.group}`);
-  const day = DAY_NAME[weekday(o.date)].replace(/^./, (c) => c.toUpperCase());
+  const day = WEEKDAYS[weekday(o.date)].replace(/^./, (c) => c.toUpperCase());
   const now = new Date(),
     ph = phase(o, now),
-    holiday = isHoliday(o.date, CONFIG.holidays);
+    holiday = isHoliday(o.date, HOLIDAYS);
   // спрашиваем модель с тем временем, которое сейчас
-  const check = (op) => can(op, o, new Date(), getState(), CONFIG.holidays);
-  const allow = (op) => can(op, o, now, getState(), CONFIG.holidays).ok;
+  const check = (op) => can(op, o, new Date(), getState(), HOLIDAYS);
+  const allow = (op) => can(op, o, now, getState(), HOLIDAYS).ok;
   el.innerHTML = `<div class="popover__head"><span class="chip popover__chip ${colorClass(o)}">${esc(o.group)}</span><span class="popover__meta">${o.course} курс · ${esc(o.lessonType)}</span></div>
     <div class="popover__details">
       <div class="popover__date">${day}, ${humanDate(o.date)}</div>
@@ -221,16 +227,19 @@ export function openPopover(o, card) {
   const r = card.getBoundingClientRect(),
     w = el.offsetWidth,
     hgt = el.offsetHeight,
-    gap = 8,
-    edge = 16;
+    gap = POPOVER_GAP_PX,
+    edge = SCREEN_EDGE_PX;
   const left = Math.min(
     Math.max(edge, r.left + r.width / 2 - w / 2),
     window.innerWidth - w - edge,
   );
-  const below = r.bottom + gap + hgt <= window.innerHeight - 8;
+  const below =
+    r.bottom + gap + hgt <= window.innerHeight - SCREEN_TOP_BOTTOM_GAP_PX;
   el.style.left = left + 'px';
   el.style.top =
-    (below ? r.bottom + gap : Math.max(8, r.top - gap - hgt)) + 'px';
+    (below
+      ? r.bottom + gap
+      : Math.max(SCREEN_TOP_BOTTOM_GAP_PX, r.top - gap - hgt)) + 'px';
 }
 
 /**
