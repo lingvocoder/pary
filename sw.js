@@ -25,6 +25,7 @@ const FILES = [
   './js/store.js',
   './js/ui/helpers.js',
   './js/ui/hours.js',
+  './js/ui/geometry.js',
   './js/ui/icons.js',
   './js/ui/layers.js',
   './js/ui/state.js',

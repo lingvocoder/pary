@@ -1,10 +1,5 @@
 /* Подсказка по тапу на пару: подробности, аудитория, быстрые действия. */
 import { HOLIDAYS } from '../config/university.js';
-import {
-  POPOVER_GAP_PX,
-  SCREEN_EDGE_PX,
-  SCREEN_TOP_BOTTOM_GAP_PX,
-} from '../config/interface.js';
 import { calendarLink } from '../domain/calendar-link.js';
 import {
   formatLongDate,
@@ -30,6 +25,7 @@ import { esc, toast, colorClass } from './helpers.js';
 import { iconCalendar, iconMapPin } from './icons.js';
 import { openEditor } from './editor.js';
 import { addLayer, removeLayer } from './layers.js';
+import { placePopover } from './geometry.js';
 
 let pop = null;
 
@@ -237,24 +233,14 @@ export function openPopover(o, card) {
     { passive: false },
   );
 
-  // положение: под карточкой, а если не помещается — над ней;
-  // от краёв экрана — те же 16 px, что поля страницы
-  const r = card.getBoundingClientRect(),
-    w = el.offsetWidth,
-    hgt = el.offsetHeight,
-    gap = POPOVER_GAP_PX,
-    edge = SCREEN_EDGE_PX;
-  const left = Math.min(
-    Math.max(edge, r.left + r.width / 2 - w / 2),
-    window.innerWidth - w - edge,
+  // под карточкой, а если не помещается — над ней: расчёт в geometry.js
+  const { left, top } = placePopover(
+    card.getBoundingClientRect(),
+    { width: el.offsetWidth, height: el.offsetHeight },
+    { width: window.innerWidth, height: window.innerHeight },
   );
-  const below =
-    r.bottom + gap + hgt <= window.innerHeight - SCREEN_TOP_BOTTOM_GAP_PX;
   el.style.left = left + 'px';
-  el.style.top =
-    (below
-      ? r.bottom + gap
-      : Math.max(SCREEN_TOP_BOTTOM_GAP_PX, r.top - gap - hgt)) + 'px';
+  el.style.top = top + 'px';
 }
 
 /**
