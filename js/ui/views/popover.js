@@ -21,29 +21,29 @@ function actionsView(actions) {
   const buttons = [];
   if (actions.edit)
     buttons.push(
-      '<button class="btn btn--primary popover__action" id="pEdit">Изменить</button>',
+      '<button class="btn btn--primary popover__action" id="popover-edit">Изменить</button>',
     );
   if (actions.cancel)
     buttons.push(
-      '<button class="btn btn--danger-outline popover__action" id="pCancel">Отменить</button>',
+      '<button class="btn btn--danger-outline popover__action" id="popover-cancel">Отменить</button>',
     );
   // «Вернуть» ничего не разрушает — обычная вторичная кнопка, без красного
   if (actions.restore)
     buttons.push(
-      '<button class="btn btn--secondary popover__action" id="pRestore">Вернуть</button>',
+      '<button class="btn btn--secondary popover__action" id="popover-restore">Вернуть</button>',
     );
   // факт: у начавшегося и прошедшего занятия — только отметка, состоялось ли оно
   if (actions.notHeld)
     buttons.push(
-      '<button class="btn btn--danger-outline popover__action" id="pNotHeld">Не состоялась</button>',
+      '<button class="btn btn--danger-outline popover__action" id="popover-not-held">Не состоялась</button>',
     );
   if (actions.held)
     buttons.push(
-      '<button class="btn btn--secondary popover__action" id="pHeld">Состоялась</button>',
+      '<button class="btn btn--secondary popover__action" id="popover-held">Состоялась</button>',
     );
   if (actions.calendar)
     buttons.push(
-      `<button class="btn btn--secondary popover__icon-action" id="pCal" aria-label="В календарь">${iconCalendar('btn__icon')}</button>`,
+      `<button class="btn btn--secondary popover__icon-action" id="popover-calendar" aria-label="В календарь">${iconCalendar('btn__icon')}</button>`,
     );
   return buttons.length
     ? `<div class="popover__actions">${buttons.join('')}</div>`
@@ -72,7 +72,7 @@ export function popoverView(popover) {
       <div class="popover__subject">${esc(popover.subject)}</div>
       ${flagView(popover.flag)}${movedView(popover.movedFrom)}
     </div>
-    <div class="popover__room" id="pRoom"></div>
+    <div class="popover__room" id="popover-room"></div>
     ${actionsView(popover.actions)}`;
 }
 

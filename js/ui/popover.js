@@ -1,4 +1,4 @@
-/* Подсказка по тапу на пару: подробности, аудитория, быстрые действия. */
+/* Подсказка по тапу на занятие: подробности, аудитория, быстрые действия. */
 import { HOLIDAYS } from '../config/university.js';
 import { calendarLink } from '../domain/calendar-link.js';
 import {
@@ -13,13 +13,8 @@ import {
   formatCancelledToast,
   formatNotHeldToast,
 } from '../domain/texts.js';
-import {
-  lessonPhase,
-  isHoliday,
-  findLessonAt,
-  findRule,
-} from '../domain/lessons.js';
-import { OPERATION, can, lessonState } from '../domain/rules.js';
+import { lessonPhase, findLessonAt, findRule } from '../domain/lessons.js';
+import { OPERATION, can, lessonState, isApplicable } from '../domain/rules.js';
 import { ACTION, roomChangeScope } from '../domain/changes.js';
 import { getState, dispatch } from '../store/store.js';
 import { toast, TOAST_KIND } from './toast.js';
@@ -29,198 +24,220 @@ import { addLayer, removeLayer } from './layers.js';
 import { placePopover } from './geometry.js';
 import { popoverView, roomView, roomInputView } from './views/popover.js';
 
-let pop = null;
+/** Открытая подсказка: её элементы, занятие и фаза на момент открытия. */
+let openedPopover = null;
 
-/** «Перенесена, обычно — вт, 27 октября, 08:00»: исходные день, дата и время пары по правилу. */
-function movedFrom(o) {
-  const rule = findRule(getState(), o.ruleId);
-  return formatMovedFrom(o, rule);
-}
+/** Кнопки отметки: операция, что записать в cancelled и какой тост показать.
+    «Не состоялась» — тот же флаг cancelled, что у отмены: часы такое занятие не считают. */
+const CANCELLED_TOGGLES = [
+  {
+    buttonId: 'popover-cancel',
+    operation: OPERATION.CANCEL,
+    isCancelled: true,
+    toastText: formatCancelledToast,
+  },
+  {
+    buttonId: 'popover-restore',
+    operation: OPERATION.RESTORE,
+    isCancelled: false,
+    toastText: () => 'Пара возвращена',
+  },
+  {
+    buttonId: 'popover-not-held',
+    operation: OPERATION.NOT_HELD,
+    isCancelled: true,
+    toastText: formatNotHeldToast,
+  },
+  {
+    buttonId: 'popover-held',
+    operation: OPERATION.HELD,
+    isCancelled: false,
+    toastText: () => 'Отмечено: состоялась',
+  },
+];
 
-export function closePopover() {
-  if (!pop) return;
-  removeLayer(pop.layer);
-  pop.catcher.remove();
-  pop.el.remove();
-  document
-    .querySelectorAll('.card--selected')
-    .forEach((c) => c.classList.remove('card--selected'));
-  pop = null;
-}
+/** Спросить модель: можно ли сделать операцию с занятием в момент now. */
+const askRules = (operation, lesson, now) =>
+  can({ operation, lesson, now, state: getState(), holidays: HOLIDAYS });
 
-export function openPopover(o, card) {
-  closePopover();
-  const catcher = document.createElement('div');
-  catcher.className = 'popover-catcher'; // ловит тап мимо подсказки
-  const el = document.createElement('section');
-  el.className = 'popover';
-  el.setAttribute('role', 'dialog');
-  el.setAttribute('aria-label', formatGroupTitle(o.group));
-  const now = new Date(),
-    ph = lessonPhase(o, now),
-    holiday = isHoliday(o.date, HOLIDAYS);
-  // спрашиваем модель с тем временем, которое сейчас
-  const check = (op) =>
-    can({
-      operation: op,
-      lesson: o,
-      now: new Date(),
-      state: getState(),
-      holidays: HOLIDAYS,
-    });
-  const allow = (op) =>
-    can({
-      operation: op,
-      lesson: o,
-      now: now,
-      state: getState(),
-      holidays: HOLIDAYS,
-    }).ok;
-  el.innerHTML = popoverView({
-    group: o.group,
-    colorClass: lessonColorClass(o),
-    meta: formatCourseAndType(o),
-    date: formatLongDate(o.date),
-    time: formatTimeRange(o.slot),
-    subject: o.subject,
-    flag: formatLessonFlag(lessonState(o, now, HOLIDAYS), o),
-    movedFrom: o.moved ? movedFrom(o) : '',
+/** Данные подсказки: тексты, флаг и какие кнопки показать. */
+function popoverModel(lesson, now) {
+  const currentState = lessonState(lesson, now, HOLIDAYS);
+  const isAllowed = (operation) => askRules(operation, lesson, now).ok;
+  const rule = findRule(getState(), lesson.ruleId);
+  return {
+    group: lesson.group,
+    colorClass: lessonColorClass(lesson),
+    meta: formatCourseAndType(lesson),
+    date: formatLongDate(lesson.date),
+    time: formatTimeRange(lesson.slot),
+    subject: lesson.subject,
+    flag: formatLessonFlag(currentState, lesson),
+    movedFrom: lesson.moved ? formatMovedFrom(lesson, rule) : '',
     actions: {
-      edit: allow(OPERATION.EDIT),
-      cancel: allow(OPERATION.CANCEL),
-      // «Вернуть» видна у любой будущей отменённой пары: если слот занят,
-      // по нажатию модель ответит почему
-      restore: o.cancelled && ph === 'future' && !holiday,
-      notHeld: allow(OPERATION.NOT_HELD),
-      held: allow(OPERATION.HELD),
-      calendar: allow(OPERATION.CALENDAR),
+      edit: isAllowed(OPERATION.EDIT),
+      cancel: isAllowed(OPERATION.CANCEL),
+      // «Вернуть» видна и при занятом слоте: почему нельзя, скажет can() по нажатию
+      restore: isApplicable(OPERATION.RESTORE, currentState),
+      notHeld: isAllowed(OPERATION.NOT_HELD),
+      held: isAllowed(OPERATION.HELD),
+      calendar: isAllowed(OPERATION.CALENDAR),
     },
-  });
-  document.body.append(catcher, el);
-  card.classList.add('card--selected');
-  pop = { el, catcher, o, phase: ph, layer: addLayer(closePopover) };
-
-  /** Перед действием — проверка заново: пара могла начаться, пока подсказка открыта. */
-  const guard = (op) => {
-    const r = check(op);
-    if (r.ok) return true;
-    closePopover();
-    toast(r.reason, TOAST_KIND.ERROR);
-    return false;
   };
-  const onClick = (id, handler) => {
-    const b = el.querySelector('#' + id);
-    if (b) b.onclick = handler;
-  };
+}
 
-  // строка аудитории: показ ↔ ввод
-  const roomRow = el.querySelector('#pRoom');
-  // у прошедшей пары аудитория — только текст, без «Указать»
+/** Перед действием — проверка заново: занятие могло начаться, пока подсказка открыта. */
+function isStillAllowed(operation, lesson) {
+  const answer = askRules(operation, lesson, new Date());
+  if (answer.ok) return true;
+  closePopover();
+  toast(answer.reason, TOAST_KIND.ERROR);
+  return false;
+}
+
+/** Ссылка в строке аудитории: «Указать» / «Изменить»; у прошедшего занятия — никакой. */
+function roomLinkText(lesson, now) {
+  if (!askRules(OPERATION.ROOM, lesson, now).ok) return null;
+  return lesson.room ? 'Изменить' : 'Указать';
+}
+
+/** После правки аудитории — та же подсказка у обновлённой карточки. */
+function reopenAt(date, slot) {
+  const lesson = findLessonAt(getState(), date, slot);
+  const card =
+    lesson &&
+    document.querySelector(`.card[data-id="${CSS.escape(lesson.id)}"]`);
+  if (card) openPopover(lesson, card);
+}
+
+/** Строка аудитории: показ ↔ ввод. */
+function setupRoomRow(roomRow, lesson, now) {
   const showRoom = () => {
     roomRow.innerHTML = roomView({
-      label: formatRoomLabel(o.room),
-      linkText: allow(OPERATION.ROOM)
-        ? o.room
-          ? 'Изменить'
-          : 'Указать'
-        : null,
+      label: formatRoomLabel(lesson.room),
+      linkText: roomLinkText(lesson, now),
     });
-    const b = roomRow.querySelector('button');
-    if (b) b.onclick = editRoom;
+    const link = roomRow.querySelector('button');
+    if (link) link.onclick = editRoom;
+  };
+  const saveRoom = (input) => {
+    const room = input.value.trim();
+    if (room === lesson.room) {
+      showRoom();
+      return;
+    }
+    if (!isStillAllowed(OPERATION.ROOM, lesson)) return;
+    const scope = roomChangeScope(lesson);
+    dispatch({ type: ACTION.EDIT, lesson, changes: { room }, scope });
+    toast(formatRoomSaved(room, lesson, scope), TOAST_KIND.SUCCESS);
+    reopenAt(lesson.date, lesson.slot);
   };
   const editRoom = () => {
-    roomRow.innerHTML = roomInputView(o.room);
+    roomRow.innerHTML = roomInputView(lesson.room);
     const input = roomRow.querySelector('input');
-    const done = () => {
-      const room = input.value.trim();
-      if (room === o.room) {
-        showRoom();
-        return;
-      }
-      if (!guard(OPERATION.ROOM)) return;
-      const scope = roomChangeScope(o);
-      dispatch({ type: ACTION.EDIT, lesson: o, changes: { room }, scope });
-      toast(formatRoomSaved(room, o, scope), TOAST_KIND.SUCCESS);
-      const again = findLessonAt(getState(), o.date, o.slot),
-        c =
-          again &&
-          document.querySelector(`.card[data-id="${CSS.escape(again.id)}"]`);
-      if (c) openPopover(again, c);
-    };
-    roomRow.querySelector('button').onclick = done;
-    input.onkeydown = (e) => {
-      if (e.key === 'Enter') done();
+    roomRow.querySelector('button').onclick = () => saveRoom(input);
+    input.onkeydown = (event) => {
+      if (event.key === 'Enter') saveRoom(input);
     };
     input.focus();
   };
   showRoom();
+}
 
-  onClick('pEdit', () => {
+/** Кнопки действий: «Изменить», отметки, «В календарь». */
+function setupActions(popoverElement, lesson) {
+  const onButton = (buttonId, handler) => {
+    const button = popoverElement.querySelector('#' + buttonId);
+    if (button) button.onclick = handler;
+  };
+  onButton('popover-edit', () => {
     closePopover();
-    openEditor(o);
+    openEditor(lesson);
   });
-  onClick('pCancel', () => {
-    if (!guard(OPERATION.CANCEL)) return;
-    closePopover();
-    dispatch({ type: ACTION.SET_CANCELLED, lesson: o, isCancelled: true });
-    toast(formatCancelledToast(o), TOAST_KIND.SUCCESS);
+  for (const toggle of CANCELLED_TOGGLES)
+    onButton(toggle.buttonId, () => {
+      if (!isStillAllowed(toggle.operation, lesson)) return;
+      closePopover();
+      const isCancelled = toggle.isCancelled;
+      dispatch({ type: ACTION.SET_CANCELLED, lesson, isCancelled });
+      toast(toggle.toastText(lesson), TOAST_KIND.SUCCESS);
+    });
+  onButton('popover-calendar', () => {
+    if (!isStillAllowed(OPERATION.CALENDAR, lesson)) return;
+    const rule = findRule(getState(), lesson.ruleId);
+    window.open(calendarLink(lesson, rule), '_blank', 'noopener');
   });
-  onClick('pRestore', () => {
-    if (!guard(OPERATION.RESTORE)) return;
-    closePopover();
-    dispatch({ type: ACTION.SET_CANCELLED, lesson: o, isCancelled: false });
-    toast('Пара возвращена', TOAST_KIND.SUCCESS);
-  });
-  // тот же флаг cancelled, что у отмены: часы такую пару уже не считают
-  onClick('pNotHeld', () => {
-    if (!guard(OPERATION.NOT_HELD)) return;
-    closePopover();
-    dispatch({ type: ACTION.SET_CANCELLED, lesson: o, isCancelled: true });
-    toast(formatNotHeldToast(o), TOAST_KIND.SUCCESS);
-  });
-  onClick('pHeld', () => {
-    if (!guard(OPERATION.HELD)) return;
-    closePopover();
-    dispatch({ type: ACTION.SET_CANCELLED, lesson: o, isCancelled: false });
-    toast('Отмечено: состоялась', TOAST_KIND.SUCCESS);
-  });
-  onClick('pCal', () => {
-    if (!guard(OPERATION.CALENDAR)) return;
-    window.open(
-      calendarLink(o, findRule(getState(), o.ruleId)),
-      '_blank',
-      'noopener',
-    );
-  });
+}
+
+export function closePopover() {
+  if (!openedPopover) return;
+  removeLayer(openedPopover.layer);
+  openedPopover.catcher.remove();
+  openedPopover.element.remove();
+  document
+    .querySelectorAll('.card--selected')
+    .forEach((card) => card.classList.remove('card--selected'));
+  openedPopover = null;
+}
+
+/** Слой, который ловит тап мимо подсказки и закрывает её. */
+function createCatcher() {
+  const catcher = document.createElement('div');
+  catcher.className = 'popover-catcher';
   catcher.addEventListener('click', closePopover);
   catcher.addEventListener(
     'touchstart',
-    (e) => {
-      e.preventDefault();
+    (event) => {
+      event.preventDefault();
       closePopover();
     },
     { passive: false },
   );
+  return catcher;
+}
 
+export function openPopover(lesson, card) {
+  closePopover();
+  const now = new Date();
+  const element = document.createElement('section');
+  element.className = 'popover';
+  element.setAttribute('role', 'dialog');
+  element.setAttribute('aria-label', formatGroupTitle(lesson.group));
+  element.innerHTML = popoverView(popoverModel(lesson, now));
+  const catcher = createCatcher();
+  document.body.append(catcher, element);
+  card.classList.add('card--selected');
+  openedPopover = {
+    element,
+    catcher,
+    lesson,
+    phase: lessonPhase(lesson, now),
+    layer: addLayer(closePopover),
+  };
+  setupRoomRow(element.querySelector('#popover-room'), lesson, now);
+  setupActions(element, lesson);
   // под карточкой, а если не помещается — над ней: расчёт в geometry.js
   const { left, top } = placePopover(
     card.getBoundingClientRect(),
-    { width: el.offsetWidth, height: el.offsetHeight },
+    { width: element.offsetWidth, height: element.offsetHeight },
     { width: window.innerWidth, height: window.innerHeight },
   );
-  el.style.left = left + 'px';
-  el.style.top = top + 'px';
+  element.style.left = left + 'px';
+  element.style.top = top + 'px';
 }
 
 /**
- * Подсказка открыта, а фаза пары сменилась (началась или закончилась):
+ * Подсказка открыта, а фаза занятия сменилась (началось или закончилось):
  * переоткрыть, чтобы перестроились флаг, кнопки и аудитория.
  * Вызывается из refreshNow().
  */
 export function refreshPopover(now) {
-  if (!pop || lessonPhase(pop.o, now) === pop.phase) return;
-  const o = pop.o,
-    card = document.querySelector(`.card[data-id="${CSS.escape(o.id)}"]`);
-  if (card) openPopover(o, card);
+  if (!openedPopover) return;
+  const { lesson, phase } = openedPopover;
+  if (lessonPhase(lesson, now) === phase) return;
+  const card = document.querySelector(
+    `.card[data-id="${CSS.escape(lesson.id)}"]`,
+  );
+  if (card) openPopover(lesson, card);
   else closePopover();
 }
