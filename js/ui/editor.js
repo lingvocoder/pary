@@ -1,4 +1,5 @@
-/* Редактор пары: новая или существующая. */
+/* Редактор занятия: новое или существующее. Что можно и что изменилось, решают
+   domain/rules.js и domain/forms.js; здесь — поля, кнопки и порядок шагов. */
 import { SUBJECTS, HOLIDAYS } from '../config/university.js';
 import { calendarLink } from '../domain/calendar-link.js';
 import {
@@ -18,7 +19,7 @@ import {
   findRule,
 } from '../domain/lessons.js';
 import { OPERATION, PLACE_KIND, can, canPlace } from '../domain/rules.js';
-import { ACTION } from '../domain/changes.js';
+import { ACTION, SCOPE } from '../domain/changes.js';
 import {
   knownSubjects,
   newLessonDraft,
@@ -34,296 +35,318 @@ import { editorView, OTHER_SUBJECT_OPTION } from './views/editor.js';
 const REPEAT_TEXT = 'Иначе пара будет только в эту дату';
 const REPEAT_PAST_TEXT = 'Задним числом — только разовая';
 
-/**
- * Что именно удалить. У повторяющейся — «эта дата или дальше», у разовой — подтверждение:
- * вернуть её не получится.
- * @returns {Promise<'one'|'future'|null>}
- */
-async function askDeleteScope(o) {
-  if (o.type !== LESSON_KIND.ONE_OFF)
-    return askScope(o, formatDeleteQuestion(o));
-  const confirmed = await askConfirm(
-    'Удалить пару?',
-    formatDeleteOneOffNote(o),
-    'Удалить пару',
-  );
-  return confirmed ? 'one' : null;
-}
+/** Спросить модель с текущим временем: можно ли сделать операцию с занятием. */
+const askRules = (operation, lesson) =>
+  can({
+    operation,
+    lesson,
+    now: new Date(),
+    state: getState(),
+    holidays: HOLIDAYS,
+  });
 
 /**
- * @param {Object|null} o       занятие или null для новой пары
- * @param {{date:string, slot:number}} [preset]  куда добавить новую
+ * Что именно удалить. У повторяющегося — «эта дата или дальше», у разового — подтверждение:
+ * вернуть его не получится.
+ * @returns {Promise<string|null>} одно из SCOPE или null — передумали
  */
-export function openEditor(o, preset) {
+async function askDeleteScope(lesson) {
+  if (lesson.type !== LESSON_KIND.ONE_OFF)
+    return askScope(lesson, formatDeleteQuestion(lesson));
+  const confirmed = await askConfirm(
+    'Удалить пару?',
+    formatDeleteOneOffNote(lesson),
+    'Удалить пару',
+  );
+  return confirmed ? SCOPE.THIS_DATE : null;
+}
+
+/** Данные для представления редактора. */
+function editorModel(lesson, values) {
+  const isNew = !lesson;
   const state = getState();
-  const isNew = !o;
-  const holidays = HOLIDAYS;
-  // начавшуюся и прошедшую пару не редактируем: это факт
-  if (!isNew) {
-    const r = can({
-      operation: OPERATION.EDIT,
-      lesson: o,
-      now: new Date(),
-      state: state,
-      holidays: holidays,
-    });
-    if (!r.ok) {
-      toast(r.reason, TOAST_KIND.ERROR);
-      return;
-    }
-  }
-  const v = isNew ? newLessonDraft(preset) : { ...o };
-  const rule = isNew ? null : findRule(state, o.ruleId) || null;
-  const info = formatEditorInfo(isNew ? null : o, rule);
+  const rule = isNew ? null : findRule(state, lesson.ruleId) || null;
   // предметы: из настроек, затем из данных; текущий — если его нет в списке
   const subjects = knownSubjects(state, SUBJECTS);
-  if (v.subject && !subjects.includes(v.subject)) subjects.push(v.subject);
-  const title = isNew ? 'Новая пара' : formatGroupTitle(v.group);
+  if (values.subject && !subjects.includes(values.subject))
+    subjects.push(values.subject);
   const toggle = isNew
     ? {
         title: 'Каждую неделю',
         description: REPEAT_TEXT,
-        id: 'erep',
+        id: 'editor-weekly',
         isChecked: true,
       }
     : {
         title: 'Отменена',
-        description: formatCancelSwitchNote(o),
-        id: 'eoff',
-        isChecked: v.cancelled,
+        description: formatCancelSwitchNote(lesson),
+        id: 'editor-cancelled',
+        isChecked: values.cancelled,
       };
-  const canAddToCalendar =
-    !isNew &&
-    can({
-      operation: OPERATION.CALENDAR,
-      lesson: o,
-      now: new Date(),
-      state,
-      holidays,
-    }).ok;
-  const { root, close } = openSheet(
-    editorView({
-      isNew,
-      title,
-      info,
-      values: v,
-      subjects,
-      toggle,
-      canAddToCalendar,
-    }),
-    title,
-  );
-
-  // «Сохранить» закреплена внизу панели: нижний отступ даёт сама полоса с кнопкой
-  root.classList.add('sheet__panel--with-footer');
-
-  let course = +v.course,
-    color = v.color || '';
-  root.querySelector('#ec').onclick = (e) => {
-    const b = e.target.closest('[data-c]');
-    if (!b) return;
-    course = +b.dataset.c;
-    root
-      .querySelectorAll('.course-picker__button')
-      .forEach((x) => x.setAttribute('aria-pressed', x === b));
+  return {
+    isNew,
+    title: isNew ? 'Новая пара' : formatGroupTitle(values.group),
+    info: formatEditorInfo(lesson, rule),
+    values,
+    subjects,
+    toggle,
+    canAddToCalendar: !isNew && askRules(OPERATION.CALENDAR, lesson).ok,
+    rule,
   };
-  root.querySelector('#ecol').onclick = (e) => {
-    const b = e.target.closest('[data-col]');
-    if (!b) return;
-    color = b.dataset.col;
-    root
-      .querySelectorAll('.color-picker__swatch')
-      .forEach((x) => x.setAttribute('aria-pressed', x === b));
+}
+
+/**
+ * Группа кнопок «выбери одно» (курс, цвет): нажатая отмечается aria-pressed.
+ * @param {Element} group
+ * @param {string} dataKey      имя data-атрибута со значением кнопки
+ * @param {*} initialValue
+ * @returns {function(): *} что выбрано сейчас
+ */
+function setupChoiceGroup(group, dataKey, initialValue) {
+  let selected = initialValue;
+  group.onclick = (event) => {
+    const button = event.target.closest(`[data-${dataKey}]`);
+    if (!button) return;
+    selected = button.dataset[dataKey];
+    group
+      .querySelectorAll(`[data-${dataKey}]`)
+      .forEach((candidate) =>
+        candidate.setAttribute('aria-pressed', candidate === button),
+      );
   };
-  // Календарь по клику в любом месте поля — только при мыши (pointer: fine):
-  // в Chrome на компьютере значок скрыт, без showPicker() поле бы не открылось.
-  // На сенсорном экране календарь открывает система, второй вызов там не нужен.
-  // try: showPicker() бросает ошибку, если выбор уже открыт или браузер против.
-  const dateInput = root.querySelector('#ed');
+  return () => selected;
+}
+
+/**
+ * Календарь по клику в любом месте поля — только при мыши (pointer: fine):
+ * в Chrome на компьютере значок скрыт, без showPicker() поле бы не открылось.
+ * На сенсорном экране календарь открывает система, второй вызов там не нужен.
+ */
+function setupDatePicker(dateInput) {
   const hasMouse = matchMedia('(pointer: fine)').matches;
   dateInput.onclick = () => {
     if (!hasMouse || !dateInput.showPicker) return;
     try {
       dateInput.showPicker();
     } catch {
-      // браузер откроет календарь сам или не откроет — поле всё равно редактируется
+      // выбор уже открыт или браузер против — поле всё равно редактируется
     }
   };
-  // «Другой…» — под списком появляется поле для названия
-  const subjectSelect = root.querySelector('#es'),
-    otherField = root.querySelector('#esOtherField'),
-    otherInput = root.querySelector('#esOther');
+}
+
+/** «Другой…» — под списком появляется поле для названия. Возвращает чтение предмета. */
+function setupOtherSubject(root) {
+  const subjectSelect = root.querySelector('#editor-subject');
+  const otherField = root.querySelector('#editor-other-subject-field');
+  const otherInput = root.querySelector('#editor-other-subject');
   subjectSelect.onchange = () => {
     otherField.hidden = subjectSelect.value !== OTHER_SUBJECT_OPTION;
     if (!otherField.hidden) otherInput.focus();
   };
-  const readSubject = () =>
+  return () =>
     subjectSelect.value === OTHER_SUBJECT_OPTION
       ? otherInput.value.trim()
       : subjectSelect.value;
-  // «Каждую неделю»: в начавшейся или прошедшей клетке — выключен и неактивен.
-  // Выбор пользователя запоминаем, чтобы вернуть его, если дату сдвинут вперёд.
-  if (isNew) {
-    const repeat = root.querySelector('#erep'),
-      repeatText = repeat
-        .closest('.toggle')
-        .querySelector('.toggle__description'),
-      slotSelect = root.querySelector('#ep');
-    let repeatWanted = repeat.checked;
-    repeat.onchange = () => (repeatWanted = repeat.checked);
-    const updateRepeat = () => {
-      const past =
-        !!dateInput.value &&
-        isPastSlot(dateInput.value, +slotSelect.value, new Date());
-      repeat.disabled = past;
-      repeat.checked = past ? false : repeatWanted;
-      repeatText.textContent = past ? REPEAT_PAST_TEXT : REPEAT_TEXT;
-    };
-    dateInput.addEventListener('change', updateRepeat);
-    slotSelect.addEventListener('change', updateRepeat);
-    updateRepeat();
-  }
+}
 
-  /** Перед сохранением и удалением — проверка заново: пара могла начаться,
-      пока шторка была открыта. Нельзя — тост, шторка закрывается, данные не меняются. */
-  const stillAllowed = (op) => {
-    const r = can({
-      operation: op,
-      lesson: o,
-      now: new Date(),
-      state: getState(),
-      holidays: holidays,
-    });
-    if (r.ok) return true;
+/**
+ * «Каждую неделю»: в начавшейся или прошедшей клетке — выключен и неактивен.
+ * Выбор пользователя запоминаем, чтобы вернуть его, если дату сдвинут вперёд.
+ */
+function setupWeeklyToggle(root, dateInput) {
+  const weekly = root.querySelector('#editor-weekly');
+  const weeklyNote = weekly
+    .closest('.toggle')
+    .querySelector('.toggle__description');
+  const slotSelect = root.querySelector('#editor-slot');
+  let isWeeklyWanted = weekly.checked;
+  weekly.onchange = () => (isWeeklyWanted = weekly.checked);
+  const updateWeekly = () => {
+    const isPast =
+      !!dateInput.value &&
+      isPastSlot(dateInput.value, +slotSelect.value, new Date());
+    weekly.disabled = isPast;
+    weekly.checked = isPast ? false : isWeeklyWanted;
+    weeklyNote.textContent = isPast ? REPEAT_PAST_TEXT : REPEAT_TEXT;
+  };
+  dateInput.addEventListener('change', updateWeekly);
+  slotSelect.addEventListener('change', updateWeekly);
+  updateWeekly();
+}
+
+/** Можно ли поставить занятие в клетку; нельзя — тост, про праздник — с датой. */
+function isPlaceAllowed(kind, form, exceptLessonId) {
+  const answer = canPlace({
+    kind,
+    date: form.date,
+    slot: form.slot,
+    now: new Date(),
+    state: getState(),
+    holidays: HOLIDAYS,
+    exceptLessonId,
+  });
+  if (answer.ok) return true;
+  const reason = isHoliday(form.date, HOLIDAYS)
+    ? formatHolidayDate(form.date)
+    : answer.reason;
+  toast(reason, TOAST_KIND.ERROR);
+  return false;
+}
+
+/** Новое занятие: проверить клетку и добавить. */
+function saveNewLesson(form, close) {
+  const kind = form.isWeekly ? PLACE_KIND.ADD_RULE : PLACE_KIND.ADD_ONE_OFF;
+  if (!isPlaceAllowed(kind, form)) return;
+  close();
+  dispatch({ type: ACTION.ADD, newLesson: form });
+  toast(formatAddedToast(form), TOAST_KIND.SUCCESS);
+}
+
+/** Переключатель «Отменена» поменяли: это «Вернуть» или «Отменить» — спросить модель. */
+function isCancelSwitchAllowed(lesson, isCancelled, isPlaceChanged) {
+  // вернуть в занятый слот нельзя; при переносе свободу нового слота уже проверил canPlace
+  const isRestore = !isCancelled && lesson.cancelled && !isPlaceChanged;
+  const isCancel = isCancelled && !lesson.cancelled;
+  if (!isRestore && !isCancel) return true;
+  const operation = isRestore ? OPERATION.RESTORE : OPERATION.CANCEL;
+  const answer = askRules(operation, lesson);
+  if (!answer.ok) toast(answer.reason, TOAST_KIND.ERROR);
+  return answer.ok;
+}
+
+/** Правка существующего занятия. Порядок шагов — как в 0.4.0. */
+async function saveLessonChanges({
+  lesson,
+  form,
+  isCancelled,
+  stillAllowed,
+  close,
+}) {
+  const changes = diffLessonChanges(lesson, form);
+  if (!stillAllowed(OPERATION.EDIT)) return;
+  // праздник, прошлое и занятость — только если занятие ставят на новое место
+  const isPlaceChanged = 'date' in changes || 'slot' in changes;
+  if (isPlaceChanged && !isPlaceAllowed(PLACE_KIND.MOVE, form, lesson.id))
+    return;
+  if (!isCancelSwitchAllowed(lesson, isCancelled, isPlaceChanged)) return;
+  const hasChanges = Object.keys(changes).length > 0;
+  const isCancelChanged = isCancelled !== lesson.cancelled;
+  // ничего не меняли — просто закрыть: сохранять нечего, и тост был бы неправдой
+  if (!hasChanges && !isCancelChanged) {
     close();
-    toast(r.reason, TOAST_KIND.ERROR);
-    return false;
+    return;
+  }
+  if (hasChanges) {
+    const scope = await askScope(lesson, 'Сохранить изменения?');
+    if (!scope || !stillAllowed(OPERATION.EDIT)) return;
+    close();
+    dispatch({ type: ACTION.EDIT, lesson, changes, scope });
+    if (isCancelChanged) {
+      // после переноса отметку ставим занятию на новом месте
+      const movedLesson = findLessonAt(getState(), form.date, form.slot);
+      if (movedLesson)
+        dispatch({
+          type: ACTION.SET_CANCELLED,
+          lesson: movedLesson,
+          isCancelled,
+        });
+    }
+  } else {
+    close();
+    dispatch({ type: ACTION.SET_CANCELLED, lesson, isCancelled });
+  }
+  toast('Сохранено', TOAST_KIND.SUCCESS);
+}
+
+/** Кнопки существующего занятия: «Удалить пару» и «В календарь». */
+function setupLessonButtons(root, lesson, rule, stillAllowed, close) {
+  root.querySelector('#editor-delete').onclick = async () => {
+    if (!stillAllowed(OPERATION.DELETE)) return;
+    const scope = await askDeleteScope(lesson);
+    if (!scope || !stillAllowed(OPERATION.DELETE)) return;
+    close();
+    dispatch({ type: ACTION.DELETE, lesson, scope });
+    toast('Пара удалена', TOAST_KIND.SUCCESS);
   };
-  /** Можно ли поставить пару в клетку; про праздник — с датой в тексте. */
-  const placeAllowed = (kind, f, exceptId) => {
-    const r = canPlace({
-      kind: kind,
-      date: f.date,
-      slot: f.slot,
-      now: new Date(),
-      state: getState(),
-      holidays: holidays,
-      exceptLessonId: exceptId,
-    });
-    if (r.ok) return true;
-    toast(
-      isHoliday(f.date, holidays) ? formatHolidayDate(f.date) : r.reason,
-      TOAST_KIND.ERROR,
-    );
+  const calendarButton = root.querySelector('#editor-calendar');
+  if (calendarButton)
+    calendarButton.onclick = () =>
+      window.open(calendarLink(lesson, rule), '_blank', 'noopener');
+}
+
+/**
+ * @param {Lesson|null} lesson  занятие или null — новое
+ * @param {{date: string, slot: number}} [place]  куда добавить новое
+ */
+export function openEditor(lesson, place) {
+  // начавшееся и прошедшее занятие не редактируем: это факт
+  if (lesson) {
+    const answer = askRules(OPERATION.EDIT, lesson);
+    if (!answer.ok) {
+      toast(answer.reason, TOAST_KIND.ERROR);
+      return;
+    }
+  }
+  const values = lesson ? { ...lesson } : newLessonDraft(place);
+  const model = editorModel(lesson, values);
+  const { root, close } = openSheet(editorView(model), model.title);
+  // «Сохранить» закреплена внизу панели: нижний отступ даёт сама полоса с кнопкой
+  root.classList.add('sheet__panel--with-footer');
+
+  const readCourse = setupChoiceGroup(
+    root.querySelector('#editor-course'),
+    'course',
+    +values.course,
+  );
+  const readColor = setupChoiceGroup(
+    root.querySelector('#editor-color'),
+    'color',
+    values.color || '',
+  );
+  const dateInput = root.querySelector('#editor-date');
+  setupDatePicker(dateInput);
+  const readSubject = setupOtherSubject(root);
+  if (model.isNew) setupWeeklyToggle(root, dateInput);
+
+  /** Перед сохранением и удалением — проверка заново: занятие могло начаться,
+      пока шторка была открыта. Нельзя — тост, шторка закрывается, данные не меняются. */
+  const stillAllowed = (operation) => {
+    const answer = askRules(operation, lesson);
+    if (answer.ok) return true;
+    close();
+    toast(answer.reason, TOAST_KIND.ERROR);
     return false;
   };
 
-  const read = () => ({
-    group: root.querySelector('#eg').value.trim(),
-    course,
+  const readForm = () => ({
+    group: root.querySelector('#editor-group').value.trim(),
+    course: +readCourse(),
     subject: readSubject(),
-    room: root.querySelector('#er').value.trim(),
-    color,
+    room: root.querySelector('#editor-room').value.trim(),
+    color: readColor(),
     date: dateInput.value,
-    slot: +root.querySelector('#ep').value,
+    slot: +root.querySelector('#editor-slot').value,
   });
 
-  root.querySelector('#esave').onclick = async () => {
-    const f = read();
-    const validation = validateLessonForm(f);
+  root.querySelector('#editor-save').onclick = () => {
+    const form = readForm();
+    const validation = validateLessonForm(form);
     if (!validation.ok) {
       toast(validation.reason, TOAST_KIND.ERROR);
       if (validation.field === FORM_FIELD.GROUP)
-        root.querySelector('#eg').focus();
-      if (validation.field === FORM_FIELD.SUBJECT) otherInput.focus();
+        root.querySelector('#editor-group').focus();
+      if (validation.field === FORM_FIELD.SUBJECT)
+        root.querySelector('#editor-other-subject').focus();
       return;
     }
-    if (isNew) {
-      f.isWeekly = root.querySelector('#erep').checked;
-      if (
-        !placeAllowed(
-          f.isWeekly ? PLACE_KIND.ADD_RULE : PLACE_KIND.ADD_ONE_OFF,
-          f,
-        )
-      )
-        return;
-      close();
-      dispatch({ type: ACTION.ADD, newLesson: f });
-      toast(formatAddedToast(f), TOAST_KIND.SUCCESS);
+    if (model.isNew) {
+      form.isWeekly = root.querySelector('#editor-weekly').checked;
+      saveNewLesson(form, close);
       return;
     }
-    const changes = diffLessonChanges(o, f);
-    if (!stillAllowed(OPERATION.EDIT)) return;
-    // праздник, прошлое и занятость — только если пару ставят на новое место
-    const placeChanged = 'date' in changes || 'slot' in changes;
-    if (placeChanged && !placeAllowed(PLACE_KIND.MOVE, f, o.id)) return;
-    const off = root.querySelector('#eoff').checked;
-    // «Отменена» выключили — это «Вернуть»: в занятый слот нельзя.
-    // При переносе свободу нового слота уже проверил canPlace.
-    if (!off && o.cancelled && !placeChanged) {
-      const r = can({
-        operation: OPERATION.RESTORE,
-        lesson: o,
-        now: new Date(),
-        state: getState(),
-        holidays: holidays,
-      });
-      if (!r.ok) {
-        toast(r.reason, TOAST_KIND.ERROR);
-        return;
-      }
-    }
-    if (off && !o.cancelled) {
-      const r = can({
-        operation: OPERATION.CANCEL,
-        lesson: o,
-        now: new Date(),
-        state: getState(),
-        holidays: holidays,
-      });
-      if (!r.ok) {
-        toast(r.reason, TOAST_KIND.ERROR);
-        return;
-      }
-    }
-    // ничего не меняли — просто закрыть: сохранять нечего, и тост был бы неправдой
-    if (!Object.keys(changes).length && off === o.cancelled) {
-      close();
-      return;
-    }
-    if (Object.keys(changes).length) {
-      const scope = await askScope(o, 'Сохранить изменения?');
-      if (!scope || !stillAllowed(OPERATION.EDIT)) return;
-      close();
-      dispatch({ type: ACTION.EDIT, lesson: o, changes, scope });
-      if (off !== o.cancelled) {
-        const after = findLessonAt(getState(), f.date, f.slot);
-        if (after)
-          dispatch({
-            type: ACTION.SET_CANCELLED,
-            lesson: after,
-            isCancelled: off,
-          });
-      }
-    } else {
-      close();
-      if (off !== o.cancelled)
-        dispatch({ type: ACTION.SET_CANCELLED, lesson: o, isCancelled: off });
-    }
-    toast('Сохранено', TOAST_KIND.SUCCESS);
+    const isCancelled = root.querySelector('#editor-cancelled').checked;
+    saveLessonChanges({ lesson, form, isCancelled, stillAllowed, close });
   };
-  if (!isNew) {
-    root.querySelector('#edel').onclick = async () => {
-      if (!stillAllowed(OPERATION.DELETE)) return;
-      const scope = await askDeleteScope(o);
-      if (!scope || !stillAllowed(OPERATION.DELETE)) return;
-      close();
-      dispatch({ type: ACTION.DELETE, lesson: o, scope });
-      toast('Пара удалена', TOAST_KIND.SUCCESS);
-    };
-    const calendarButton = root.querySelector('#ecal');
-    if (calendarButton)
-      calendarButton.onclick = () =>
-        window.open(calendarLink(o, rule), '_blank', 'noopener');
-  }
+  if (!model.isNew)
+    setupLessonButtons(root, lesson, model.rule, stillAllowed, close);
 }

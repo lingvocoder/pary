@@ -38,13 +38,13 @@ const subjectOptionsView = (subjects, selectedSubject) =>
 const courseButtonsView = (selectedCourse) =>
   COURSES.map(
     (course) =>
-      `<button class="course-picker__button" data-c="${course}" aria-pressed="${selectedCourse === course}">${course}</button>`,
+      `<button class="course-picker__button" data-course="${course}" aria-pressed="${selectedCourse === course}">${course}</button>`,
   ).join('');
 
 const colorSwatchesView = (selectedColor) =>
   PALETTE.map(
     (paletteColor) =>
-      `<button class="color-picker__swatch ${paletteColor.tint ? 'tint-' + paletteColor.tint : 'color-picker__swatch--default'}" data-col="${paletteColor.id}" aria-label="${paletteColor.name}" aria-pressed="${selectedColor === paletteColor.id}"></button>`,
+      `<button class="color-picker__swatch ${paletteColor.tint ? 'tint-' + paletteColor.tint : 'color-picker__swatch--default'}" data-color="${paletteColor.id}" aria-label="${paletteColor.name}" aria-pressed="${selectedColor === paletteColor.id}"></button>`,
   ).join('');
 
 const headerView = (title, info) => `
@@ -55,7 +55,7 @@ const headerView = (title, info) => `
 
 /** Кнопки существующего занятия: «В календарь» (если можно) и «Удалить пару». */
 const lessonButtonsView = (canAddToCalendar) =>
-  `<div class="button-pair">${canAddToCalendar ? `<button class="btn btn--secondary" id="ecal">${iconCalendar('btn__icon')}В календарь</button>` : ''}<button class="btn btn--danger-text" id="edel">Удалить пару</button></div>`;
+  `<div class="button-pair">${canAddToCalendar ? `<button class="btn btn--secondary" id="editor-calendar">${iconCalendar('btn__icon')}В календарь</button>` : ''}<button class="btn btn--danger-text" id="editor-delete">Удалить пару</button></div>`;
 
 /**
  * @param {Object} editor
@@ -73,20 +73,20 @@ export function editorView(editor) {
   const { values } = editor;
   return `${headerView(editor.title, editor.info)}
     <div class="form-row">
-      <div class="field"><label class="field__label" for="eg">Группа</label><input class="field__input" type="text" id="eg" inputmode="numeric" autocomplete="off" value="${esc(values.group)}" placeholder="326"></div>
-      <div class="field"><span class="field__label">Курс</span><div class="course-picker" id="ec">${courseButtonsView(+values.course)}</div></div>
+      <div class="field"><label class="field__label" for="editor-group">Группа</label><input class="field__input" type="text" id="editor-group" inputmode="numeric" autocomplete="off" value="${esc(values.group)}" placeholder="326"></div>
+      <div class="field"><span class="field__label">Курс</span><div class="course-picker" id="editor-course">${courseButtonsView(+values.course)}</div></div>
     </div>
     <div class="form-row">
-      <div class="field"><label class="field__label" for="es">Предмет</label>${selectView('es', subjectOptionsView(editor.subjects, values.subject))}</div>
-      <div class="field"><label class="field__label" for="er">Аудитория</label><input class="field__input" type="text" id="er" autocomplete="off" value="${esc(values.room)}" placeholder="например, 301"></div>
+      <div class="field"><label class="field__label" for="editor-subject">Предмет</label>${selectView('editor-subject', subjectOptionsView(editor.subjects, values.subject))}</div>
+      <div class="field"><label class="field__label" for="editor-room">Аудитория</label><input class="field__input" type="text" id="editor-room" autocomplete="off" value="${esc(values.room)}" placeholder="например, 301"></div>
     </div>
-    <div class="field" id="esOtherField" hidden><label class="field__label" for="esOther">Название предмета</label><input class="field__input" type="text" id="esOther" autocomplete="off"></div>
+    <div class="field" id="editor-other-subject-field" hidden><label class="field__label" for="editor-other-subject">Название предмета</label><input class="field__input" type="text" id="editor-other-subject" autocomplete="off"></div>
     <div class="form-row">
-      <div class="field"><label class="field__label" for="ed">Дата</label>${pickerView(`<input class="field__input" type="date" id="ed" value="${values.date}">`)}</div>
-      <div class="field"><label class="field__label" for="ep">Пара</label>${selectView('ep', slotOptionsView(values.slot))}</div>
+      <div class="field"><label class="field__label" for="editor-date">Дата</label>${pickerView(`<input class="field__input" type="date" id="editor-date" value="${values.date}">`)}</div>
+      <div class="field"><label class="field__label" for="editor-slot">Пара</label>${selectView('editor-slot', slotOptionsView(values.slot))}</div>
     </div>
-    <div class="field"><span class="field__label">Цвет</span><div class="color-picker" id="ecol">${colorSwatchesView(values.color || '')}</div></div>
+    <div class="field"><span class="field__label">Цвет</span><div class="color-picker" id="editor-color">${colorSwatchesView(values.color || '')}</div></div>
     ${switchRowView(editor.toggle)}
     ${editor.isNew ? '' : lessonButtonsView(editor.canAddToCalendar)}
-    <div class="sheet__footer"><button class="btn btn--primary" id="esave">${editor.isNew ? 'Добавить' : 'Сохранить'}</button></div>`;
+    <div class="sheet__footer"><button class="btn btn--primary" id="editor-save">${editor.isNew ? 'Добавить' : 'Сохранить'}</button></div>`;
 }
