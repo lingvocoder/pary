@@ -1,15 +1,9 @@
 /* Редактор пары: новая или существующая. */
-import {
-  SLOTS,
-  COURSES,
-  SUBJECTS,
-  PALETTE,
-  HOLIDAYS,
-} from '../config/university.js';
+import { SUBJECTS, HOLIDAYS } from '../config/university.js';
 import { calendarLink } from '../domain/calendar-link.js';
 import {
   formatEditorInfo,
-  formatSlotOption,
+  formatGroupTitle,
   formatCancelSwitchNote,
   formatHolidayDate,
   formatAddedToast,
@@ -33,13 +27,9 @@ import {
   FORM_FIELD,
 } from '../domain/forms.js';
 import { getState, dispatch } from '../store/store.js';
-import { esc } from './dom.js';
 import { toast } from './helpers.js';
 import { openSheet, askScope, askConfirm } from './sheets.js';
-import { iconCalendar, iconChevronDown } from './icons.js';
-
-// значение пункта «Другой…» в списке предметов — не название предмета
-const OTHER_SUBJECT = '__other__';
+import { editorView, OTHER_SUBJECT_OPTION } from './views/editor.js';
 
 const REPEAT_TEXT = 'Иначе пара будет только в эту дату';
 const REPEAT_PAST_TEXT = 'Задним числом — только разовая';
@@ -85,57 +75,43 @@ export function openEditor(o, preset) {
   const v = isNew ? newLessonDraft(preset) : { ...o };
   const rule = isNew ? null : findRule(state, o.ruleId) || null;
   const info = formatEditorInfo(isNew ? null : o, rule);
-  const slots = SLOTS.map(
-    (s, i) =>
-      `<option value="${i + 1}"${v.slot === i + 1 ? ' selected' : ''}>${formatSlotOption(i + 1)}</option>`,
-  ).join('');
-  // предметы: из настроек, затем из данных; текущий — если его нет в списке; последним — «Другой…»
+  // предметы: из настроек, затем из данных; текущий — если его нет в списке
   const subjects = knownSubjects(state, SUBJECTS);
   if (v.subject && !subjects.includes(v.subject)) subjects.push(v.subject);
-  const subjectOptions =
-    subjects
-      .map(
-        (s) =>
-          `<option value="${esc(s)}"${s === v.subject ? ' selected' : ''}>${esc(s)}</option>`,
-      )
-      .join('') + `<option value="${OTHER_SUBJECT}">Другой…</option>`;
-  // поле, которое открывает системный выбор (список или календарь):
-  // значок браузера скрыт, вместо него chevron-down справа — одинаково у всех трёх
-  const picker = (control) =>
-    `<div class="field__picker">${control}${iconChevronDown('field__chevron')}</div>`;
-  const select = (id, options) =>
-    picker(`<select class="field__input" id="${id}">${options}</select>`);
-  // переключатель: <input role="switch"> внутри label — касание по всей строке
-  const switchRow = (title, description, id, checked) =>
-    `<label class="toggle"><span class="toggle__text"><span class="toggle__title">${title}</span><span class="toggle__description">${description}</span></span><span class="switch"><input class="switch__input" type="checkbox" role="switch" id="${id}"${checked ? ' checked' : ''}><span class="switch__knob" aria-hidden="true"></span></span></label>`;
+  const title = isNew ? 'Новая пара' : formatGroupTitle(v.group);
+  const toggle = isNew
+    ? {
+        title: 'Каждую неделю',
+        description: REPEAT_TEXT,
+        id: 'erep',
+        isChecked: true,
+      }
+    : {
+        title: 'Отменена',
+        description: formatCancelSwitchNote(o),
+        id: 'eoff',
+        isChecked: v.cancelled,
+      };
+  const canAddToCalendar =
+    !isNew &&
+    can({
+      operation: OPERATION.CALENDAR,
+      lesson: o,
+      now: new Date(),
+      state,
+      holidays,
+    }).ok;
   const { root, close } = openSheet(
-    `
-    <div class="sheet__header">
-      <h2 class="sheet__title">${isNew ? 'Новая пара' : 'Группа ' + esc(v.group)}</h2>
-      ${info ? `<p class="sheet__note">${esc(info)}</p>` : ''}
-    </div>
-    <div class="form-row">
-      <div class="field"><label class="field__label" for="eg">Группа</label><input class="field__input" type="text" id="eg" inputmode="numeric" autocomplete="off" value="${esc(v.group)}" placeholder="326"></div>
-      <div class="field"><span class="field__label">Курс</span><div class="course-picker" id="ec">${COURSES.map((c) => `<button class="course-picker__button" data-c="${c}" aria-pressed="${+v.course === c}">${c}</button>`).join('')}</div></div>
-    </div>
-    <div class="form-row">
-      <div class="field"><label class="field__label" for="es">Предмет</label>${select('es', subjectOptions)}</div>
-      <div class="field"><label class="field__label" for="er">Аудитория</label><input class="field__input" type="text" id="er" autocomplete="off" value="${esc(v.room)}" placeholder="например, 301"></div>
-    </div>
-    <div class="field" id="esOtherField" hidden><label class="field__label" for="esOther">Название предмета</label><input class="field__input" type="text" id="esOther" autocomplete="off"></div>
-    <div class="form-row">
-      <div class="field"><label class="field__label" for="ed">Дата</label>${picker(`<input class="field__input" type="date" id="ed" value="${v.date}">`)}</div>
-      <div class="field"><label class="field__label" for="ep">Пара</label>${select('ep', slots)}</div>
-    </div>
-    <div class="field"><span class="field__label">Цвет</span><div class="color-picker" id="ecol">${PALETTE.map((p) => `<button class="color-picker__swatch ${p.tint ? 'tint-' + p.tint : 'color-picker__swatch--default'}" data-col="${p.id}" aria-label="${p.name}" aria-pressed="${(v.color || '') === p.id}"></button>`).join('')}</div></div>
-    ${
-      isNew
-        ? switchRow('Каждую неделю', REPEAT_TEXT, 'erep', true)
-        : switchRow('Отменена', formatCancelSwitchNote(o), 'eoff', v.cancelled)
-    }
-    ${isNew ? '' : `<div class="button-pair">${can({ operation: OPERATION.CALENDAR, lesson: o, now: new Date(), state: state, holidays: holidays }).ok ? `<button class="btn btn--secondary" id="ecal">${iconCalendar('btn__icon')}В календарь</button>` : ''}<button class="btn btn--danger-text" id="edel">Удалить пару</button></div>`}
-    <div class="sheet__footer"><button class="btn btn--primary" id="esave">${isNew ? 'Добавить' : 'Сохранить'}</button></div>`,
-    isNew ? 'Новая пара' : 'Группа ' + v.group,
+    editorView({
+      isNew,
+      title,
+      info,
+      values: v,
+      subjects,
+      toggle,
+      canAddToCalendar,
+    }),
+    title,
   );
 
   // «Сохранить» закреплена внизу панели: нижний отступ даёт сама полоса с кнопкой
@@ -178,11 +154,11 @@ export function openEditor(o, preset) {
     otherField = root.querySelector('#esOtherField'),
     otherInput = root.querySelector('#esOther');
   subjectSelect.onchange = () => {
-    otherField.hidden = subjectSelect.value !== OTHER_SUBJECT;
+    otherField.hidden = subjectSelect.value !== OTHER_SUBJECT_OPTION;
     if (!otherField.hidden) otherInput.focus();
   };
   const readSubject = () =>
-    subjectSelect.value === OTHER_SUBJECT
+    subjectSelect.value === OTHER_SUBJECT_OPTION
       ? otherInput.value.trim()
       : subjectSelect.value;
   // «Каждую неделю»: в начавшейся или прошедшей клетке — выключен и неактивен.
