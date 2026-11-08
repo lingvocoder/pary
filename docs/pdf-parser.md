@@ -2,7 +2,7 @@
 
 Эталон — `docs/reference/parse_schedule.py` (Python + pdfplumber). На сентябрьских PDF (4 курса)
 он нашёл 10 из 10 пар преподавателя; результат сверен с картинками страниц.
-В 0.5 этот алгоритм переносится на JavaScript (pdf.js) в `js/import/` за функцией `parsePdf(file)`.
+В 0.6 этот алгоритм переносится на JavaScript (pdf.js) в `js/import/` за функцией `parsePdf(file)`.
 
 ## Что внутри PDF
 
