@@ -10,8 +10,9 @@ import {
 } from '../config/interface.js';
 import { WEEKDAYS_SHORT, WEEKDAYS, WEEKDAYS_TO } from '../lang/ru.js';
 import { weekday, humanDate } from '../domain/dates.js';
-import { can, canPlace } from '../domain/rules.js';
-import { isPastSlot, isHoliday } from '../domain/lessons.js';
+import { LESSON_KIND, isPastSlot, isHoliday } from '../domain/lessons.js';
+import { OPERATION, PLACE_KIND, can, canPlace } from '../domain/rules.js';
+import { ACTION } from '../domain/changes.js';
 import { getState, dispatch } from '../store.js';
 import { toast, stickyToast, hideToast, slotOf } from './helpers.js';
 import { askScope } from './sheets.js';
@@ -53,7 +54,13 @@ function startDrag(card, x, y) {
   closePopover();
   markHintLearned('hold');
   // начавшуюся, прошедшую или отменённую пару не переносим: только тост, без вибрации
-  const allowed = can('move', o, new Date(), getState(), HOLIDAYS);
+  const allowed = can({
+    operation: OPERATION.MOVE,
+    lesson: o,
+    now: new Date(),
+    state: getState(),
+    holidays: HOLIDAYS,
+  });
   if (!allowed.ok) {
     toast(allowed.reason, 'error');
     return;
@@ -79,7 +86,15 @@ function startDrag(card, x, y) {
 
 /** Можно ли перенести пару o в клетку: спрашиваем модель с текущим временем. */
 const placeCheck = (date, slot, o) =>
-  canPlace('move', date, slot, new Date(), getState(), HOLIDAYS, o.id);
+  canPlace({
+    kind: PLACE_KIND.MOVE,
+    date: date,
+    slot: slot,
+    now: new Date(),
+    state: getState(),
+    holidays: HOLIDAYS,
+    exceptLessonId: o.id,
+  });
 
 function moveDrag(x, y) {
   drag.ghost.style.left = x + 'px';
@@ -132,7 +147,8 @@ async function endDrag() {
     return;
   }
   const rule =
-    o.type === 'rule' && getState().rules.find((r) => r.id === o.ruleId);
+    o.type === LESSON_KIND.RULE &&
+    getState().rules.find((r) => r.id === o.ruleId);
   const scope = await askScope(
     o,
     `Перенести ${WEEKDAYS_TO[weekday(date)]}, ${slotOf(slot).start}?`,
@@ -141,7 +157,7 @@ async function endDrag() {
       : `Группа ${o.group}`,
   );
   if (!scope) return;
-  dispatch({ type: 'edit', occ: o, changes: { date, slot }, scope });
+  dispatch({ type: ACTION.EDIT, lesson: o, changes: { date, slot }, scope });
   toast(
     `Перенесено: ${WEEKDAYS_SHORT[weekday(date)]} ${humanDate(date)}, ${slotOf(slot).start}`,
     'success',
@@ -275,14 +291,14 @@ export function initGestures(week) {
     const date = c.dataset.date,
       slot = +c.dataset.slot;
     // куда добавить нельзя (праздник) — редактор не открываем, модель говорит почему
-    const place = canPlace(
-      'addOnce',
-      date,
-      slot,
-      new Date(),
-      getState(),
-      HOLIDAYS,
-    );
+    const place = canPlace({
+      kind: PLACE_KIND.ADD_ONE_OFF,
+      date: date,
+      slot: slot,
+      now: new Date(),
+      state: getState(),
+      holidays: HOLIDAYS,
+    });
     if (!place.ok) {
       toast(place.reason, 'error');
       return;

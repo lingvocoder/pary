@@ -2,7 +2,7 @@
 import { SEMESTER, HOLIDAYS, HOURS_PER_PAIR } from '../config/university.js';
 import { plural } from '../lang/ru.js';
 import { fromIso, humanDate } from '../domain/dates.js';
-import { countPairs } from '../domain/hours.js';
+import { countLessons } from '../domain/hours.js';
 import { getState } from '../store.js';
 import { esc, colorClass } from './helpers.js';
 import { iconClock } from './icons.js';
@@ -16,7 +16,13 @@ const amountCell = (pairs) =>
 
 export function openHours() {
   const { from, to } = SEMESTER;
-  const r = countPairs(getState(), from, to, new Date(), HOLIDAYS);
+  const r = countLessons({
+    state: getState(),
+    from: from,
+    to: to,
+    now: new Date(),
+    holidays: HOLIDAYS,
+  });
   const h = HOURS_PER_PAIR;
   const period = `${humanDate(from)} – ${humanDate(to)} ${fromIso(to).getFullYear()}`;
   // бейдж — цвет курса, а не «важный» цвет отдельной пары

@@ -25,12 +25,12 @@ import {
   MINUTES_PER_HOUR,
 } from '../domain/dates.js';
 import {
-  weekOccurrences,
-  nextPair,
+  weekLessons,
+  nextLesson,
   isOngoing,
   isHoliday,
 } from '../domain/lessons.js';
-import { countPairs } from '../domain/hours.js';
+import { countLessons } from '../domain/hours.js';
 import { getState, getPref, setPref } from '../store.js';
 import { $, esc, colorClass, slotOf } from './helpers.js';
 import {
@@ -64,7 +64,7 @@ export function markHintLearned(gesture) {
 /** Перерисовать весь экран из текущего состояния. */
 export function render() {
   closePopover();
-  ui.occ = weekOccurrences(getState(), ui.week);
+  ui.occ = weekLessons(getState(), ui.week);
   ui.today = toIso(new Date());
   renderHero();
   renderRange();
@@ -74,7 +74,7 @@ export function render() {
 }
 
 function renderHero() {
-  const n = nextPair(getState(), new Date(), HOLIDAYS);
+  const n = nextLesson(getState(), new Date(), HOLIDAYS);
   const menu = `<button class="icon-btn" id="menu" aria-label="Меню">${iconEllipsis('icon-btn__icon')}</button>`;
   if (!n) {
     $('#hero').innerHTML =
@@ -114,13 +114,13 @@ function renderRange() {
       ? `${a.getDate()}–${b.getDate()} ${MONTHS_GENITIVE[a.getMonth()]}`
       : `${a.getDate()} ${MONTHS_SHORT[a.getMonth()]} – ${b.getDate()} ${MONTHS_SHORT[b.getMonth()]}`;
   // пар за неделю — по тем же правилам, что часы за семестр: без отменённых и праздников
-  const { total } = countPairs(
-    getState(),
-    ui.week,
-    addDays(ui.week, WORKDAYS_PER_WEEK - 1),
-    new Date(),
-    HOLIDAYS,
-  );
+  const { total } = countLessons({
+    state: getState(),
+    from: ui.week,
+    to: addDays(ui.week, WORKDAYS_PER_WEEK - 1),
+    now: new Date(),
+    holidays: HOLIDAYS,
+  });
   const summary = $('#weekSummary');
   summary.hidden = !total;
   summary.textContent = `${total} ${plural(total, 'пара', 'пары', 'пар')} · ${total * HOURS_PER_PAIR} ак. ч`;

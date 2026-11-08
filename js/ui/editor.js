@@ -9,8 +9,14 @@ import {
 } from '../config/university.js';
 import { WEEKDAYS, WEEKDAYS_IN } from '../lang/ru.js';
 import { weekday, humanDate, SUNDAY } from '../domain/dates.js';
-import { can, canPlace } from '../domain/rules.js';
-import { findAt, isHoliday, isPastSlot } from '../domain/lessons.js';
+import {
+  LESSON_KIND,
+  isPastSlot,
+  isHoliday,
+  findLessonAt,
+} from '../domain/lessons.js';
+import { OPERATION, PLACE_KIND, can, canPlace } from '../domain/rules.js';
+import { ACTION } from '../domain/changes.js';
 import { knownSubjects } from '../domain/forms.js';
 import { getState, dispatch } from '../store.js';
 import { esc, toast, slotOf } from './helpers.js';
@@ -30,7 +36,8 @@ const REPEAT_PAST_TEXT = 'Задним числом — только разов�
  * @returns {Promise<'one'|'future'|null>}
  */
 async function askDeleteScope(o) {
-  if (o.type !== 'once') return askScope(o, `Удалить группу ${o.group}?`);
+  if (o.type !== LESSON_KIND.ONE_OFF)
+    return askScope(o, `Удалить группу ${o.group}?`);
   const when = `${WEEKDAYS[weekday(o.date)]}, ${humanDate(o.date)}, ${slotOf(o.slot).start}`;
   const confirmed = await askConfirm(
     'Удалить пару?',
@@ -50,7 +57,13 @@ export function openEditor(o, preset) {
   const holidays = HOLIDAYS;
   // начавшуюся и прошедшую пару не редактируем: это факт
   if (!isNew) {
-    const r = can('edit', o, new Date(), state, holidays);
+    const r = can({
+      operation: OPERATION.EDIT,
+      lesson: o,
+      now: new Date(),
+      state: state,
+      holidays: holidays,
+    });
     if (!r.ok) {
       toast(r.reason, 'error');
       return;
@@ -69,7 +82,7 @@ export function openEditor(o, preset) {
       }
     : { ...o };
   const rule =
-    !isNew && o.type === 'rule'
+    !isNew && o.type === LESSON_KIND.RULE
       ? state.rules.find((r) => r.id === o.ruleId)
       : null;
   let info = '';
@@ -126,12 +139,12 @@ export function openEditor(o, preset) {
         ? switchRow('Каждую неделю', REPEAT_TEXT, 'erep', true)
         : switchRow(
             'Отменена',
-            `${rule ? `Только ${humanDate(o.orig)}. ` : ''}Пара останется в сетке размытой.`,
+            `${rule ? `Только ${humanDate(o.ruleDate)}. ` : ''}Пара останется в сетке размытой.`,
             'eoff',
             v.cancelled,
           )
     }
-    ${isNew ? '' : `<div class="button-pair">${can('calendar', o, new Date(), state, holidays).ok ? `<button class="btn btn--secondary" id="ecal">${iconCalendar('btn__icon')}В календарь</button>` : ''}<button class="btn btn--danger-text" id="edel">Удалить пару</button></div>`}
+    ${isNew ? '' : `<div class="button-pair">${can({ operation: OPERATION.CALENDAR, lesson: o, now: new Date(), state: state, holidays: holidays }).ok ? `<button class="btn btn--secondary" id="ecal">${iconCalendar('btn__icon')}В календарь</button>` : ''}<button class="btn btn--danger-text" id="edel">Удалить пару</button></div>`}
     <div class="sheet__footer"><button class="btn btn--primary" id="esave">${isNew ? 'Добавить' : 'Сохранить'}</button></div>`,
     isNew ? 'Новая пара' : 'Группа ' + v.group,
   );
@@ -209,7 +222,13 @@ export function openEditor(o, preset) {
   /** Перед сохранением и удалением — проверка заново: пара могла начаться,
       пока шторка была открыта. Нельзя — тост, шторка закрывается, данные не меняются. */
   const stillAllowed = (op) => {
-    const r = can(op, o, new Date(), getState(), holidays);
+    const r = can({
+      operation: op,
+      lesson: o,
+      now: new Date(),
+      state: getState(),
+      holidays: holidays,
+    });
     if (r.ok) return true;
     close();
     toast(r.reason, 'error');
@@ -217,15 +236,15 @@ export function openEditor(o, preset) {
   };
   /** Можно ли поставить пару в клетку; про праздник — с датой в тексте. */
   const placeAllowed = (kind, f, exceptId) => {
-    const r = canPlace(
-      kind,
-      f.date,
-      f.slot,
-      new Date(),
-      getState(),
-      holidays,
-      exceptId,
-    );
+    const r = canPlace({
+      kind: kind,
+      date: f.date,
+      slot: f.slot,
+      now: new Date(),
+      state: getState(),
+      holidays: holidays,
+      exceptLessonId: exceptId,
+    });
     if (r.ok) return true;
     toast(
       isHoliday(f.date, holidays)
@@ -267,12 +286,18 @@ export function openEditor(o, preset) {
       return;
     }
     if (isNew) {
-      f.repeat = root.querySelector('#erep').checked;
-      if (!placeAllowed(f.repeat ? 'addRepeat' : 'addOnce', f)) return;
+      f.isWeekly = root.querySelector('#erep').checked;
+      if (
+        !placeAllowed(
+          f.isWeekly ? PLACE_KIND.ADD_RULE : PLACE_KIND.ADD_ONE_OFF,
+          f,
+        )
+      )
+        return;
       close();
-      dispatch({ type: 'add', pair: f });
+      dispatch({ type: ACTION.ADD, newLesson: f });
       toast(
-        f.repeat
+        f.isWeekly
           ? `Добавлено: ${WEEKDAYS_IN[weekday(f.date)]}, ${slotOf(f.slot).start}, каждую неделю`
           : `Добавлено: ${humanDate(f.date)}, ${slotOf(f.slot).start}`,
         'success',
@@ -284,22 +309,34 @@ export function openEditor(o, preset) {
       if (String(f[k]) !== String(o[k] ?? '')) changes[k] = f[k];
     if (f.date !== o.date) changes.date = f.date;
     if (f.slot !== o.slot) changes.slot = f.slot;
-    if (!stillAllowed('edit')) return;
+    if (!stillAllowed(OPERATION.EDIT)) return;
     // праздник, прошлое и занятость — только если пару ставят на новое место
     const placeChanged = 'date' in changes || 'slot' in changes;
-    if (placeChanged && !placeAllowed('move', f, o.id)) return;
+    if (placeChanged && !placeAllowed(PLACE_KIND.MOVE, f, o.id)) return;
     const off = root.querySelector('#eoff').checked;
     // «Отменена» выключили — это «Вернуть»: в занятый слот нельзя.
     // При переносе свободу нового слота уже проверил canPlace.
     if (!off && o.cancelled && !placeChanged) {
-      const r = can('restore', o, new Date(), getState(), holidays);
+      const r = can({
+        operation: OPERATION.RESTORE,
+        lesson: o,
+        now: new Date(),
+        state: getState(),
+        holidays: holidays,
+      });
       if (!r.ok) {
         toast(r.reason, 'error');
         return;
       }
     }
     if (off && !o.cancelled) {
-      const r = can('cancel', o, new Date(), getState(), holidays);
+      const r = can({
+        operation: OPERATION.CANCEL,
+        lesson: o,
+        now: new Date(),
+        state: getState(),
+        holidays: holidays,
+      });
       if (!r.ok) {
         toast(r.reason, 'error');
         return;
@@ -312,27 +349,32 @@ export function openEditor(o, preset) {
     }
     if (Object.keys(changes).length) {
       const scope = await askScope(o, 'Сохранить изменения?');
-      if (!scope || !stillAllowed('edit')) return;
+      if (!scope || !stillAllowed(OPERATION.EDIT)) return;
       close();
-      dispatch({ type: 'edit', occ: o, changes, scope });
+      dispatch({ type: ACTION.EDIT, lesson: o, changes, scope });
       if (off !== o.cancelled) {
-        const after = findAt(getState(), f.date, f.slot);
-        if (after) dispatch({ type: 'setCancelled', occ: after, value: off });
+        const after = findLessonAt(getState(), f.date, f.slot);
+        if (after)
+          dispatch({
+            type: ACTION.SET_CANCELLED,
+            lesson: after,
+            isCancelled: off,
+          });
       }
     } else {
       close();
       if (off !== o.cancelled)
-        dispatch({ type: 'setCancelled', occ: o, value: off });
+        dispatch({ type: ACTION.SET_CANCELLED, lesson: o, isCancelled: off });
     }
     toast('Сохранено', 'success');
   };
   if (!isNew) {
     root.querySelector('#edel').onclick = async () => {
-      if (!stillAllowed('delete')) return;
+      if (!stillAllowed(OPERATION.DELETE)) return;
       const scope = await askDeleteScope(o);
-      if (!scope || !stillAllowed('delete')) return;
+      if (!scope || !stillAllowed(OPERATION.DELETE)) return;
       close();
-      dispatch({ type: 'delete', occ: o, scope });
+      dispatch({ type: ACTION.DELETE, lesson: o, scope });
       toast('Пара удалена', 'success');
     };
     const calendarButton = root.querySelector('#ecal');

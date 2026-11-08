@@ -2,6 +2,7 @@
 import { TIMEZONE } from '../config/university.js';
 import { slotOf } from './helpers.js';
 import { getState } from '../store.js';
+import { LESSON_KIND } from '../domain/lessons.js';
 
 export function gcalUrl(o) {
   const sl = slotOf(o.slot),
@@ -14,7 +15,7 @@ export function gcalUrl(o) {
     details: `${o.course} курс, ${o.slot}-я пара`,
   });
   if (o.room) p.set('location', `ауд. ${o.room}`);
-  if (o.type === 'rule' && !o.moved) {
+  if (o.type === LESSON_KIND.RULE && !o.moved) {
     // повторяющаяся — с повтором каждую неделю
     const r = getState().rules.find((x) => x.id === o.ruleId);
     p.set(

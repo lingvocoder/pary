@@ -1,192 +1,260 @@
-/* Изменения данных: reduce() — единственная точка, через которую меняется состояние. */
+/* Изменения данных: reduce() — единственная точка, через которую меняется состояние.
+   Остальные функции файла меняют переданную им копию состояния; снаружи их вызывает только reduce(). */
 import { DEFAULT_LESSON_TYPE } from '../config/university.js';
 import { addDays, weekday } from './dates.js';
-import { exKey, splitKey, busyAt } from './lessons.js';
+import {
+  ruleExceptionKey,
+  splitRuleExceptionKey,
+  findOccupant,
+  LESSON_KIND,
+  SOURCE,
+} from './lessons.js';
 import { seed } from './seed.js';
 import { migrate } from './migrate.js';
 
-const newId = () =>
-  globalThis.crypto && crypto.randomUUID
-    ? crypto.randomUUID()
-    : 'id-' + Date.now().toString(36) + Math.random().toString(36).slice(2);
+/** Типы действий. Действие — простой объект: в v2 действия станут очередью синхронизации. */
+export const ACTION = Object.freeze({
+  ADD: 'add',
+  EDIT: 'edit',
+  DELETE: 'delete',
+  SET_CANCELLED: 'setCancelled',
+  RESET: 'reset',
+  LOAD: 'load',
+});
 
-const EDITABLE = ['group', 'course', 'subject', 'lessonType', 'color', 'room'];
+/** Что меняет правка повторяющегося занятия: только эту дату или эту и все следующие. */
+export const SCOPE = Object.freeze({ THIS_DATE: 'one', FUTURE: 'future' });
 
-function cleanException(s, k) {
-  const e = s.exceptions[k];
-  if (!e) return;
-  if (e.patch && !Object.keys(e.patch).length) delete e.patch;
-  if (!e.cancelled) delete e.cancelled;
-  if (!e.deleted) delete e.deleted;
-  if (!Object.keys(e).length) delete s.exceptions[k];
+/** Поля занятия, которые меняет правка (дата и пара — отдельно, это перенос). */
+const EDITABLE_FIELDS = [
+  'group',
+  'course',
+  'subject',
+  'lessonType',
+  'color',
+  'room',
+];
+
+const findRule = (state, ruleId) =>
+  state.rules.find((rule) => rule.id === ruleId);
+const findOneOff = (state, id) =>
+  state.oneOffs.find((oneOff) => oneOff.id === id);
+const isExceptionOfRule = (key, ruleId) =>
+  splitRuleExceptionKey(key)[0] === ruleId;
+
+/** Убирает из правки пустые поля, а пустую правку — целиком. */
+function dropEmptyRuleException(state, key) {
+  const ruleException = state.exceptions[key];
+  if (!ruleException) return;
+  if (ruleException.patch && !Object.keys(ruleException.patch).length)
+    delete ruleException.patch;
+  if (!ruleException.cancelled) delete ruleException.cancelled;
+  if (!ruleException.deleted) delete ruleException.deleted;
+  if (!Object.keys(ruleException).length) delete state.exceptions[key];
 }
 
-/* Ниже — изменения. Они меняют переданную копию s; снаружи их вызывает только reduce(). */
+/** Только эта дата: правка пишется в исключение правила. */
+function editThisDate(state, rule, lesson, changes) {
+  const key = ruleExceptionKey(rule.id, lesson.ruleDate);
+  const ruleException = state.exceptions[key] || (state.exceptions[key] = {});
+  const patch = { ...(ruleException.patch || {}) };
+  for (const field of EDITABLE_FIELDS) {
+    if (!(field in changes)) continue;
+    // совпало с правилом — правка этого поля больше не нужна
+    if (changes[field] === rule[field]) delete patch[field];
+    else patch[field] = changes[field];
+  }
+  ruleException.patch = patch;
+  if ('date' in changes || 'slot' in changes) {
+    const newDate = changes.date ?? lesson.date;
+    const newSlot = changes.slot ?? lesson.slot;
+    const isBackHome = newDate === lesson.ruleDate && newSlot === rule.slot;
+    if (isBackHome) delete ruleException.moveTo;
+    else ruleException.moveTo = { date: newDate, slot: newSlot };
+  }
+  dropEmptyRuleException(state, key);
+}
 
-function applyChange(s, o, changes, scope) {
-  if (o.type === 'once') {
-    Object.assign(
-      s.oneOffs.find((x) => x.id === o.id),
-      changes,
-    );
+/** Правило начинается с этой даты — меняем его целиком, без деления. */
+function rewriteRule(state, rule, lesson, { fields, newDate, newSlot }) {
+  const key = ruleExceptionKey(rule.id, lesson.ruleDate);
+  const wasCancelled = state.exceptions[key] && state.exceptions[key].cancelled;
+  delete state.exceptions[key];
+  const newWeekday = weekday(newDate);
+  // день недели сменился — правки старых дат больше ни к чему не относятся
+  if (newWeekday !== rule.weekday)
+    for (const otherKey of Object.keys(state.exceptions))
+      if (isExceptionOfRule(otherKey, rule.id))
+        delete state.exceptions[otherKey];
+  Object.assign(rule, fields, {
+    weekday: newWeekday,
+    slot: newSlot,
+    from: newDate,
+  });
+  if (wasCancelled)
+    state.exceptions[ruleExceptionKey(rule.id, newDate)] = { cancelled: true };
+}
+
+/** Правило делится: старое заканчивается накануне, новое начинается с этой даты. */
+function splitRule(state, rule, lesson, { fields, newDate, newSlot }) {
+  const newWeekday = weekday(newDate);
+  const newRule = {
+    ...rule,
+    ...fields,
+    id: crypto.randomUUID(),
+    weekday: newWeekday,
+    slot: newSlot,
+    from: newDate,
+    until: rule.until,
+    source: SOURCE.MANUAL,
+  };
+  for (const key of Object.keys(state.exceptions)) {
+    const [ruleId, ruleDate] = splitRuleExceptionKey(key);
+    if (ruleId !== rule.id || ruleDate < lesson.ruleDate) continue;
+    // будущие правки переезжают к новому правилу, если день недели тот же
+    if (newWeekday === rule.weekday && ruleDate !== lesson.ruleDate)
+      state.exceptions[ruleExceptionKey(newRule.id, ruleDate)] =
+        state.exceptions[key];
+    delete state.exceptions[key];
+  }
+  rule.until = addDays(lesson.ruleDate, -1);
+  state.rules.push(newRule);
+}
+
+/** Эта и все следующие недели: правило меняется целиком или делится на «до» и «после». */
+function editFromThisDate(state, rule, lesson, changes) {
+  const fields = {};
+  for (const field of EDITABLE_FIELDS)
+    if (field in changes) fields[field] = changes[field];
+  const change = {
+    fields,
+    newDate: changes.date ?? lesson.ruleDate,
+    newSlot: changes.slot ?? rule.slot,
+  };
+  if (rule.from >= lesson.ruleDate) rewriteRule(state, rule, lesson, change);
+  else splitRule(state, rule, lesson, change);
+}
+
+function editLesson(state, lesson, changes, scope) {
+  if (lesson.type === LESSON_KIND.ONE_OFF) {
+    Object.assign(findOneOff(state, lesson.id), changes);
     return;
   }
-  const r = s.rules.find((x) => x.id === o.ruleId);
-  if (scope === 'one') {
-    // только эта дата: исключение
-    const k = exKey(r.id, o.orig),
-      e = s.exceptions[k] || (s.exceptions[k] = {}),
-      p = { ...(e.patch || {}) };
-    for (const f of EDITABLE)
-      if (f in changes) {
-        if (changes[f] === r[f]) delete p[f];
-        else p[f] = changes[f];
-      }
-    e.patch = p;
-    if ('date' in changes || 'slot' in changes) {
-      const nd = changes.date ?? o.date,
-        ns = changes.slot ?? o.slot;
-      if (nd === o.orig && ns === r.slot) delete e.moveTo;
-      else e.moveTo = { date: nd, slot: ns };
-    }
-    cleanException(s, k);
+  const rule = findRule(state, lesson.ruleId);
+  if (scope === SCOPE.THIS_DATE) editThisDate(state, rule, lesson, changes);
+  else editFromThisDate(state, rule, lesson, changes);
+}
+
+function deleteLesson(state, lesson, scope) {
+  if (lesson.type === LESSON_KIND.ONE_OFF) {
+    state.oneOffs = state.oneOffs.filter((oneOff) => oneOff.id !== lesson.id);
     return;
   }
-  // эта и все следующие: правило делится на «до» и «после»
-  const nd = changes.date ?? o.orig,
-    ns = changes.slot ?? r.slot,
-    fields = {};
-  for (const f of EDITABLE) if (f in changes) fields[f] = changes[f];
-  const nwd = weekday(nd);
-  if (r.from >= o.orig) {
-    // правило начинается с этой даты — меняем его целиком
-    const k = exKey(r.id, o.orig),
-      keepCancel = s.exceptions[k] && s.exceptions[k].cancelled;
-    delete s.exceptions[k];
-    if (nwd !== r.weekday)
-      for (const kk of Object.keys(s.exceptions))
-        if (kk.startsWith(r.id + '|')) delete s.exceptions[kk];
-    Object.assign(r, fields, { weekday: nwd, slot: ns, from: nd });
-    if (keepCancel) s.exceptions[exKey(r.id, nd)] = { cancelled: true };
-  } else {
-    const nr = {
-      ...r,
-      ...fields,
-      id: newId(),
-      weekday: nwd,
-      slot: ns,
-      from: nd,
-      until: r.until,
-      source: 'manual',
-    };
-    for (const k of Object.keys(s.exceptions)) {
-      const [id, d] = splitKey(k);
-      if (id !== r.id || d < o.orig) continue;
-      if (nwd === r.weekday && d !== o.orig)
-        s.exceptions[exKey(nr.id, d)] = s.exceptions[k];
-      delete s.exceptions[k];
-    }
-    r.until = addDays(o.orig, -1);
-    s.rules.push(nr);
+  const rule = findRule(state, lesson.ruleId);
+  if (scope === SCOPE.THIS_DATE) {
+    (state.exceptions[ruleExceptionKey(rule.id, lesson.ruleDate)] ||=
+      {}).deleted = true;
+    return;
+  }
+  if (rule.from >= lesson.ruleDate) {
+    // правило начинается с этой даты — удаляется целиком
+    state.rules = state.rules.filter((candidate) => candidate !== rule);
+    for (const key of Object.keys(state.exceptions))
+      if (isExceptionOfRule(key, rule.id)) delete state.exceptions[key];
+    return;
+  }
+  rule.until = addDays(lesson.ruleDate, -1);
+  for (const key of Object.keys(state.exceptions)) {
+    const [ruleId, ruleDate] = splitRuleExceptionKey(key);
+    if (ruleId === rule.id && ruleDate >= lesson.ruleDate)
+      delete state.exceptions[key];
   }
 }
 
-function removeOccurrence(s, o, scope) {
-  if (o.type === 'once') {
-    s.oneOffs = s.oneOffs.filter((x) => x.id !== o.id);
+function setCancelled(state, lesson, isCancelled) {
+  // вернуть в занятый слот нельзя: двух занятий в одной клетке не бывает
+  const isSlotTaken = () =>
+    findOccupant({
+      state,
+      date: lesson.date,
+      slot: lesson.slot,
+      exceptLessonId: lesson.id,
+    }) !== null;
+  if (!isCancelled && isSlotTaken()) return;
+  if (lesson.type === LESSON_KIND.ONE_OFF) {
+    findOneOff(state, lesson.id).cancelled = isCancelled;
     return;
   }
-  const r = s.rules.find((x) => x.id === o.ruleId);
-  if (scope === 'one') {
-    (s.exceptions[exKey(r.id, o.orig)] ||= {}).deleted = true;
-    return;
-  }
-  if (r.from >= o.orig) {
-    s.rules = s.rules.filter((x) => x !== r);
-    for (const k of Object.keys(s.exceptions))
-      if (k.startsWith(r.id + '|')) delete s.exceptions[k];
-  } else {
-    r.until = addDays(o.orig, -1);
-    for (const k of Object.keys(s.exceptions)) {
-      const [id, d] = splitKey(k);
-      if (id === r.id && d >= o.orig) delete s.exceptions[k];
-    }
-  }
+  const key = ruleExceptionKey(lesson.ruleId, lesson.ruleDate);
+  (state.exceptions[key] ||= {}).cancelled = isCancelled;
+  dropEmptyRuleException(state, key);
 }
 
-function setCancelled(s, o, value) {
-  // вернуть в занятый слот нельзя: двух пар в одной клетке не бывает
-  if (!value && busyAt(s, o.date, o.slot, o.id)) return;
-  if (o.type === 'once') {
-    s.oneOffs.find((x) => x.id === o.id).cancelled = value;
-    return;
-  }
-  const k = exKey(o.ruleId, o.orig);
-  (s.exceptions[k] ||= {}).cancelled = value;
-  cleanException(s, k);
-}
-
-function addPair(s, f) {
-  const base = {
-    group: f.group,
-    course: f.course,
-    subject: f.subject,
+/**
+ * Новое занятие: повторяющееся — правило, иначе разовая пара.
+ * @param {State} state
+ * @param {{group:string, course:number, subject:string, color:string, room:string,
+ *   date:string, slot:number, isWeekly:boolean}} newLesson
+ */
+function addLesson(state, newLesson) {
+  const common = {
+    group: newLesson.group,
+    course: newLesson.course,
+    subject: newLesson.subject,
     lessonType: DEFAULT_LESSON_TYPE,
-    color: f.color,
-    room: f.room || '',
+    color: newLesson.color,
+    room: newLesson.room || '',
     teacher: '',
   };
-  if (f.repeat)
-    s.rules.push({
-      id: newId(),
-      ...base,
-      weekday: weekday(f.date),
-      slot: f.slot,
-      from: f.date,
+  if (newLesson.isWeekly)
+    state.rules.push({
+      id: crypto.randomUUID(),
+      ...common,
+      weekday: weekday(newLesson.date),
+      slot: newLesson.slot,
+      from: newLesson.date,
       until: null,
-      source: 'manual',
+      source: SOURCE.MANUAL,
       importKey: null,
     });
   else
-    s.oneOffs.push({
-      id: newId(),
-      ...base,
-      date: f.date,
-      slot: f.slot,
+    state.oneOffs.push({
+      id: crypto.randomUUID(),
+      ...common,
+      date: newLesson.date,
+      slot: newLesson.slot,
       cancelled: false,
-      source: 'manual',
+      source: SOURCE.MANUAL,
     });
 }
 
 /**
- * Единственная точка изменения данных. Возвращает НОВОЕ состояние.
- * Каждое действие — обычный объект, его можно сохранить в очередь
- * и потом отправить на сервер (v2).
+ * Единственная точка изменения данных. Возвращает НОВОЕ состояние, старое не трогает.
  * @param {State} state
- * @param {{type:string}} action
+ * @param {{type:string}} action  одно из ACTION и его поля
  * @returns {State}
  */
 export function reduce(state, action) {
-  const s = structuredClone(state);
+  const nextState = structuredClone(state);
   switch (action.type) {
-    case 'add':
-      addPair(s, action.pair);
+    case ACTION.ADD:
+      addLesson(nextState, action.newLesson);
       break;
-    case 'edit':
-      applyChange(s, action.occ, action.changes, action.scope);
+    case ACTION.EDIT:
+      editLesson(nextState, action.lesson, action.changes, action.scope);
       break;
-    case 'delete':
-      removeOccurrence(s, action.occ, action.scope);
+    case ACTION.DELETE:
+      deleteLesson(nextState, action.lesson, action.scope);
       break;
-    case 'setCancelled':
-      setCancelled(s, action.occ, action.value);
+    case ACTION.SET_CANCELLED:
+      setCancelled(nextState, action.lesson, action.isCancelled);
       break;
-    case 'reset':
+    case ACTION.RESET:
       return seed();
-    case 'load':
-      return migrate(action.data);
+    case ACTION.LOAD:
+      return migrate(action.backup);
     default:
       throw new Error('Неизвестное действие: ' + action.type);
   }
-  return s;
+  return nextState;
 }

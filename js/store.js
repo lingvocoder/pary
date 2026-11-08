@@ -1,9 +1,9 @@
 /* Хранилище. Состояние живёт в одной переменной и меняется только через dispatch.
    Кто хочет знать об изменениях — подписывается через subscribe (так же устроен React). */
 import { STORAGE_KEY, LEGACY_STORAGE_KEY, PREFS_KEY } from './config/app.js';
+import { reduce } from './domain/changes.js';
 import { seed } from './domain/seed.js';
 import { migrate } from './domain/migrate.js';
-import { reduce } from './domain/changes.js';
 
 let storageOk = true;
 const listeners = new Set();

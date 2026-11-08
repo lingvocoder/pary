@@ -1,28 +1,35 @@
 // Тесты правил состояний занятия: js/domain/rules.js. Запуск: npm test.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { can, canPlace } from '../../js/domain/rules.js';
-import { reduce } from '../../js/domain/changes.js';
+import {
+  can,
+  canPlace,
+  lessonState,
+  isApplicable,
+  LESSON_STATE,
+  OPERATION,
+} from '../../js/domain/rules.js';
+import { ACTION, reduce } from '../../js/domain/changes.js';
 import { seed } from '../../js/domain/seed.js';
-import { WEEK, at, PAIR, BEFORE, DURING, AFTER } from './fixtures.js';
+import { WEEK, lessonsAt, PAIR, BEFORE, DURING, AFTER } from './fixtures.js';
 
 // Состояния пары — столбцы таблицы «Пара: что с ней можно сделать»
 
 const PAIR_STATES = {
-  будущая: { o: PAIR, now: BEFORE, holidays: [] },
+  будущая: { lesson: PAIR, now: BEFORE, holidays: [] },
   'будущая, отменена': {
-    o: { ...PAIR, cancelled: true },
+    lesson: { ...PAIR, cancelled: true },
     now: BEFORE,
     holidays: [],
   },
-  идёт: { o: PAIR, now: DURING, holidays: [] },
-  прошла: { o: PAIR, now: AFTER, holidays: [] },
+  идёт: { lesson: PAIR, now: DURING, holidays: [] },
+  прошла: { lesson: PAIR, now: AFTER, holidays: [] },
   'прошла, не состоялась': {
-    o: { ...PAIR, cancelled: true },
+    lesson: { ...PAIR, cancelled: true },
     now: AFTER,
     holidays: [],
   },
-  'будущая, праздник': { o: PAIR, now: BEFORE, holidays: ['2026-10-28'] },
+  'будущая, праздник': { lesson: PAIR, now: BEFORE, holidays: ['2026-10-28'] },
 };
 
 // [операция, состояние, ожидание]: true — можно, строка — точный текст отказа,
@@ -102,20 +109,33 @@ function assertRule(got, want) {
   else assert.ok(got.reason, 'у отказа должен быть текст');
 }
 
-for (const [op, name, want] of PAIR_CASES) {
-  test(`пара: ${op}, ${name} → ${want}`, () => {
-    const { o, now, holidays } = PAIR_STATES[name];
-    assertRule(can(op, o, now, seed(), holidays), want);
+for (const [operation, name, want] of PAIR_CASES) {
+  test(`пара: ${operation}, ${name} → ${want}`, () => {
+    const { lesson, now, holidays } = PAIR_STATES[name];
+    assertRule(
+      can({
+        operation,
+        lesson,
+        now,
+        state: seed(),
+        holidays,
+      }),
+      want,
+    );
   });
 }
 
 test('пара: restore в занятый слот — «Слот занят группой N»', () => {
   // пока пара отменена, в её слот поставили разовую
-  let s = seed();
-  s = reduce(s, { type: 'setCancelled', occ: PAIR, value: true });
-  s = reduce(s, {
-    type: 'add',
-    pair: {
+  let state = seed();
+  state = reduce(state, {
+    type: ACTION.SET_CANCELLED,
+    lesson: PAIR,
+    isCancelled: true,
+  });
+  state = reduce(state, {
+    type: ACTION.ADD,
+    newLesson: {
       group: '999',
       course: 1,
       subject: 'ИКТ в лингвистике',
@@ -123,11 +143,22 @@ test('пара: restore в занятый слот — «Слот занят г�
       room: '',
       date: '2026-10-28',
       slot: 6,
-      repeat: false,
+      isWeekly: false,
     },
   });
-  const o = at(s, WEEK, '2026-10-28', 6).find((x) => x.cancelled);
-  assertRule(can('restore', o, BEFORE, s, []), 'Слот занят группой 999');
+  const lesson = lessonsAt(state, WEEK, '2026-10-28', 6).find(
+    (candidate) => candidate.cancelled,
+  );
+  assertRule(
+    can({
+      operation: 'restore',
+      lesson,
+      now: BEFORE,
+      state,
+      holidays: [],
+    }),
+    'Слот занят группой 999',
+  );
 });
 
 test('пара в праздник, который начался или прошёл: всё нельзя', () => {
@@ -142,16 +173,30 @@ test('пара в праздник, который начался или про�
     'delete',
     'calendar',
   ];
-  for (const op of ops)
+  for (const operation of ops)
     for (const now of [DURING, AFTER])
       assertRule(
-        can(op, PAIR, now, seed(), ['2026-10-28']),
+        can({
+          operation,
+          lesson: PAIR,
+          now,
+          state: seed(),
+          holidays: ['2026-10-28'],
+        }),
         'Праздник — пары нет',
       );
 });
 
 test('пара: неизвестная операция — ошибка', () => {
-  assert.throws(() => can('fly', PAIR, BEFORE, seed(), []));
+  assert.throws(() =>
+    can({
+      operation: 'fly',
+      lesson: PAIR,
+      now: BEFORE,
+      state: seed(),
+      holidays: [],
+    }),
+  );
 });
 
 // Клетки таблицы «Клетка: что в неё можно поставить». Сейчас — среда 28.10, 12:00,
@@ -160,21 +205,35 @@ test('пара: неизвестная операция — ошибка', () =>
 const NOON = new Date('2026-10-28T12:00:00');
 
 const cancelledSeed = () =>
-  reduce(seed(), { type: 'setCancelled', occ: PAIR, value: true });
+  reduce(seed(), {
+    type: ACTION.SET_CANCELLED,
+    lesson: PAIR,
+    isCancelled: true,
+  });
 
 const CELLS = {
-  'будущая, свободна': { s: seed, date: '2026-10-29', slot: 3, holidays: [] },
+  'будущая, свободна': {
+    makeState: seed,
+    date: '2026-10-29',
+    slot: 3,
+    holidays: [],
+  },
   'будущая, там отменённая': {
-    s: cancelledSeed,
+    makeState: cancelledSeed,
     date: '2026-10-28',
     slot: 6,
     holidays: [],
   },
-  'будущая, занята': { s: seed, date: '2026-10-28', slot: 6, holidays: [] },
-  идёт: { s: seed, date: '2026-10-28', slot: 3, holidays: [] },
-  прошла: { s: seed, date: '2026-10-28', slot: 1, holidays: [] },
+  'будущая, занята': {
+    makeState: seed,
+    date: '2026-10-28',
+    slot: 6,
+    holidays: [],
+  },
+  идёт: { makeState: seed, date: '2026-10-28', slot: 3, holidays: [] },
+  прошла: { makeState: seed, date: '2026-10-28', slot: 1, holidays: [] },
   праздник: {
-    s: seed,
+    makeState: seed,
     date: '2026-10-29',
     slot: 3,
     holidays: ['2026-10-29'],
@@ -206,28 +265,59 @@ const CELL_CASES = [
 
 for (const [kind, name, want] of CELL_CASES) {
   test(`клетка: ${kind}, ${name} → ${want}`, () => {
-    const { s, date, slot, holidays } = CELLS[name];
-    assertRule(canPlace(kind, date, slot, NOON, s(), holidays), want);
+    const { makeState, date, slot, holidays } = CELLS[name];
+    assertRule(
+      canPlace({
+        kind,
+        date,
+        slot,
+        now: NOON,
+        state: makeState(),
+        holidays,
+      }),
+      want,
+    );
   });
 }
 
 test('клетка: перенос в свой же слот — не занятость', () => {
   assertRule(
-    canPlace('move', '2026-10-28', 6, NOON, seed(), [], PAIR.id),
+    canPlace({
+      kind: 'move',
+      date: '2026-10-28',
+      slot: 6,
+      now: NOON,
+      state: seed(),
+      holidays: [],
+      exceptLessonId: PAIR.id,
+    }),
     true,
   );
 });
 
 test('клетка: неизвестный вид — ошибка', () => {
-  assert.throws(() => canPlace('fly', '2026-10-29', 3, NOON, seed(), []));
+  assert.throws(() =>
+    canPlace({
+      kind: 'fly',
+      date: '2026-10-29',
+      slot: 3,
+      now: NOON,
+      state: seed(),
+      holidays: [],
+    }),
+  );
 });
 
 test('пара: held, если в слот уже поставили замену, — «Слот занят группой N»', () => {
-  let s = seed();
-  s = reduce(s, { type: 'setCancelled', occ: PAIR, value: true });
-  s = reduce(s, {
-    type: 'add',
-    pair: {
+  let state = seed();
+  state = reduce(state, {
+    type: ACTION.SET_CANCELLED,
+    lesson: PAIR,
+    isCancelled: true,
+  });
+  state = reduce(state, {
+    type: ACTION.ADD,
+    newLesson: {
       group: '999',
       course: 1,
       subject: 'ИКТ в лингвистике',
@@ -235,9 +325,48 @@ test('пара: held, если в слот уже поставили замен�
       room: '',
       date: '2026-10-28',
       slot: 6,
-      repeat: false,
+      isWeekly: false,
     },
   });
-  const o = at(s, WEEK, '2026-10-28', 6).find((x) => x.cancelled);
-  assertRule(can('held', o, AFTER, s, []), 'Слот занят группой 999');
+  const lesson = lessonsAt(state, WEEK, '2026-10-28', 6).find(
+    (candidate) => candidate.cancelled,
+  );
+  assertRule(
+    can({
+      operation: 'held',
+      lesson,
+      now: AFTER,
+      state,
+      holidays: [],
+    }),
+    'Слот занят группой 999',
+  );
+});
+
+test('состояние занятия: шесть столбцов таблицы и праздник, который уже прошёл', () => {
+  const expected = {
+    будущая: LESSON_STATE.FUTURE,
+    'будущая, отменена': LESSON_STATE.CANCELLED,
+    идёт: LESSON_STATE.ONGOING,
+    прошла: LESSON_STATE.PAST,
+    'прошла, не состоялась': LESSON_STATE.NOT_HELD,
+    'будущая, праздник': LESSON_STATE.HOLIDAY,
+  };
+  for (const [name, state] of Object.entries(expected)) {
+    const { lesson, now, holidays } = PAIR_STATES[name];
+    assert.equal(lessonState(lesson, now, holidays), state, name);
+  }
+  assert.equal(
+    lessonState(PAIR, AFTER, ['2026-10-28']),
+    LESSON_STATE.HOLIDAY_DONE,
+  );
+});
+
+test('применимость: «Вернуть» видна и при занятом слоте — почему нельзя, скажет can()', () => {
+  assert.equal(isApplicable(OPERATION.RESTORE, LESSON_STATE.CANCELLED), true);
+  assert.equal(isApplicable(OPERATION.RESTORE, LESSON_STATE.FUTURE), false);
+  assert.equal(isApplicable(OPERATION.HELD, LESSON_STATE.NOT_HELD), true);
+  assert.equal(isApplicable(OPERATION.MOVE, LESSON_STATE.HOLIDAY), true);
+  assert.equal(isApplicable(OPERATION.EDIT, LESSON_STATE.ONGOING), false);
+  assert.throws(() => isApplicable('fly', LESSON_STATE.FUTURE));
 });

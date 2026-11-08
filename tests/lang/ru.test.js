@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { plural } from '../../js/lang/ru.js';
 
-const pairs = (n) => `${n} ${plural(n, 'пара', 'пары', 'пар')}`;
+const pairs = (count) => `${count} ${plural(count, 'пара', 'пары', 'пар')}`;
 
 test('склонение: 1 пара, 2–4 пары, 5+ пар, 11–14 пар', () => {
   assert.equal(pairs(1), '1 пара');

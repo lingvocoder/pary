@@ -2,8 +2,9 @@
 import { APP_VERSION, BACKUP_FILE_PREFIX } from '../config/app.js';
 import { DOWNLOAD_URL_LIFETIME_MS } from '../config/interface.js';
 import { toIso } from '../domain/dates.js';
+import { weekLessons } from '../domain/lessons.js';
+import { ACTION } from '../domain/changes.js';
 import { migrate } from '../domain/migrate.js';
-import { weekOccurrences } from '../domain/lessons.js';
 import { getState, dispatch, isStorageOk } from '../store.js';
 import { $, toast, copyWeekSummary } from './helpers.js';
 import { openSheet, askConfirm } from './sheets.js';
@@ -66,7 +67,7 @@ export function openMenu() {
         'Да, сбросить правки',
       );
       if (ok) {
-        dispatch({ type: 'reset' });
+        dispatch({ type: ACTION.RESET });
         toast('Расписание сброшено', 'success');
       }
     }
@@ -83,7 +84,7 @@ export function initBackupInput() {
     let copy, summary;
     try {
       copy = migrate(JSON.parse(await f.text()));
-      summary = copyWeekSummary(weekOccurrences(copy, thisWeek()).length);
+      summary = copyWeekSummary(weekLessons(copy, thisWeek()).length);
     } catch (_) {
       toast('Это не файл резервной копии расписания', 'error');
       return;
@@ -94,7 +95,7 @@ export function initBackupInput() {
       'Да, заменить',
     );
     if (!ok) return;
-    dispatch({ type: 'load', data: copy });
+    dispatch({ type: ACTION.LOAD, backup: copy });
     toast('Расписание загружено', 'success');
   };
 }

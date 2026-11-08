@@ -1,4 +1,4 @@
-/* Занятия недели: из правил, исключений и разовых пар — кто в каком слоте, следующая пара,
+/* Занятия недели: из правил, исключений и разовых пар — кто в каком слоте, следующее занятие,
    фаза занятия и праздник. Чистые функции: текущее время приходит параметром now. */
 import { SLOTS } from '../config/university.js';
 import { UPCOMING_WEEKS } from '../config/interface.js';
@@ -30,8 +30,8 @@ import {
  * @property {string|null} importKey  как узнать эту пару в новом PDF
  */
 /**
- * Исключение для одной даты правила. Ключ: `${ruleId}|${date}`.
- * @typedef {Object} Exception
+ * Правка одной даты правила. Ключ в state.exceptions: `${ruleId}|${ruleDate}`.
+ * @typedef {Object} RuleException
  * @property {boolean} [cancelled]
  * @property {boolean} [deleted]
  * @property {{date:string, slot:number}} [moveTo]
@@ -54,19 +54,20 @@ import {
  * @property {'manual'} source
  */
 /**
+ * Сохранённые данные. Имена полей — схема данных в телефоне, их меняют только через миграцию.
  * @typedef {Object} State
  * @property {number} schema
  * @property {Rule[]} rules
- * @property {Object<string, Exception>} exceptions
+ * @property {Object<string, RuleException>} exceptions
  * @property {OneOff[]} oneOffs
  */
 /**
- * Конкретное занятие в конкретный день — то, что видно в сетке.
- * @typedef {Object} Occurrence
- * @property {'rule'|'once'} type
+ * Занятие в конкретный день — то, что видно в сетке. Вычисляется, в данных не хранится.
+ * @typedef {Object} Lesson
+ * @property {'rule'|'oneOff'} type
  * @property {string} id            уникален в пределах недели
  * @property {string} [ruleId]
- * @property {string} orig          дата по правилу (до переноса)
+ * @property {string} ruleDate      дата по правилу (до переноса); у разовой — её дата
  * @property {string} date
  * @property {number} slot
  * @property {string} group
@@ -80,132 +81,192 @@ import {
  * @property {'pdf'|'manual'} source
  */
 
-export const exKey = (ruleId, date) => `${ruleId}|${date}`;
-export const splitKey = (k) => {
-  const i = k.indexOf('|');
-  return [k.slice(0, i), k.slice(i + 1)];
-};
-export const ruleActiveOn = (r, date) =>
-  date >= r.from &&
-  (!r.until || date <= r.until) &&
-  weekday(date) === r.weekday;
+/** Откуда занятие: из повторяющегося правила или разовая пара. */
+export const LESSON_KIND = Object.freeze({ RULE: 'rule', ONE_OFF: 'oneOff' });
 
-/** @returns {Occurrence} */
-function occFromRule(r, date, e) {
-  const p = e.patch || {};
-  const pick = (f) => (f in p ? p[f] : r[f]);
+/** Откуда пара попала в данные. Значения хранятся в телефоне. */
+export const SOURCE = Object.freeze({ PDF: 'pdf', MANUAL: 'manual' });
+
+/** Фаза занятия по времени: ещё не началось, идёт, закончилось. */
+export const PHASE = Object.freeze({
+  FUTURE: 'future',
+  ONGOING: 'ongoing',
+  PAST: 'past',
+});
+
+const KEY_SEPARATOR = '|';
+
+/** Ключ правки одной даты правила в state.exceptions. */
+export const ruleExceptionKey = (ruleId, ruleDate) =>
+  `${ruleId}${KEY_SEPARATOR}${ruleDate}`;
+
+/** Обратно: ключ → [ruleId, ruleDate]. */
+export function splitRuleExceptionKey(key) {
+  const separatorIndex = key.indexOf(KEY_SEPARATOR);
+  return [key.slice(0, separatorIndex), key.slice(separatorIndex + 1)];
+}
+
+/** Действует ли правило в эту дату: в своих границах и в свой день недели. */
+export const isRuleActiveOn = (rule, date) =>
+  date >= rule.from &&
+  (!rule.until || date <= rule.until) &&
+  weekday(date) === rule.weekday;
+
+/**
+ * Занятие из правила на его дату, с учётом правки этой даты.
+ * @param {Rule} rule
+ * @param {string} ruleDate
+ * @param {RuleException} ruleException  {} — правки нет
+ * @returns {Lesson}
+ */
+function lessonFromRule(rule, ruleDate, ruleException) {
+  const patch = ruleException.patch || {};
+  const pick = (field) => (field in patch ? patch[field] : rule[field]);
+  const moveTo = ruleException.moveTo;
   return {
-    type: 'rule',
-    id: exKey(r.id, date),
-    ruleId: r.id,
-    orig: date,
+    type: LESSON_KIND.RULE,
+    id: ruleExceptionKey(rule.id, ruleDate),
+    ruleId: rule.id,
+    ruleDate,
     group: pick('group'),
     course: pick('course'),
     subject: pick('subject'),
     lessonType: pick('lessonType'),
     color: pick('color'),
     room: pick('room'),
-    date: e.moveTo ? e.moveTo.date : date,
-    slot: e.moveTo ? e.moveTo.slot : r.slot,
-    cancelled: !!e.cancelled,
-    moved: !!e.moveTo,
-    source: r.source,
+    date: moveTo ? moveTo.date : ruleDate,
+    slot: moveTo ? moveTo.slot : rule.slot,
+    cancelled: !!ruleException.cancelled,
+    moved: !!moveTo,
+    source: rule.source,
   };
 }
 
 /**
  * Все занятия недели, с учётом переносов в неё и из неё.
- * @param {State} s
- * @param {string} ws  понедельник недели
- * @returns {Occurrence[]}
+ * @param {State} state
+ * @param {string} weekStartDate  понедельник недели
+ * @returns {Lesson[]}
  */
-export function weekOccurrences(s, ws) {
-  const we = addDays(ws, DAYS_PER_WEEK - 1),
-    inWeek = (d) => d >= ws && d <= we,
-    out = [];
-  for (const r of s.rules) {
-    const date = addDays(ws, r.weekday);
-    if (!ruleActiveOn(r, date)) continue;
-    const e = s.exceptions[exKey(r.id, date)] || {};
-    if (!e.deleted && !e.moveTo) out.push(occFromRule(r, date, e));
+export function weekLessons(state, weekStartDate) {
+  const weekEndDate = addDays(weekStartDate, DAYS_PER_WEEK - 1);
+  const isInWeek = (date) => date >= weekStartDate && date <= weekEndDate;
+  const lessons = [];
+  for (const rule of state.rules) {
+    const ruleDate = addDays(weekStartDate, rule.weekday);
+    if (!isRuleActiveOn(rule, ruleDate)) continue;
+    const ruleException =
+      state.exceptions[ruleExceptionKey(rule.id, ruleDate)] || {};
+    if (!ruleException.deleted && !ruleException.moveTo)
+      lessons.push(lessonFromRule(rule, ruleDate, ruleException));
   }
-  for (const k in s.exceptions) {
-    // перенесённые сюда с других дат
-    const e = s.exceptions[k];
-    if (!e.moveTo || e.deleted || !inWeek(e.moveTo.date)) continue;
-    const [id, date] = splitKey(k),
-      r = s.rules.find((x) => x.id === id);
-    if (r && ruleActiveOn(r, date)) out.push(occFromRule(r, date, e));
+  // перенесённые в эту неделю с других дат
+  for (const key in state.exceptions) {
+    const ruleException = state.exceptions[key];
+    const movedHere =
+      ruleException.moveTo &&
+      !ruleException.deleted &&
+      isInWeek(ruleException.moveTo.date);
+    if (!movedHere) continue;
+    const [ruleId, ruleDate] = splitRuleExceptionKey(key);
+    const rule = state.rules.find((candidate) => candidate.id === ruleId);
+    if (rule && isRuleActiveOn(rule, ruleDate))
+      lessons.push(lessonFromRule(rule, ruleDate, ruleException));
   }
-  for (const o of s.oneOffs)
-    if (inWeek(o.date))
-      out.push({ ...o, type: 'once', orig: o.date, moved: false });
-  return out;
+  for (const oneOff of state.oneOffs)
+    if (isInWeek(oneOff.date))
+      lessons.push({
+        ...oneOff,
+        type: LESSON_KIND.ONE_OFF,
+        ruleDate: oneOff.date,
+        moved: false,
+      });
+  return lessons;
 }
 
-/** Ближайшая неотменённая пара не в праздник, которая ещё не закончилась. */
-export function nextPair(s, now, holidays = []) {
-  const today = toIso(now);
-  for (let w = 0; w < UPCOMING_WEEKS; w++) {
-    const list = weekOccurrences(
-      s,
-      addDays(weekStart(today), DAYS_PER_WEEK * w),
-    )
-      .filter((o) => !o.cancelled && !isHoliday(o.date, holidays))
-      .map((o) => ({
-        ...o,
-        start: atTime(o.date, SLOTS[o.slot - 1].start),
-        end: atTime(o.date, SLOTS[o.slot - 1].end),
-      }))
-      .filter((o) => o.end > now)
-      .sort((a, b) => a.start - b.start);
-    if (list.length) return list[0];
+/**
+ * Ближайшее неотменённое занятие не в праздник, которое ещё не закончилось.
+ * Ищет на UPCOMING_WEEKS недель вперёд.
+ * @param {State} state
+ * @param {Date} now
+ * @param {string[]} [holidays]
+ * @returns {(Lesson & {start: Date, end: Date})|null}
+ */
+export function nextLesson(state, now, holidays = []) {
+  const thisWeekStart = weekStart(toIso(now));
+  for (let weekOffset = 0; weekOffset < UPCOMING_WEEKS; weekOffset++) {
+    const weekStartDate = addDays(thisWeekStart, DAYS_PER_WEEK * weekOffset);
+    const upcoming = weekLessons(state, weekStartDate)
+      .filter(
+        (lesson) => !lesson.cancelled && !isHoliday(lesson.date, holidays),
+      )
+      .map((lesson) => ({ ...lesson, ...slotTimes(lesson.date, lesson.slot) }))
+      .filter((lesson) => lesson.end > now)
+      .sort((first, second) => first.start - second.start);
+    if (upcoming.length) return upcoming[0];
   }
   return null;
 }
 
-/** Начало и конец слота в эту дату — объекты Date. */
-export const slotTimes = (date, slot) => ({
-  start: atTime(date, SLOTS[slot - 1].start),
-  end: atTime(date, SLOTS[slot - 1].end),
-});
+/**
+ * Начало и конец пары с этим номером в эту дату.
+ * @returns {{start: Date, end: Date}}
+ */
+export function slotTimes(date, slot) {
+  const bell = SLOTS[slot - 1];
+  return { start: atTime(date, bell.start), end: atTime(date, bell.end) };
+}
 
-/** Идёт ли пара прямо сейчас: не отменена, не в праздник и начало ≤ now < конец. */
-export function isOngoing(o, now, holidays = []) {
-  if (o.cancelled || isHoliday(o.date, holidays)) return false;
-  const { start, end } = slotTimes(o.date, o.slot);
+/** Идёт ли занятие прямо сейчас: не отменено, не в праздник и начало ≤ now < конец. */
+export function isOngoing(lesson, now, holidays = []) {
+  if (lesson.cancelled || isHoliday(lesson.date, holidays)) return false;
+  const { start, end } = slotTimes(lesson.date, lesson.slot);
   return start <= now && now < end;
 }
 
-/** Слот уже в прошлом: его начало ≤ now. Значит, и пара, которая идёт сейчас, — прошлое. */
+/** Слот уже в прошлом: его начало ≤ now. Значит, и занятие, которое идёт сейчас, — прошлое. */
 export function isPastSlot(date, slot, now) {
   return slotTimes(date, slot).start <= now;
 }
 
-/** Кто уже занимает слот. Отменённая пара и пара в праздник слот не держат. */
-export function busyAt(s, date, slot, exceptId, holidays = []) {
-  return (
-    weekOccurrences(s, weekStart(date)).find(
-      (o) =>
-        o.date === date &&
-        o.slot === slot &&
-        !o.cancelled &&
-        !isHoliday(o.date, holidays) &&
-        o.id !== exceptId,
-    ) || null
+/**
+ * Кто уже занимает слот. Отменённое занятие и занятие в праздник слот не держат.
+ * @param {Object} where
+ * @param {State} where.state
+ * @param {string} where.date
+ * @param {number} where.slot
+ * @param {string} [where.exceptLessonId]  занятие, которое переносят: свой слот оно не занимает
+ * @param {string[]} [where.holidays]
+ * @returns {Lesson|null}
+ */
+export function findOccupant({
+  state,
+  date,
+  slot,
+  exceptLessonId,
+  holidays = [],
+}) {
+  const occupant = weekLessons(state, weekStart(date)).find(
+    (lesson) =>
+      lesson.date === date &&
+      lesson.slot === slot &&
+      !lesson.cancelled &&
+      !isHoliday(lesson.date, holidays) &&
+      lesson.id !== exceptLessonId,
   );
+  return occupant || null;
 }
 
 /**
- * Фаза пары по её фактическому месту (уже после переноса).
- * @param {Occurrence} o
+ * Фаза занятия по его фактическому месту (уже после переноса).
+ * @param {Lesson} lesson
  * @param {Date} now
- * @returns {'future'|'ongoing'|'past'}
+ * @returns {string} одно из PHASE
  */
-export function phase(o, now) {
-  const { start, end } = slotTimes(o.date, o.slot);
-  if (now < start) return 'future';
-  return now < end ? 'ongoing' : 'past';
+export function lessonPhase(lesson, now) {
+  const { start, end } = slotTimes(lesson.date, lesson.slot);
+  if (now < start) return PHASE.FUTURE;
+  return now < end ? PHASE.ONGOING : PHASE.PAST;
 }
 
 /** Праздник ли эта дата: список праздников приходит параметром (HOLIDAYS). */
@@ -214,9 +275,9 @@ export function isHoliday(date, holidays) {
 }
 
 /** Занятие в слоте: сначала неотменённое, иначе любое. */
-export function findAt(s, date, slot) {
-  const list = weekOccurrences(s, weekStart(date)).filter(
-    (o) => o.date === date && o.slot === slot,
+export function findLessonAt(state, date, slot) {
+  const inSlot = weekLessons(state, weekStart(date)).filter(
+    (lesson) => lesson.date === date && lesson.slot === slot,
   );
-  return list.find((o) => !o.cancelled) || list[0] || null;
+  return inSlot.find((lesson) => !lesson.cancelled) || inSlot[0] || null;
 }

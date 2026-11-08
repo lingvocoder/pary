@@ -2,54 +2,57 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  nextPair,
+  nextLesson,
   isOngoing,
   isPastSlot,
-  busyAt,
-  phase,
+  findOccupant,
+  lessonPhase,
   isHoliday,
 } from '../../js/domain/lessons.js';
-import { reduce } from '../../js/domain/changes.js';
+import { ACTION, reduce } from '../../js/domain/changes.js';
 import { seed } from '../../js/domain/seed.js';
-import { WEEK, one, PAIR, AFTER } from './fixtures.js';
+import { WEEK, lessonAt, PAIR, AFTER } from './fixtures.js';
 
 test('занятый слот: отменённая пара место не занимает', () => {
-  let s = seed();
-  assert.equal(busyAt(s, '2026-10-28', 6).group, '323');
-  s = reduce(s, {
-    type: 'setCancelled',
-    occ: one(s, WEEK, '2026-10-28', 6),
-    value: true,
+  let state = seed();
+  assert.equal(
+    findOccupant({ state, date: '2026-10-28', slot: 6 }).group,
+    '323',
+  );
+  state = reduce(state, {
+    type: ACTION.SET_CANCELLED,
+    lesson: lessonAt(state, WEEK, '2026-10-28', 6),
+    isCancelled: true,
   });
-  assert.equal(busyAt(s, '2026-10-28', 6), null);
+  assert.equal(findOccupant({ state, date: '2026-10-28', slot: 6 }), null);
 });
 
 test('следующая пара в четверг вечером — суббота, 08:00, 326', () => {
-  const n = nextPair(seed(), new Date(2026, 9, 29, 19, 40));
-  assert.equal(n.date, '2026-10-31');
-  assert.equal(n.slot, 1);
-  assert.equal(n.group, '326');
+  const next = nextLesson(seed(), new Date(2026, 9, 29, 19, 40));
+  assert.equal(next.date, '2026-10-31');
+  assert.equal(next.slot, 1);
+  assert.equal(next.group, '326');
 });
 
 test('идёт сейчас: начало ≤ now < конец, отменённая — нет', () => {
   // 323, среда 28.10, 6-я пара: 15:40–17:00
-  const o = one(seed(), WEEK, '2026-10-28', 6);
-  assert.equal(isOngoing(o, new Date('2026-10-28T15:39:59')), false);
-  assert.equal(isOngoing(o, new Date('2026-10-28T15:40:00')), true);
-  assert.equal(isOngoing(o, new Date('2026-10-28T16:30:00')), true);
-  assert.equal(isOngoing(o, new Date('2026-10-28T17:00:00')), false);
-  assert.equal(isOngoing(o, new Date('2026-10-29T15:50:00')), false); // другой день
+  const lesson = lessonAt(seed(), WEEK, '2026-10-28', 6);
+  assert.equal(isOngoing(lesson, new Date('2026-10-28T15:39:59')), false);
+  assert.equal(isOngoing(lesson, new Date('2026-10-28T15:40:00')), true);
+  assert.equal(isOngoing(lesson, new Date('2026-10-28T16:30:00')), true);
+  assert.equal(isOngoing(lesson, new Date('2026-10-28T17:00:00')), false);
+  assert.equal(isOngoing(lesson, new Date('2026-10-29T15:50:00')), false); // другой день
   assert.equal(
-    isOngoing({ ...o, cancelled: true }, new Date('2026-10-28T15:50:00')),
+    isOngoing({ ...lesson, cancelled: true }, new Date('2026-10-28T15:50:00')),
     false,
   );
 });
 
 test('идёт сейчас: в праздник — нет', () => {
-  const o = one(seed(), WEEK, '2026-10-28', 6);
+  const lesson = lessonAt(seed(), WEEK, '2026-10-28', 6);
   const now = new Date('2026-10-28T16:00:00');
-  assert.equal(isOngoing(o, now, ['2026-10-28']), false);
-  assert.equal(isOngoing(o, now, ['2026-10-29']), true);
+  assert.equal(isOngoing(lesson, now, ['2026-10-28']), false);
+  assert.equal(isOngoing(lesson, now, ['2026-10-29']), true);
 });
 
 test('прошедший слот: вчера, сегодня уже началась, сегодня впереди, идёт сейчас', () => {
@@ -66,15 +69,15 @@ test('прошедший слот: вчера, сегодня уже начал�
 });
 
 test('фаза: граница начала и конца', () => {
-  assert.equal(phase(PAIR, new Date('2026-10-28T15:39:59')), 'future');
-  assert.equal(phase(PAIR, new Date('2026-10-28T15:40:00')), 'ongoing');
-  assert.equal(phase(PAIR, new Date('2026-10-28T16:59:59')), 'ongoing');
-  assert.equal(phase(PAIR, new Date('2026-10-28T17:00:00')), 'past');
+  assert.equal(lessonPhase(PAIR, new Date('2026-10-28T15:39:59')), 'future');
+  assert.equal(lessonPhase(PAIR, new Date('2026-10-28T15:40:00')), 'ongoing');
+  assert.equal(lessonPhase(PAIR, new Date('2026-10-28T16:59:59')), 'ongoing');
+  assert.equal(lessonPhase(PAIR, new Date('2026-10-28T17:00:00')), 'past');
 });
 
 test('фаза — по фактическому месту, после переноса', () => {
   const moved = { ...PAIR, date: '2026-10-29', slot: 1, moved: true };
-  assert.equal(phase(moved, AFTER), 'future');
+  assert.equal(lessonPhase(moved, AFTER), 'future');
 });
 
 test('праздник: дата в списке или нет', () => {
@@ -84,13 +87,31 @@ test('праздник: дата в списке или нет', () => {
 
 test('следующая пара: праздник пропускается', () => {
   // четверг вечером; суббота 31.10 — праздник, значит следующая — вторник 3.11
-  const n = nextPair(seed(), new Date(2026, 9, 29, 19, 40), ['2026-10-31']);
-  assert.equal(n.date, '2026-11-03');
-  assert.equal(n.slot, 1);
-  assert.equal(n.group, '221');
+  const next = nextLesson(seed(), new Date(2026, 9, 29, 19, 40), [
+    '2026-10-31',
+  ]);
+  assert.equal(next.date, '2026-11-03');
+  assert.equal(next.slot, 1);
+  assert.equal(next.group, '221');
 });
 
 test('занятый слот: пара в праздник место не занимает', () => {
-  assert.equal(busyAt(seed(), '2026-10-28', 6, null, ['2026-10-28']), null);
-  assert.equal(busyAt(seed(), '2026-10-28', 6, null, []).group, '323');
+  assert.equal(
+    findOccupant({
+      state: seed(),
+      date: '2026-10-28',
+      slot: 6,
+      holidays: ['2026-10-28'],
+    }),
+    null,
+  );
+  assert.equal(
+    findOccupant({
+      state: seed(),
+      date: '2026-10-28',
+      slot: 6,
+      holidays: [],
+    }).group,
+    '323',
+  );
 });

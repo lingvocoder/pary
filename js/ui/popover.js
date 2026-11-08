@@ -7,8 +7,14 @@ import {
 } from '../config/interface.js';
 import { WEEKDAYS_SHORT, WEEKDAYS } from '../lang/ru.js';
 import { weekday, humanDate } from '../domain/dates.js';
-import { findAt, phase, isHoliday } from '../domain/lessons.js';
-import { can } from '../domain/rules.js';
+import {
+  LESSON_KIND,
+  lessonPhase,
+  isHoliday,
+  findLessonAt,
+} from '../domain/lessons.js';
+import { OPERATION, can } from '../domain/rules.js';
+import { ACTION } from '../domain/changes.js';
 import { getState, dispatch } from '../store.js';
 import { esc, toast, colorClass, slotOf } from './helpers.js';
 import { iconCalendar, iconMapPin } from './icons.js';
@@ -21,8 +27,8 @@ let pop = null;
 /** «Перенесена, обычно — вт, 27 октября, 08:00»: исходные день, дата и время пары по правилу. */
 function movedFrom(o) {
   const rule = getState().rules.find((r) => r.id === o.ruleId);
-  const day = WEEKDAYS_SHORT[weekday(o.orig)].toLowerCase();
-  return `Перенесена, обычно — ${day}, ${humanDate(o.orig)}, ${slotOf(rule.slot).start}`;
+  const day = WEEKDAYS_SHORT[weekday(o.ruleDate)].toLowerCase();
+  return `Перенесена, обычно — ${day}, ${humanDate(o.ruleDate)}, ${slotOf(rule.slot).start}`;
 }
 
 /**
@@ -47,11 +53,11 @@ function flagHtml(o, ph, holiday) {
  */
 function actionsHtml(o, allow, ph, holiday) {
   const buttons = [];
-  if (allow('edit'))
+  if (allow(OPERATION.EDIT))
     buttons.push(
       '<button class="btn btn--primary popover__action" id="pEdit">Изменить</button>',
     );
-  if (allow('cancel'))
+  if (allow(OPERATION.CANCEL))
     buttons.push(
       '<button class="btn btn--danger-outline popover__action" id="pCancel">Отменить</button>',
     );
@@ -61,15 +67,15 @@ function actionsHtml(o, allow, ph, holiday) {
       '<button class="btn btn--secondary popover__action" id="pRestore">Вернуть</button>',
     );
   // факт: у начавшейся и прошедшей пары — только отметка, состоялась ли она
-  if (allow('notHeld'))
+  if (allow(OPERATION.NOT_HELD))
     buttons.push(
       '<button class="btn btn--danger-outline popover__action" id="pNotHeld">Не состоялась</button>',
     );
-  if (allow('held'))
+  if (allow(OPERATION.HELD))
     buttons.push(
       '<button class="btn btn--secondary popover__action" id="pHeld">Состоялась</button>',
     );
-  if (allow('calendar'))
+  if (allow(OPERATION.CALENDAR))
     buttons.push(
       `<button class="btn btn--secondary popover__icon-action" id="pCal" aria-label="В календарь">${iconCalendar('btn__icon')}</button>`,
     );
@@ -100,11 +106,25 @@ export function openPopover(o, card) {
   el.setAttribute('aria-label', `Группа ${o.group}`);
   const day = WEEKDAYS[weekday(o.date)].replace(/^./, (c) => c.toUpperCase());
   const now = new Date(),
-    ph = phase(o, now),
+    ph = lessonPhase(o, now),
     holiday = isHoliday(o.date, HOLIDAYS);
   // спрашиваем модель с тем временем, которое сейчас
-  const check = (op) => can(op, o, new Date(), getState(), HOLIDAYS);
-  const allow = (op) => can(op, o, now, getState(), HOLIDAYS).ok;
+  const check = (op) =>
+    can({
+      operation: op,
+      lesson: o,
+      now: new Date(),
+      state: getState(),
+      holidays: HOLIDAYS,
+    });
+  const allow = (op) =>
+    can({
+      operation: op,
+      lesson: o,
+      now: now,
+      state: getState(),
+      holidays: HOLIDAYS,
+    }).ok;
   el.innerHTML = `<div class="popover__head"><span class="chip popover__chip ${colorClass(o)}">${esc(o.group)}</span><span class="popover__meta">${o.course} курс · ${esc(o.lessonType)}</span></div>
     <div class="popover__details">
       <div class="popover__date">${day}, ${humanDate(o.date)}</div>
@@ -135,7 +155,7 @@ export function openPopover(o, card) {
   const roomRow = el.querySelector('#pRoom');
   // у прошедшей пары аудитория — только текст, без «Указать»
   const showRoom = () => {
-    const link = allow('room')
+    const link = allow(OPERATION.ROOM)
       ? `<button class="popover__room-link">${o.room ? 'Изменить' : 'Указать'}</button>`
       : '';
     roomRow.innerHTML = `${iconMapPin('popover__room-icon')}<span class="popover__room-label">${o.room ? 'Аудитория ' + esc(o.room) : 'Аудитория не указана'}</span>${link}`;
@@ -151,22 +171,22 @@ export function openPopover(o, card) {
         showRoom();
         return;
       }
-      if (!guard('room')) return;
+      if (!guard(OPERATION.ROOM)) return;
       dispatch({
-        type: 'edit',
-        occ: o,
+        type: ACTION.EDIT,
+        lesson: o,
         changes: { room },
-        scope: o.type === 'rule' ? 'future' : 'one',
+        scope: o.type === LESSON_KIND.RULE ? 'future' : 'one',
       });
       toast(
         !room
           ? 'Аудитория убрана'
-          : o.type === 'rule'
-            ? `Аудитория ${room}: с ${humanDate(o.orig)} и дальше`
+          : o.type === LESSON_KIND.RULE
+            ? `Аудитория ${room}: с ${humanDate(o.ruleDate)} и дальше`
             : `Аудитория ${room}`,
         'success',
       );
-      const again = findAt(getState(), o.date, o.slot),
+      const again = findLessonAt(getState(), o.date, o.slot),
         c =
           again &&
           document.querySelector(`.card[data-id="${CSS.escape(again.id)}"]`);
@@ -185,32 +205,32 @@ export function openPopover(o, card) {
     openEditor(o);
   });
   onClick('pCancel', () => {
-    if (!guard('cancel')) return;
+    if (!guard(OPERATION.CANCEL)) return;
     closePopover();
-    dispatch({ type: 'setCancelled', occ: o, value: true });
-    toast(`Отменена: ${humanDate(o.orig)}`, 'success');
+    dispatch({ type: ACTION.SET_CANCELLED, lesson: o, isCancelled: true });
+    toast(`Отменена: ${humanDate(o.ruleDate)}`, 'success');
   });
   onClick('pRestore', () => {
-    if (!guard('restore')) return;
+    if (!guard(OPERATION.RESTORE)) return;
     closePopover();
-    dispatch({ type: 'setCancelled', occ: o, value: false });
+    dispatch({ type: ACTION.SET_CANCELLED, lesson: o, isCancelled: false });
     toast('Пара возвращена', 'success');
   });
   // тот же флаг cancelled, что у отмены: часы такую пару уже не считают
   onClick('pNotHeld', () => {
-    if (!guard('notHeld')) return;
+    if (!guard(OPERATION.NOT_HELD)) return;
     closePopover();
-    dispatch({ type: 'setCancelled', occ: o, value: true });
+    dispatch({ type: ACTION.SET_CANCELLED, lesson: o, isCancelled: true });
     toast(`Отмечено: не состоялась, ${humanDate(o.date)}`, 'success');
   });
   onClick('pHeld', () => {
-    if (!guard('held')) return;
+    if (!guard(OPERATION.HELD)) return;
     closePopover();
-    dispatch({ type: 'setCancelled', occ: o, value: false });
+    dispatch({ type: ACTION.SET_CANCELLED, lesson: o, isCancelled: false });
     toast('Отмечено: состоялась', 'success');
   });
   onClick('pCal', () => {
-    if (!guard('calendar')) return;
+    if (!guard(OPERATION.CALENDAR)) return;
     window.open(gcalUrl(o), '_blank', 'noopener');
   });
   catcher.addEventListener('click', closePopover);
@@ -249,7 +269,7 @@ export function openPopover(o, card) {
  * Вызывается из refreshNow().
  */
 export function refreshPopover(now) {
-  if (!pop || phase(pop.o, now) === pop.phase) return;
+  if (!pop || lessonPhase(pop.o, now) === pop.phase) return;
   const o = pop.o,
     card = document.querySelector(`.card[data-id="${CSS.escape(o.id)}"]`);
   if (card) openPopover(o, card);
