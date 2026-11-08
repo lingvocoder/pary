@@ -1,29 +1,9 @@
-/* Мелкие помощники интерфейса: поиск элементов, экранирование, уведомление, форматирование. */
-import {
-  SLOTS,
-  COURSES,
-  DEFAULT_COURSE,
-  PALETTE,
-} from '../config/university.js';
+/* Мелкие помощники интерфейса: уведомление и сетка звонков. */
+import { SLOTS } from '../config/university.js';
 import { TOAST_DURATION_MS } from '../config/interface.js';
 import { iconCheckCircle, iconXCircle } from './icons.js';
+import { $, esc } from './dom.js';
 
-export const $ = (sel) => document.querySelector(sel);
-/** Экранирует текст перед вставкой в HTML — защита от «сломанной» разметки. */
-export const esc = (v) =>
-  String(v ?? '').replace(
-    /[&<>"']/g,
-    (c) =>
-      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[
-        c
-      ],
-  );
-/** CSS-класс цвета пары: свой цвет «важной» пары (tint-red…) или цвет курса (course-1…4). */
-export const colorClass = (o) => {
-  const custom = PALETTE.find((p) => p.id && p.id === o.color);
-  if (custom) return 'tint-' + custom.tint;
-  return 'course-' + (COURSES.includes(+o.course) ? +o.course : DEFAULT_COURSE);
-};
 export const slotOf = (n) => SLOTS[n - 1];
 
 let toastTimer;

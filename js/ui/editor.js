@@ -33,7 +33,8 @@ import {
   FORM_FIELD,
 } from '../domain/forms.js';
 import { getState, dispatch } from '../store/store.js';
-import { esc, toast } from './helpers.js';
+import { esc } from './dom.js';
+import { toast } from './helpers.js';
 import { openSheet, askScope, askConfirm } from './sheets.js';
 import { iconCalendar, iconChevronDown } from './icons.js';
 

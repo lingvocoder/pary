@@ -30,7 +30,9 @@ import { LESSON_KIND, SOURCE } from './lessons.js';
 import { LESSON_STATE } from './rules.js';
 import { SCOPE } from './changes.js';
 
-const slotStart = (slot) => SLOTS[slot - 1].start;
+/** Начало пары с этим номером: «08:00». */
+export const formatSlotStart = (slot) => SLOTS[slot - 1].start;
+const slotStart = formatSlotStart;
 const slotEnd = (slot) => SLOTS[slot - 1].end;
 const capitalize = (text) => text.charAt(0).toUpperCase() + text.slice(1);
 

@@ -1,6 +1,7 @@
 /* Шторки снизу и вопрос «только эта дата или дальше». */
 import { SHEET_CLOSE_MS } from '../config/interface.js';
-import { esc, hideToast } from './helpers.js';
+import { esc } from './dom.js';
+import { hideToast } from './helpers.js';
 import { formatThisDateOption, formatFromDateOption } from '../domain/texts.js';
 import { LESSON_KIND } from '../domain/lessons.js';
 import { addLayer, removeLayer } from './layers.js';

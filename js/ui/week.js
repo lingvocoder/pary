@@ -3,12 +3,12 @@ import { SLOTS, WORKDAYS_PER_WEEK, HOLIDAYS } from '../config/university.js';
 import { WEEKDAYS_SHORT } from '../lang/ru.js';
 import { defaultNewLessonDate } from '../domain/forms.js';
 import {
-  formatNoUpcoming,
   formatHeroLabel,
   formatHeroDetails,
   formatWeekRange,
   formatWeekSummary,
   formatCardLabel,
+  formatSlotStart,
 } from '../domain/texts.js';
 import { toIso, fromIso, addDays, weekStart } from '../domain/dates.js';
 import {
@@ -21,14 +21,13 @@ import {
 import { countLessons } from '../domain/hours.js';
 import { getState } from '../store/store.js';
 import { getPref, setPref } from '../store/prefs.js';
-import { $, esc, colorClass, slotOf } from './helpers.js';
-import {
-  iconEllipsis,
-  iconXMark,
-  iconCalendarDays,
-  iconPlus,
-} from './icons.js';
+import { $ } from './dom.js';
 import { ui, thisWeek } from './state.js';
+import { heroView } from './views/hero.js';
+import { liveDotView } from './views/card.js';
+import { weekGridView } from './views/week-grid.js';
+import { emptyWeekView } from './views/empty-week.js';
+import { lessonColorClass } from './views/color.js';
 import { closePopover, refreshPopover } from './popover.js';
 import { openEditor } from './editor.js';
 import { openMenu } from './menu.js';
@@ -62,20 +61,21 @@ export function render() {
   renderHint();
 }
 
+/** Данные шапки: следующее занятие и когда оно; null — впереди пар нет. */
+function heroModel(now) {
+  const lesson = nextLesson(getState(), now, HOLIDAYS);
+  if (!lesson) return null;
+  return {
+    label: formatHeroLabel(lesson.start <= now),
+    time: formatSlotStart(lesson.slot),
+    group: lesson.group,
+    colorClass: lessonColorClass(lesson),
+    details: formatHeroDetails(lesson, now),
+  };
+}
+
 function renderHero() {
-  const n = nextLesson(getState(), new Date(), HOLIDAYS);
-  const menu = `<button class="icon-btn" id="menu" aria-label="Меню">${iconEllipsis('icon-btn__icon')}</button>`;
-  if (!n) {
-    $('#hero').innerHTML =
-      `<div class="hero__info"><span class="hero__label">${formatHeroLabel(false)}</span><span class="hero__empty">${formatNoUpcoming()}</span></div>${menu}`;
-  } else {
-    const now = new Date(),
-      going = n.start <= now;
-    $('#hero').innerHTML =
-      `<div class="hero__info"><span class="hero__label">${formatHeroLabel(going)}</span>
-      <div class="hero__main"><span class="hero__time">${slotOf(n.slot).start}</span><span class="chip hero__chip ${colorClass(n)}">${esc(n.group)}</span></div>
-      <span class="hero__details">${esc(formatHeroDetails(n, now))}</span></div>${menu}`;
-  }
+  $('#hero').innerHTML = heroView(heroModel(new Date()));
   $('#menu').onclick = openMenu;
 }
 
@@ -101,62 +101,67 @@ function isNowSlot(slot, now) {
   return ui.week === weekStart(toIso(now)) && currentSlot(now) === slot;
 }
 
-// зелёная точка «идёт сейчас» в углу карточки
-const LIVE_DOT = '<span class="card__live" aria-hidden="true"></span>';
+const cardLabel = (lesson, isLive) =>
+  formatCardLabel(lesson, {
+    isHoliday: isHoliday(lesson.date, HOLIDAYS),
+    isLive,
+  });
 
-const cardLabel = (o, live) =>
-  formatCardLabel(o, { isHoliday: isHoliday(o.date, HOLIDAYS), isLive: live });
+/** Данные карточки. Занятие в праздник размыто, как отменённое, но без крестика. */
+function cardModel(lesson, now) {
+  const isLive = isOngoing(lesson, now, HOLIDAYS);
+  const isHolidayLesson = isHoliday(lesson.date, HOLIDAYS);
+  return {
+    id: lesson.id,
+    group: lesson.group,
+    room: lesson.room,
+    colorClass: lessonColorClass(lesson),
+    isHoliday: isHolidayLesson,
+    isCancelled: lesson.cancelled && !isHolidayLesson,
+    isMoved: lesson.moved,
+    isLive,
+    label: cardLabel(lesson, isLive),
+  };
+}
 
-function cardHtml(o) {
-  const live = isOngoing(o, new Date(), HOLIDAYS);
-  // пара в праздник размыта, как отменённая, но без крестика: её не отменяли
-  const holiday = isHoliday(o.date, HOLIDAYS);
-  const cancelled = o.cancelled && !holiday;
-  const cls = [
-    'card',
-    colorClass(o),
-    holiday ? 'card--holiday' : '',
-    cancelled ? 'card--cancelled' : '',
-    o.moved ? 'card--moved' : '',
-  ].join(' ');
-  // под номером группы — аудитория, если известна
-  const room = o.room ? `<span class="card__room">${esc(o.room)}</span>` : '';
-  return `<div class="${cls}" data-id="${esc(o.id)}" role="button" tabindex="0"
-    aria-label="${esc(cardLabel(o, live))}">
-    <div class="card__body"><b class="card__group">${esc(o.group)}</b>${room}</div>
-    ${cancelled ? iconXMark('card__mark card__mark--cancelled') : ''}${live ? LIVE_DOT : ''}</div>`;
+/** Данные сетки: дни недели и строки пар с карточками в клетках. */
+function gridModel(now) {
+  const today = toIso(now);
+  const dates = [];
+  for (let i = 0; i < WORKDAYS_PER_WEEK; i++) dates.push(addDays(ui.week, i));
+  const days = dates.map((date, dayIndex) => ({
+    name: WEEKDAYS_SHORT[dayIndex],
+    number: fromIso(date).getDate(),
+    isToday: date === today,
+    isHoliday: isHoliday(date, HOLIDAYS),
+  }));
+  const rows = SLOTS.map((bell, slotIndex) => {
+    const slot = slotIndex + 1;
+    return {
+      slot,
+      start: bell.start,
+      isLast: slot === SLOTS.length,
+      isNow: isNowSlot(slot, now),
+      cells: dates.map((date) => ({
+        date,
+        isToday: date === today,
+        // отменённые — после неотменённых: сверху та, что идёт
+        cards: ui.occ
+          .filter((lesson) => lesson.date === date && lesson.slot === slot)
+          .sort((first, second) => first.cancelled - second.cancelled)
+          .map((lesson) => cardModel(lesson, now)),
+      })),
+    };
+  });
+  return { days, rows };
 }
 
 function renderGrid() {
-  const now = new Date(),
-    today = toIso(now);
-  let h = '<div class="week-grid__corner"></div>';
-  for (let i = 0; i < WORKDAYS_PER_WEEK; i++) {
-    const d = addDays(ui.week, i);
-    const dayMods = `${d === today ? ' week-grid__day--today' : ''}${isHoliday(d, HOLIDAYS) ? ' week-grid__day--holiday' : ''}`;
-    h += `<div class="week-grid__day${dayMods}"><span class="week-grid__day-name">${WEEKDAYS_SHORT[i]}</span><span class="week-grid__day-num">${fromIso(d).getDate()}</span></div>`;
-  }
-  SLOTS.forEach((sl, si) => {
-    const n = si + 1,
-      isLast = n === SLOTS.length;
-    h += `<div class="week-grid__time${isLast ? ' week-grid__time--last' : ''}${isNowSlot(n, now) ? ' week-grid__time--now' : ''}" data-slot="${n}"><b class="week-grid__slot-num">${n}</b><span class="week-grid__slot-start">${sl.start}</span></div>`;
-    for (let i = 0; i < WORKDAYS_PER_WEEK; i++) {
-      const d = addDays(ui.week, i);
-      const here = ui.occ
-        .filter((o) => o.date === d && o.slot === n)
-        .sort((a, b) => a.cancelled - b.cancelled);
-      h += `<div class="week-grid__cell${d === today ? ' week-grid__cell--today' : ''}${isLast ? ' week-grid__cell--last' : ''}" data-date="${d}" data-slot="${n}">${here.map(cardHtml).join('')}</div>`;
-    }
-  });
-  $('#week').innerHTML = `<div class="week-grid" id="grid">${h}</div>`;
+  $('#week').innerHTML = weekGridView(gridModel(new Date()));
 }
 
 function renderEmpty() {
-  $('#week').innerHTML = `<div class="empty-week">
-    ${iconCalendarDays('empty-week__icon')}
-    <h2 class="empty-week__title">На этой неделе пар нет</h2>
-    <p class="empty-week__text">Добавь пару вручную или открой соседнюю неделю.</p>
-    <button class="btn btn--primary empty-week__button" id="emptyAdd">${iconPlus('btn__icon')}Добавить пару</button></div>`;
+  $('#week').innerHTML = emptyWeekView();
   $('#emptyAdd').onclick = () => {
     const date = defaultNewLessonDate(ui.week, toIso(new Date()));
     openEditor(null, { date, slot: 1 });
@@ -177,20 +182,20 @@ export function refreshNow() {
   renderHero();
   const grid = $('#grid');
   if (!grid) return;
-  grid.querySelectorAll('.week-grid__time').forEach((el) => {
-    el.classList.toggle(
+  grid.querySelectorAll('.week-grid__time').forEach((timeCell) => {
+    timeCell.classList.toggle(
       'week-grid__time--now',
-      isNowSlot(+el.dataset.slot, now),
+      isNowSlot(+timeCell.dataset.slot, now),
     );
   });
   grid.querySelectorAll('.card').forEach((card) => {
-    const o = ui.occ.find((x) => x.id === card.dataset.id);
-    if (!o) return;
-    const live = isOngoing(o, now, HOLIDAYS),
-      dot = card.querySelector('.card__live');
-    if (live && !dot) card.insertAdjacentHTML('beforeend', LIVE_DOT);
-    if (!live && dot) dot.remove();
-    card.setAttribute('aria-label', cardLabel(o, live));
+    const lesson = ui.occ.find((candidate) => candidate.id === card.dataset.id);
+    if (!lesson) return;
+    const isLive = isOngoing(lesson, now, HOLIDAYS);
+    const dot = card.querySelector('.card__live');
+    if (isLive && !dot) card.insertAdjacentHTML('beforeend', liveDotView());
+    if (!isLive && dot) dot.remove();
+    card.setAttribute('aria-label', cardLabel(lesson, isLive));
   });
   refreshPopover(now);
 }

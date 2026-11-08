@@ -7,7 +7,8 @@ import { weekLessons } from '../domain/lessons.js';
 import { ACTION } from '../domain/changes.js';
 import { migrate } from '../domain/migrate.js';
 import { getState, dispatch, isStorageOk } from '../store/store.js';
-import { $, toast } from './helpers.js';
+import { $ } from './dom.js';
+import { toast } from './helpers.js';
 import { openSheet, askConfirm } from './sheets.js';
 import {
   iconArrowDownTray,

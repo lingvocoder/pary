@@ -21,7 +21,9 @@ import {
 import { OPERATION, can, lessonState } from '../domain/rules.js';
 import { ACTION, roomChangeScope } from '../domain/changes.js';
 import { getState, dispatch } from '../store/store.js';
-import { esc, toast, colorClass } from './helpers.js';
+import { esc } from './dom.js';
+import { toast } from './helpers.js';
+import { lessonColorClass } from './views/color.js';
 import { iconCalendar, iconMapPin } from './icons.js';
 import { openEditor } from './editor.js';
 import { addLayer, removeLayer } from './layers.js';
@@ -122,7 +124,7 @@ export function openPopover(o, card) {
       state: getState(),
       holidays: HOLIDAYS,
     }).ok;
-  el.innerHTML = `<div class="popover__head"><span class="chip popover__chip ${colorClass(o)}">${esc(o.group)}</span><span class="popover__meta">${esc(formatCourseAndType(o))}</span></div>
+  el.innerHTML = `<div class="popover__head"><span class="chip popover__chip ${lessonColorClass(o)}">${esc(o.group)}</span><span class="popover__meta">${esc(formatCourseAndType(o))}</span></div>
     <div class="popover__details">
       <div class="popover__date">${formatLongDate(o.date)}</div>
       <div class="popover__time">${formatTimeRange(o.slot)}</div>
