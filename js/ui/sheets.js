@@ -1,10 +1,14 @@
 /* Шторки снизу и вопрос «только эта дата или дальше». */
 import { SHEET_CLOSE_MS } from '../config/interface.js';
-import { esc } from './dom.js';
 import { hideToast } from './helpers.js';
 import { formatThisDateOption, formatFromDateOption } from '../domain/texts.js';
 import { LESSON_KIND } from '../domain/lessons.js';
 import { addLayer, removeLayer } from './layers.js';
+import {
+  sheetPanelView,
+  confirmView,
+  scopeQuestionView,
+} from './views/sheets.js';
 
 /**
  * Открывает шторку с готовым HTML. Возвращает {root, scrim, close}.
@@ -16,7 +20,7 @@ import { addLayer, removeLayer } from './layers.js';
 export function openSheet(html, label, onDismiss) {
   const scrim = document.createElement('div');
   scrim.className = 'sheet';
-  scrim.innerHTML = `<section class="sheet__panel" role="dialog" aria-modal="true" aria-label="${esc(label)}"><span class="sheet__grab"></span>${html}</section>`;
+  scrim.innerHTML = sheetPanelView(label, html);
   document.body.appendChild(scrim);
   hideToast();
   requestAnimationFrame(() => scrim.classList.add('sheet--open'));
@@ -48,8 +52,7 @@ export function askConfirm(title, note, confirmText) {
       resolve(answer);
     };
     const { root, close } = openSheet(
-      `<div class="sheet__header"><h2 class="sheet__title">${esc(title)}</h2><p class="sheet__note">${esc(note)}</p></div>
-      <div class="sheet__actions"><button class="btn btn--danger" data-confirm>${esc(confirmText)}</button><button class="btn btn--plain" data-cancel>Отмена</button></div>`,
+      confirmView({ title, note, confirmText }),
       title,
       () => finish(false),
     );
@@ -63,10 +66,12 @@ export function askScope(o, title, note) {
   if (o.type === LESSON_KIND.ONE_OFF) return Promise.resolve('one');
   return new Promise((resolve) => {
     const { root, close } = openSheet(
-      `<div class="sheet__header"><h2 class="sheet__title">${esc(title)}</h2>${note ? `<p class="sheet__note">${esc(note)}</p>` : ''}</div>
-      <button class="scope-option" data-v="one"><b class="scope-option__title">${formatThisDateOption(o.ruleDate)}</b><small class="scope-option__hint">Остальные недели не меняются</small></button>
-      <button class="scope-option" data-v="future"><b class="scope-option__title">${formatFromDateOption(o.ruleDate)}</b><small class="scope-option__hint">Прошлые недели останутся как были</small></button>
-      <button class="btn btn--plain" data-v="">Отмена</button>`,
+      scopeQuestionView({
+        title,
+        note: note || '',
+        thisDateOption: formatThisDateOption(o.ruleDate),
+        fromDateOption: formatFromDateOption(o.ruleDate),
+      }),
       title,
       () => finish(''),
     );

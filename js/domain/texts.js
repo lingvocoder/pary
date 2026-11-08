@@ -272,6 +272,16 @@ export const formatHours = (count) => `${count * HOURS_PER_PAIR} ч`;
 export const formatSemesterNote = ({ from, to }) =>
   `${humanDate(from)} – ${humanDate(to)} ${fromIso(to).getFullYear()} · 1 пара = ${HOURS_PER_PAIR} ак. ч`;
 
+/* ---------- меню ---------- */
+
+/** «Версия 0.5.0» и, если хранилище недоступно, предупреждение. */
+export function formatVersionLine(version, isStorageOk) {
+  const warning = isStorageOk
+    ? ''
+    : '. Сохранение недоступно в этом режиме браузера';
+  return `Версия ${version}${warning}`;
+}
+
 /* ---------- Google Календарь ---------- */
 
 /** Название события: «Гр. 323, ПК первого ин. яз.». */

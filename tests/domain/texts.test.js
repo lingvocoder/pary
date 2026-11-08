@@ -37,6 +37,7 @@ import {
   formatHours,
   formatSemesterNote,
   formatCalendarTitle,
+  formatVersionLine,
   formatCalendarDetails,
   formatCalendarLocation,
 } from '../../js/domain/texts.js';
@@ -241,4 +242,12 @@ test('часы и календарь', () => {
   assert.equal(formatCalendarTitle(PAIR), 'Гр. 323, ПК первого ин. яз.');
   assert.equal(formatCalendarDetails(PAIR), '3 курс, 6-я пара');
   assert.equal(formatCalendarLocation('301'), 'ауд. 301');
+});
+
+test('меню: строка версии и предупреждение о хранилище', () => {
+  assert.equal(formatVersionLine('0.5.0', true), 'Версия 0.5.0');
+  assert.equal(
+    formatVersionLine('0.5.0', false),
+    'Версия 0.5.0. Сохранение недоступно в этом режиме браузера',
+  );
 });
