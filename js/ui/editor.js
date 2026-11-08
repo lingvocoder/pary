@@ -2,11 +2,11 @@
 import {
   SLOTS,
   COURSES,
-  DEFAULT_COURSE,
   SUBJECTS,
   PALETTE,
   HOLIDAYS,
 } from '../config/university.js';
+import { calendarLink } from '../domain/calendar-link.js';
 import {
   formatEditorInfo,
   formatSlotOption,
@@ -16,20 +16,25 @@ import {
   formatDeleteQuestion,
   formatDeleteOneOffNote,
 } from '../domain/texts.js';
-import { weekday, SUNDAY } from '../domain/dates.js';
 import {
   LESSON_KIND,
   isPastSlot,
   isHoliday,
   findLessonAt,
+  findRule,
 } from '../domain/lessons.js';
 import { OPERATION, PLACE_KIND, can, canPlace } from '../domain/rules.js';
 import { ACTION } from '../domain/changes.js';
-import { knownSubjects } from '../domain/forms.js';
+import {
+  knownSubjects,
+  newLessonDraft,
+  validateLessonForm,
+  diffLessonChanges,
+  FORM_FIELD,
+} from '../domain/forms.js';
 import { getState, dispatch } from '../store.js';
 import { esc, toast } from './helpers.js';
 import { openSheet, askScope, askConfirm } from './sheets.js';
-import { gcalUrl } from './calendar.js';
 import { iconCalendar, iconChevronDown } from './icons.js';
 
 // значение пункта «Другой…» в списке предметов — не название предмета
@@ -76,22 +81,8 @@ export function openEditor(o, preset) {
       return;
     }
   }
-  const v = isNew
-    ? {
-        group: '',
-        course: DEFAULT_COURSE,
-        subject: SUBJECTS[0],
-        room: '',
-        color: '',
-        date: preset.date,
-        slot: preset.slot,
-        cancelled: false,
-      }
-    : { ...o };
-  const rule =
-    !isNew && o.type === LESSON_KIND.RULE
-      ? state.rules.find((r) => r.id === o.ruleId)
-      : null;
+  const v = isNew ? newLessonDraft(preset) : { ...o };
+  const rule = isNew ? null : findRule(state, o.ruleId) || null;
   const info = formatEditorInfo(isNew ? null : o, rule);
   const slots = SLOTS.map(
     (s, i) =>
@@ -262,22 +253,12 @@ export function openEditor(o, preset) {
 
   root.querySelector('#esave').onclick = async () => {
     const f = read();
-    if (!f.group) {
-      toast('Укажи номер группы', 'error');
-      root.querySelector('#eg').focus();
-      return;
-    }
-    if (!f.subject) {
-      toast('Укажи предмет', 'error');
-      otherInput.focus();
-      return;
-    }
-    if (!f.date) {
-      toast('Выбери дату', 'error');
-      return;
-    }
-    if (weekday(f.date) === SUNDAY) {
-      toast('В воскресенье пар нет, выбери другой день', 'error');
+    const validation = validateLessonForm(f);
+    if (!validation.ok) {
+      toast(validation.reason, 'error');
+      if (validation.field === FORM_FIELD.GROUP)
+        root.querySelector('#eg').focus();
+      if (validation.field === FORM_FIELD.SUBJECT) otherInput.focus();
       return;
     }
     if (isNew) {
@@ -294,11 +275,7 @@ export function openEditor(o, preset) {
       toast(formatAddedToast(f), 'success');
       return;
     }
-    const changes = {};
-    for (const k of ['group', 'course', 'subject', 'room', 'color'])
-      if (String(f[k]) !== String(o[k] ?? '')) changes[k] = f[k];
-    if (f.date !== o.date) changes.date = f.date;
-    if (f.slot !== o.slot) changes.slot = f.slot;
+    const changes = diffLessonChanges(o, f);
     if (!stillAllowed(OPERATION.EDIT)) return;
     // праздник, прошлое и занятость — только если пару ставят на новое место
     const placeChanged = 'date' in changes || 'slot' in changes;
@@ -370,6 +347,6 @@ export function openEditor(o, preset) {
     const calendarButton = root.querySelector('#ecal');
     if (calendarButton)
       calendarButton.onclick = () =>
-        window.open(gcalUrl(o), '_blank', 'noopener');
+        window.open(calendarLink(o, rule), '_blank', 'noopener');
   }
 }

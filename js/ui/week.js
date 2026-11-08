@@ -1,6 +1,7 @@
 /* Главный экран: следующая пара, заголовок недели, сетка или пустая неделя. */
 import { SLOTS, WORKDAYS_PER_WEEK, HOLIDAYS } from '../config/university.js';
 import { WEEKDAYS_SHORT } from '../lang/ru.js';
+import { defaultNewLessonDate } from '../domain/forms.js';
 import {
   formatNoUpcoming,
   formatHeroLabel,
@@ -9,12 +10,13 @@ import {
   formatWeekSummary,
   formatCardLabel,
 } from '../domain/texts.js';
-import { toIso, fromIso, addDays, weekStart, atTime } from '../domain/dates.js';
+import { toIso, fromIso, addDays, weekStart } from '../domain/dates.js';
 import {
   weekLessons,
   nextLesson,
   isOngoing,
   isHoliday,
+  currentSlot,
 } from '../domain/lessons.js';
 import { countLessons } from '../domain/hours.js';
 import { getState, getPref, setPref } from '../store.js';
@@ -95,13 +97,7 @@ function renderRange() {
 
 /** Номер пары, которая идёт сейчас, — только на текущей неделе. */
 function isNowSlot(slot, now) {
-  const today = toIso(now),
-    sl = slotOf(slot);
-  return (
-    ui.week === weekStart(today) &&
-    now >= atTime(today, sl.start) &&
-    now < atTime(today, sl.end)
-  );
+  return ui.week === weekStart(toIso(now)) && currentSlot(now) === slot;
 }
 
 // зелёная точка «идёт сейчас» в углу карточки
@@ -161,11 +157,7 @@ function renderEmpty() {
     <p class="empty-week__text">Добавь пару вручную или открой соседнюю неделю.</p>
     <button class="btn btn--primary empty-week__button" id="emptyAdd">${iconPlus('btn__icon')}Добавить пару</button></div>`;
   $('#emptyAdd').onclick = () => {
-    const t = toIso(new Date());
-    const date =
-      t >= ui.week && t <= addDays(ui.week, WORKDAYS_PER_WEEK - 1)
-        ? t
-        : ui.week;
+    const date = defaultNewLessonDate(ui.week, toIso(new Date()));
     openEditor(null, { date, slot: 1 });
   };
 }

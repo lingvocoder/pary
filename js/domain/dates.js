@@ -37,6 +37,12 @@ export const weekday = (isoDate) =>
 /** Понедельник недели, в которую попадает дата. */
 export const weekStart = (isoDate) => addDays(isoDate, -weekday(isoDate));
 
+/** Какую неделю показывать в этот день: в воскресенье пар нет — уже следующую. */
+export const weekToShow = (isoDate) =>
+  weekday(isoDate) === SUNDAY
+    ? addDays(weekStart(isoDate), DAYS_PER_WEEK)
+    : weekStart(isoDate);
+
 /** Дата + время 'HH:MM' → объект Date. */
 export function atTime(isoDate, time) {
   const date = fromIso(isoDate);

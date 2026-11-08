@@ -8,6 +8,8 @@ import {
   findOccupant,
   lessonPhase,
   isHoliday,
+  currentSlot,
+  findRule,
 } from '../../js/domain/lessons.js';
 import { ACTION, reduce } from '../../js/domain/changes.js';
 import { seed } from '../../js/domain/seed.js';
@@ -114,4 +116,16 @@ test('занятый слот: пара в праздник место не за
     }).group,
     '323',
   );
+});
+
+test('текущая пара по звонкам: внутри пары, на перемене, вне сетки', () => {
+  assert.equal(currentSlot(new Date('2026-10-28T15:40:00')), 6);
+  assert.equal(currentSlot(new Date('2026-10-28T16:59:59')), 6);
+  assert.equal(currentSlot(new Date('2026-10-28T17:05:00')), null); // перемена
+  assert.equal(currentSlot(new Date('2026-10-28T07:00:00')), null);
+});
+
+test('правило по id: есть — правило, нет — undefined', () => {
+  assert.equal(findRule(seed(), 'seed-323-we-6').group, '323');
+  assert.equal(findRule(seed(), 'нет такого'), undefined);
 });

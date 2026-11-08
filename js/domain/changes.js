@@ -6,6 +6,7 @@ import {
   ruleExceptionKey,
   splitRuleExceptionKey,
   findOccupant,
+  findRule,
   LESSON_KIND,
   SOURCE,
 } from './lessons.js';
@@ -25,6 +26,15 @@ export const ACTION = Object.freeze({
 /** Что меняет правка повторяющегося занятия: только эту дату или эту и все следующие. */
 export const SCOPE = Object.freeze({ THIS_DATE: 'one', FUTURE: 'future' });
 
+/**
+ * Аудитория повторяющегося занятия меняется с этой даты и дальше: аудитория обычно
+ * закреплена за группой. У разовой — только эта дата.
+ * @param {Lesson} lesson
+ * @returns {string} одно из SCOPE
+ */
+export const roomChangeScope = (lesson) =>
+  lesson.type === LESSON_KIND.RULE ? SCOPE.FUTURE : SCOPE.THIS_DATE;
+
 /** Поля занятия, которые меняет правка (дата и пара — отдельно, это перенос). */
 const EDITABLE_FIELDS = [
   'group',
@@ -35,8 +45,6 @@ const EDITABLE_FIELDS = [
   'room',
 ];
 
-const findRule = (state, ruleId) =>
-  state.rules.find((rule) => rule.id === ruleId);
 const findOneOff = (state, id) =>
   state.oneOffs.find((oneOff) => oneOff.id === id);
 const isExceptionOfRule = (key, ruleId) =>

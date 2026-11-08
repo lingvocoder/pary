@@ -1,7 +1,12 @@
 // Тесты изменений данных (reduce): js/domain/changes.js. Запуск: npm test.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { ACTION, reduce } from '../../js/domain/changes.js';
+import {
+  ACTION,
+  SCOPE,
+  reduce,
+  roomChangeScope,
+} from '../../js/domain/changes.js';
 import { seed } from '../../js/domain/seed.js';
 import { WEEK, NEXT, lessonsAt, lessonAt, PAIR } from './fixtures.js';
 
@@ -154,4 +159,9 @@ test('возврат отменённой пары в занятый слот н
     isCancelled: false,
   });
   assert.equal(JSON.stringify(state), before);
+});
+
+test('аудитория: у повторяющейся — с этой даты и дальше, у разовой — только эта дата', () => {
+  assert.equal(roomChangeScope(PAIR), SCOPE.FUTURE);
+  assert.equal(roomChangeScope({ ...PAIR, type: 'oneOff' }), SCOPE.THIS_DATE);
 });

@@ -14,7 +14,7 @@ import {
   formatMoveNote,
   formatMovedToast,
 } from '../domain/texts.js';
-import { LESSON_KIND, isPastSlot, isHoliday } from '../domain/lessons.js';
+import { isPastSlot, isHoliday, findRule } from '../domain/lessons.js';
 import { OPERATION, PLACE_KIND, can, canPlace } from '../domain/rules.js';
 import { ACTION } from '../domain/changes.js';
 import { getState, dispatch } from '../store.js';
@@ -148,13 +148,11 @@ async function endDrag() {
     toast(place.reason, 'error');
     return;
   }
-  const rule =
-    o.type === LESSON_KIND.RULE &&
-    getState().rules.find((r) => r.id === o.ruleId);
+  const rule = findRule(getState(), o.ruleId) || null;
   const scope = await askScope(
     o,
     formatMoveQuestion(date, slot),
-    formatMoveNote(o, rule || null),
+    formatMoveNote(o, rule),
   );
   if (!scope) return;
   dispatch({ type: ACTION.EDIT, lesson: o, changes: { date, slot }, scope });

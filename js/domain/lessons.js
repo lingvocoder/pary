@@ -274,6 +274,24 @@ export function isHoliday(date, holidays) {
   return holidays.includes(date);
 }
 
+/** Правило по id; undefined — такого нет (или у занятия ruleId не задан: разовая пара). */
+export const findRule = (state, ruleId) =>
+  state.rules.find((rule) => rule.id === ruleId);
+
+/**
+ * Номер пары, которая идёт сейчас по сетке звонков; null — перемена или вне сетки.
+ * @param {Date} now
+ * @returns {number|null}
+ */
+export function currentSlot(now) {
+  const today = toIso(now);
+  for (let slot = 1; slot <= SLOTS.length; slot++) {
+    const { start, end } = slotTimes(today, slot);
+    if (start <= now && now < end) return slot;
+  }
+  return null;
+}
+
 /** Занятие в слоте: сначала неотменённое, иначе любое. */
 export function findLessonAt(state, date, slot) {
   const inSlot = weekLessons(state, weekStart(date)).filter(

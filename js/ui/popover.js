@@ -5,6 +5,7 @@ import {
   SCREEN_EDGE_PX,
   SCREEN_TOP_BOTTOM_GAP_PX,
 } from '../config/interface.js';
+import { calendarLink } from '../domain/calendar-link.js';
 import {
   formatLongDate,
   formatTimeRange,
@@ -17,25 +18,24 @@ import {
   formatNotHeldToast,
 } from '../domain/texts.js';
 import {
-  LESSON_KIND,
   lessonPhase,
   isHoliday,
   findLessonAt,
+  findRule,
 } from '../domain/lessons.js';
 import { OPERATION, can, lessonState } from '../domain/rules.js';
-import { ACTION, SCOPE } from '../domain/changes.js';
+import { ACTION, roomChangeScope } from '../domain/changes.js';
 import { getState, dispatch } from '../store.js';
 import { esc, toast, colorClass } from './helpers.js';
 import { iconCalendar, iconMapPin } from './icons.js';
 import { openEditor } from './editor.js';
-import { gcalUrl } from './calendar.js';
 import { addLayer, removeLayer } from './layers.js';
 
 let pop = null;
 
 /** «Перенесена, обычно — вт, 27 октября, 08:00»: исходные день, дата и время пары по правилу. */
 function movedFrom(o) {
-  const rule = getState().rules.find((r) => r.id === o.ruleId);
+  const rule = findRule(getState(), o.ruleId);
   return formatMovedFrom(o, rule);
 }
 
@@ -173,8 +173,7 @@ export function openPopover(o, card) {
         return;
       }
       if (!guard(OPERATION.ROOM)) return;
-      const scope =
-        o.type === LESSON_KIND.RULE ? SCOPE.FUTURE : SCOPE.THIS_DATE;
+      const scope = roomChangeScope(o);
       dispatch({ type: ACTION.EDIT, lesson: o, changes: { room }, scope });
       toast(formatRoomSaved(room, o, scope), 'success');
       const again = findLessonAt(getState(), o.date, o.slot),
@@ -222,7 +221,11 @@ export function openPopover(o, card) {
   });
   onClick('pCal', () => {
     if (!guard(OPERATION.CALENDAR)) return;
-    window.open(gcalUrl(o), '_blank', 'noopener');
+    window.open(
+      calendarLink(o, findRule(getState(), o.ruleId)),
+      '_blank',
+      'noopener',
+    );
   });
   catcher.addEventListener('click', closePopover);
   catcher.addEventListener(
