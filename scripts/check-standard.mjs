@@ -253,9 +253,22 @@ for (const file of listJsFiles(JS_DIR)) {
   if (layer === 'вне слоёв')
     report(file, 1, 'файл вне слоёв из docs/architecture.md');
 
+  // Внутри именованной константы-таблицы (const SEED_RULES = [ … ]) числа уже имеют имя.
+  let namedConstantDepth = 0;
+  const bracketBalance = (code) =>
+    (code.match(/[[({]/g) || []).length - (code.match(/[\])}]/g) || []).length;
+
   codeLines.forEach((code, index) => {
     const lineNumber = index + 1;
     const original = sourceLines[index];
+    const startsNamedConstant =
+      /^\s*(?:export\s+)?const\s+[A-Z][A-Z0-9_]*\s*=/.test(code);
+    const isInsideNamedConstant = namedConstantDepth > 0;
+    if (startsNamedConstant || isInsideNamedConstant)
+      namedConstantDepth = Math.max(
+        0,
+        namedConstantDepth + bracketBalance(code),
+      );
 
     for (const name of declaredNames(code)) {
       if (name === '$') continue;
@@ -270,9 +283,8 @@ for (const file of listJsFiles(JS_DIR)) {
         report(file, lineNumber, `обрывок слова «${name}»`);
     }
 
-    // числа: в config/ и в объявлении именованной константы — можно
-    const isNamedConstant =
-      /^\s*(?:export\s+)?const\s+[A-Z][A-Z0-9_]*\s*=/.test(code);
+    // числа: в config/ и в именованной константе (вместе с её таблицей) — можно
+    const isNamedConstant = startsNamedConstant || isInsideNamedConstant;
     if (!isConfig && !isNamedConstant && !original.includes(NUMBER_WAIVER)) {
       for (const match of code.matchAll(/(?<![\w$.])(\d+(?:\.\d+)?)(?![\w$])/g))
         if (!PLAIN_NUMBERS.has(match[1]))
