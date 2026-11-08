@@ -7,8 +7,16 @@ import {
   PALETTE,
   HOLIDAYS,
 } from '../config/university.js';
-import { WEEKDAYS, WEEKDAYS_IN } from '../lang/ru.js';
-import { weekday, humanDate, SUNDAY } from '../domain/dates.js';
+import {
+  formatEditorInfo,
+  formatSlotOption,
+  formatCancelSwitchNote,
+  formatHolidayDate,
+  formatAddedToast,
+  formatDeleteQuestion,
+  formatDeleteOneOffNote,
+} from '../domain/texts.js';
+import { weekday, SUNDAY } from '../domain/dates.js';
 import {
   LESSON_KIND,
   isPastSlot,
@@ -19,7 +27,7 @@ import { OPERATION, PLACE_KIND, can, canPlace } from '../domain/rules.js';
 import { ACTION } from '../domain/changes.js';
 import { knownSubjects } from '../domain/forms.js';
 import { getState, dispatch } from '../store.js';
-import { esc, toast, slotOf } from './helpers.js';
+import { esc, toast } from './helpers.js';
 import { openSheet, askScope, askConfirm } from './sheets.js';
 import { gcalUrl } from './calendar.js';
 import { iconCalendar, iconChevronDown } from './icons.js';
@@ -37,11 +45,10 @@ const REPEAT_PAST_TEXT = 'Задним числом — только разов�
  */
 async function askDeleteScope(o) {
   if (o.type !== LESSON_KIND.ONE_OFF)
-    return askScope(o, `Удалить группу ${o.group}?`);
-  const when = `${WEEKDAYS[weekday(o.date)]}, ${humanDate(o.date)}, ${slotOf(o.slot).start}`;
+    return askScope(o, formatDeleteQuestion(o));
   const confirmed = await askConfirm(
     'Удалить пару?',
-    `Группа ${o.group}, ${when}. Разовая — вернуть не получится.`,
+    formatDeleteOneOffNote(o),
     'Удалить пару',
   );
   return confirmed ? 'one' : null;
@@ -85,15 +92,10 @@ export function openEditor(o, preset) {
     !isNew && o.type === LESSON_KIND.RULE
       ? state.rules.find((r) => r.id === o.ruleId)
       : null;
-  let info = '';
-  if (rule) {
-    info = `Повторяется каждую неделю. ${rule.source === 'pdf' ? 'Из PDF факультета.' : 'Добавлена вручную.'}`;
-    if (o.moved)
-      info += ` На этой неделе перенесена, обычно ${WEEKDAYS[rule.weekday]}, ${slotOf(rule.slot).start}.`;
-  } else if (!isNew) info = 'Разовая пара.';
+  const info = formatEditorInfo(isNew ? null : o, rule);
   const slots = SLOTS.map(
     (s, i) =>
-      `<option value="${i + 1}"${v.slot === i + 1 ? ' selected' : ''}>${i + 1}-я, ${s.start}</option>`,
+      `<option value="${i + 1}"${v.slot === i + 1 ? ' selected' : ''}>${formatSlotOption(i + 1)}</option>`,
   ).join('');
   // предметы: из настроек, затем из данных; текущий — если его нет в списке; последним — «Другой…»
   const subjects = knownSubjects(state, SUBJECTS);
@@ -137,12 +139,7 @@ export function openEditor(o, preset) {
     ${
       isNew
         ? switchRow('Каждую неделю', REPEAT_TEXT, 'erep', true)
-        : switchRow(
-            'Отменена',
-            `${rule ? `Только ${humanDate(o.ruleDate)}. ` : ''}Пара останется в сетке размытой.`,
-            'eoff',
-            v.cancelled,
-          )
+        : switchRow('Отменена', formatCancelSwitchNote(o), 'eoff', v.cancelled)
     }
     ${isNew ? '' : `<div class="button-pair">${can({ operation: OPERATION.CALENDAR, lesson: o, now: new Date(), state: state, holidays: holidays }).ok ? `<button class="btn btn--secondary" id="ecal">${iconCalendar('btn__icon')}В календарь</button>` : ''}<button class="btn btn--danger-text" id="edel">Удалить пару</button></div>`}
     <div class="sheet__footer"><button class="btn btn--primary" id="esave">${isNew ? 'Добавить' : 'Сохранить'}</button></div>`,
@@ -247,9 +244,7 @@ export function openEditor(o, preset) {
     });
     if (r.ok) return true;
     toast(
-      isHoliday(f.date, holidays)
-        ? `${humanDate(f.date)} — праздник, пар нет`
-        : r.reason,
+      isHoliday(f.date, holidays) ? formatHolidayDate(f.date) : r.reason,
       'error',
     );
     return false;
@@ -296,12 +291,7 @@ export function openEditor(o, preset) {
         return;
       close();
       dispatch({ type: ACTION.ADD, newLesson: f });
-      toast(
-        f.isWeekly
-          ? `Добавлено: ${WEEKDAYS_IN[weekday(f.date)]}, ${slotOf(f.slot).start}, каждую неделю`
-          : `Добавлено: ${humanDate(f.date)}, ${slotOf(f.slot).start}`,
-        'success',
-      );
+      toast(formatAddedToast(f), 'success');
       return;
     }
     const changes = {};

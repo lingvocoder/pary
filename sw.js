@@ -20,6 +20,7 @@ const FILES = [
   './js/domain/seed.js',
   './js/domain/migrate.js',
   './js/domain/forms.js',
+  './js/domain/texts.js',
   './js/store.js',
   './js/ui/helpers.js',
   './js/ui/hours.js',

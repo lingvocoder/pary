@@ -1,12 +1,13 @@
 /* Меню: резервная копия, загрузка из копии, сброс. */
 import { APP_VERSION, BACKUP_FILE_PREFIX } from '../config/app.js';
 import { DOWNLOAD_URL_LIFETIME_MS } from '../config/interface.js';
+import { formatReplaceNote } from '../domain/texts.js';
 import { toIso } from '../domain/dates.js';
 import { weekLessons } from '../domain/lessons.js';
 import { ACTION } from '../domain/changes.js';
 import { migrate } from '../domain/migrate.js';
 import { getState, dispatch, isStorageOk } from '../store.js';
-import { $, toast, copyWeekSummary } from './helpers.js';
+import { $, toast } from './helpers.js';
 import { openSheet, askConfirm } from './sheets.js';
 import {
   iconArrowDownTray,
@@ -81,17 +82,17 @@ export function initBackupInput() {
     e.target.value = '';
     if (!f) return;
     // сначала проверка: чужой файл — ошибка, и никакого вопроса
-    let copy, summary;
+    let copy, copyWeekCount;
     try {
       copy = migrate(JSON.parse(await f.text()));
-      summary = copyWeekSummary(weekLessons(copy, thisWeek()).length);
+      copyWeekCount = weekLessons(copy, thisWeek()).length;
     } catch (_) {
       toast('Это не файл резервной копии расписания', 'error');
       return;
     }
     const ok = await askConfirm(
       'Заменить расписание?',
-      `${summary}. Текущее расписание и все правки пропадут. Сначала можно скачать резервную копию.`,
+      formatReplaceNote(copyWeekCount),
       'Да, заменить',
     );
     if (!ok) return;

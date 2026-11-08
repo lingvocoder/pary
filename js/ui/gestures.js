@@ -8,13 +8,17 @@ import {
   TOUCH_MOUSE_GAP_MS,
   HOLD_VIBRATION_MS,
 } from '../config/interface.js';
-import { WEEKDAYS_SHORT, WEEKDAYS, WEEKDAYS_TO } from '../lang/ru.js';
-import { weekday, humanDate } from '../domain/dates.js';
+import {
+  formatDropHint,
+  formatMoveQuestion,
+  formatMoveNote,
+  formatMovedToast,
+} from '../domain/texts.js';
 import { LESSON_KIND, isPastSlot, isHoliday } from '../domain/lessons.js';
 import { OPERATION, PLACE_KIND, can, canPlace } from '../domain/rules.js';
 import { ACTION } from '../domain/changes.js';
 import { getState, dispatch } from '../store.js';
-import { toast, stickyToast, hideToast, slotOf } from './helpers.js';
+import { toast, stickyToast, hideToast } from './helpers.js';
 import { askScope } from './sheets.js';
 import { ui } from './state.js';
 import { openPopover, closePopover } from './popover.js';
@@ -121,9 +125,7 @@ function moveDrag(x, y) {
     stickyToast(place.reason);
     return;
   }
-  stickyToast(
-    `Отпусти, чтобы перенести ${WEEKDAYS_TO[weekday(date)]}, ${slotOf(slot).start}`,
-  );
+  stickyToast(formatDropHint(date, slot));
 }
 
 async function endDrag() {
@@ -151,17 +153,12 @@ async function endDrag() {
     getState().rules.find((r) => r.id === o.ruleId);
   const scope = await askScope(
     o,
-    `Перенести ${WEEKDAYS_TO[weekday(date)]}, ${slotOf(slot).start}?`,
-    rule
-      ? `Группа ${o.group}, обычно ${WEEKDAYS[rule.weekday]}, ${slotOf(rule.slot).start}`
-      : `Группа ${o.group}`,
+    formatMoveQuestion(date, slot),
+    formatMoveNote(o, rule || null),
   );
   if (!scope) return;
   dispatch({ type: ACTION.EDIT, lesson: o, changes: { date, slot }, scope });
-  toast(
-    `Перенесено: ${WEEKDAYS_SHORT[weekday(date)]} ${humanDate(date)}, ${slotOf(slot).start}`,
-    'success',
-  );
+  toast(formatMovedToast(date, slot), 'success');
 }
 
 /** Подключает все обработчики к контейнеру недели. */

@@ -1,29 +1,15 @@
 /* Главный экран: следующая пара, заголовок недели, сетка или пустая неделя. */
+import { SLOTS, WORKDAYS_PER_WEEK, HOLIDAYS } from '../config/university.js';
+import { WEEKDAYS_SHORT } from '../lang/ru.js';
 import {
-  SLOTS,
-  WORKDAYS_PER_WEEK,
-  HOLIDAYS,
-  HOURS_PER_PAIR,
-} from '../config/university.js';
-import { UPCOMING_WEEKS } from '../config/interface.js';
-import {
-  WEEKDAYS_SHORT,
-  WEEKDAYS_IN,
-  MONTHS_GENITIVE,
-  MONTHS_SHORT,
-  plural,
-} from '../lang/ru.js';
-import {
-  toIso,
-  fromIso,
-  addDays,
-  weekday,
-  weekStart,
-  atTime,
-  humanDate,
-  MS_PER_MINUTE,
-  MINUTES_PER_HOUR,
-} from '../domain/dates.js';
+  formatNoUpcoming,
+  formatHeroLabel,
+  formatHeroDetails,
+  formatWeekRange,
+  formatWeekSummary,
+  formatCardLabel,
+} from '../domain/texts.js';
+import { toIso, fromIso, addDays, weekStart, atTime } from '../domain/dates.js';
 import {
   weekLessons,
   nextLesson,
@@ -78,41 +64,20 @@ function renderHero() {
   const menu = `<button class="icon-btn" id="menu" aria-label="Меню">${iconEllipsis('icon-btn__icon')}</button>`;
   if (!n) {
     $('#hero').innerHTML =
-      `<div class="hero__info"><span class="hero__label">Следующая пара</span><span class="hero__empty">В ближайшие ${UPCOMING_WEEKS} ${plural(UPCOMING_WEEKS, 'неделю', 'недели', 'недель')} пар нет</span></div>${menu}`;
+      `<div class="hero__info"><span class="hero__label">${formatHeroLabel(false)}</span><span class="hero__empty">${formatNoUpcoming()}</span></div>${menu}`;
   } else {
     const now = new Date(),
       going = n.start <= now;
-    let when;
-    if (going) when = `идёт сейчас, до ${slotOf(n.slot).end}`;
-    else {
-      const mins = Math.round((n.start - now) / MS_PER_MINUTE),
-        today = toIso(now);
-      if (n.date === today)
-        when =
-          mins < MINUTES_PER_HOUR
-            ? `сегодня, через ${mins} мин`
-            : `сегодня, через ${Math.floor(mins / MINUTES_PER_HOUR)} ч ${mins % MINUTES_PER_HOUR} мин`;
-      else if (n.date === addDays(today, 1))
-        when = `завтра, ${humanDate(n.date)}`;
-      else when = `${WEEKDAYS_IN[weekday(n.date)]}, ${humanDate(n.date)}`;
-    }
-    // аудитория — только если указана
-    const room = n.room ? `, ауд. ${esc(n.room)}` : '';
     $('#hero').innerHTML =
-      `<div class="hero__info"><span class="hero__label">${going ? 'Сейчас' : 'Следующая пара'}</span>
+      `<div class="hero__info"><span class="hero__label">${formatHeroLabel(going)}</span>
       <div class="hero__main"><span class="hero__time">${slotOf(n.slot).start}</span><span class="chip hero__chip ${colorClass(n)}">${esc(n.group)}</span></div>
-      <span class="hero__details">${esc(when)}${room}</span></div>${menu}`;
+      <span class="hero__details">${esc(formatHeroDetails(n, now))}</span></div>${menu}`;
   }
   $('#menu').onclick = openMenu;
 }
 
 function renderRange() {
-  const a = fromIso(ui.week),
-    b = fromIso(addDays(ui.week, WORKDAYS_PER_WEEK - 1));
-  $('#range').textContent =
-    a.getMonth() === b.getMonth()
-      ? `${a.getDate()}–${b.getDate()} ${MONTHS_GENITIVE[a.getMonth()]}`
-      : `${a.getDate()} ${MONTHS_SHORT[a.getMonth()]} – ${b.getDate()} ${MONTHS_SHORT[b.getMonth()]}`;
+  $('#range').textContent = formatWeekRange(ui.week);
   // пар за неделю — по тем же правилам, что часы за семестр: без отменённых и праздников
   const { total } = countLessons({
     state: getState(),
@@ -123,7 +88,7 @@ function renderRange() {
   });
   const summary = $('#weekSummary');
   summary.hidden = !total;
-  summary.textContent = `${total} ${plural(total, 'пара', 'пары', 'пар')} · ${total * HOURS_PER_PAIR} ак. ч`;
+  summary.textContent = formatWeekSummary(total);
   // «Сегодня» видна всегда, чтобы группа кнопок не прыгала; на текущей неделе — неактивна
   $('#tod').disabled = ui.week === thisWeek();
 }
@@ -142,10 +107,8 @@ function isNowSlot(slot, now) {
 // зелёная точка «идёт сейчас» в углу карточки
 const LIVE_DOT = '<span class="card__live" aria-hidden="true"></span>';
 
-const cardLabel = (o, live) => {
-  const holiday = isHoliday(o.date, HOLIDAYS);
-  return `Группа ${o.group}, ${o.subject}${holiday ? ', праздник' : o.cancelled ? ', отменена' : ''}${o.moved ? ', перенесена' : ''}${live ? ', идёт сейчас' : ''}`;
-};
+const cardLabel = (o, live) =>
+  formatCardLabel(o, { isHoliday: isHoliday(o.date, HOLIDAYS), isLive: live });
 
 function cardHtml(o) {
   const live = isOngoing(o, new Date(), HOLIDAYS);

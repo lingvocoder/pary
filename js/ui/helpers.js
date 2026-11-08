@@ -6,7 +6,6 @@ import {
   PALETTE,
 } from '../config/university.js';
 import { TOAST_DURATION_MS } from '../config/interface.js';
-import { plural } from '../lang/ru.js';
 import { iconCheckCircle, iconXCircle } from './icons.js';
 
 export const $ = (sel) => document.querySelector(sel);
@@ -26,16 +25,6 @@ export const colorClass = (o) => {
   return 'course-' + (COURSES.includes(+o.course) ? +o.course : DEFAULT_COURSE);
 };
 export const slotOf = (n) => SLOTS[n - 1];
-
-/**
- * Сколько пар в резервной копии на этой неделе: первая фраза вопроса перед заменой.
- * @param {number} count
- * @returns {string} «В копии на этой неделе — 6 пар» или «В копии на этой неделе пар нет»
- */
-export function copyWeekSummary(count) {
-  if (!count) return 'В копии на этой неделе пар нет';
-  return `В копии на этой неделе — ${count} ${plural(count, 'пара', 'пары', 'пар')}`;
-}
 
 let toastTimer;
 

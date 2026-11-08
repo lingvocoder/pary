@@ -2,6 +2,11 @@
 import { TIMEZONE } from '../config/university.js';
 import { slotOf } from './helpers.js';
 import { getState } from '../store.js';
+import {
+  formatCalendarTitle,
+  formatCalendarDetails,
+  formatCalendarLocation,
+} from '../domain/texts.js';
 import { LESSON_KIND } from '../domain/lessons.js';
 
 export function gcalUrl(o) {
@@ -9,12 +14,12 @@ export function gcalUrl(o) {
     d = o.date.replace(/-/g, '');
   const p = new URLSearchParams({
     action: 'TEMPLATE',
-    text: `Гр. ${o.group}, ${o.subject}`,
+    text: formatCalendarTitle(o),
     dates: `${d}T${sl.start.replace(':', '')}00/${d}T${sl.end.replace(':', '')}00`,
     ctz: TIMEZONE,
-    details: `${o.course} курс, ${o.slot}-я пара`,
+    details: formatCalendarDetails(o),
   });
-  if (o.room) p.set('location', `ауд. ${o.room}`);
+  if (o.room) p.set('location', formatCalendarLocation(o.room));
   if (o.type === LESSON_KIND.RULE && !o.moved) {
     // повторяющаяся — с повтором каждую неделю
     const r = getState().rules.find((x) => x.id === o.ruleId);

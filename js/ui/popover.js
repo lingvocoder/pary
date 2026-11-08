@@ -5,18 +5,27 @@ import {
   SCREEN_EDGE_PX,
   SCREEN_TOP_BOTTOM_GAP_PX,
 } from '../config/interface.js';
-import { WEEKDAYS_SHORT, WEEKDAYS } from '../lang/ru.js';
-import { weekday, humanDate } from '../domain/dates.js';
+import {
+  formatLongDate,
+  formatTimeRange,
+  formatCourseAndType,
+  formatMovedFrom,
+  formatLessonFlag,
+  formatRoomLabel,
+  formatRoomSaved,
+  formatCancelledToast,
+  formatNotHeldToast,
+} from '../domain/texts.js';
 import {
   LESSON_KIND,
   lessonPhase,
   isHoliday,
   findLessonAt,
 } from '../domain/lessons.js';
-import { OPERATION, can } from '../domain/rules.js';
-import { ACTION } from '../domain/changes.js';
+import { OPERATION, can, lessonState } from '../domain/rules.js';
+import { ACTION, SCOPE } from '../domain/changes.js';
 import { getState, dispatch } from '../store.js';
-import { esc, toast, colorClass, slotOf } from './helpers.js';
+import { esc, toast, colorClass } from './helpers.js';
 import { iconCalendar, iconMapPin } from './icons.js';
 import { openEditor } from './editor.js';
 import { gcalUrl } from './calendar.js';
@@ -27,23 +36,17 @@ let pop = null;
 /** «Перенесена, обычно — вт, 27 октября, 08:00»: исходные день, дата и время пары по правилу. */
 function movedFrom(o) {
   const rule = getState().rules.find((r) => r.id === o.ruleId);
-  const day = WEEKDAYS_SHORT[weekday(o.ruleDate)].toLowerCase();
-  return `Перенесена, обычно — ${day}, ${humanDate(o.ruleDate)}, ${slotOf(rule.slot).start}`;
+  return formatMovedFrom(o, rule);
 }
 
 /**
  * Строка-флаг под предметом: что с парой сейчас. Только показ — решает модель.
  * @returns {string} HTML или ''
  */
-function flagHtml(o, ph, holiday) {
-  const flag = (text, mod = '') =>
-    `<div class="popover__flag${mod}">${text}</div>`;
-  if (holiday) return flag('Праздник — пары нет');
-  if (ph === 'future') return o.cancelled ? flag('Отменена') : '';
-  if (o.cancelled) return flag('Не состоялась');
-  if (ph === 'ongoing')
-    return flag(`Идёт, до ${slotOf(o.slot).end}`, ' popover__flag--live');
-  return '';
+function flagHtml(flag) {
+  if (!flag) return '';
+  const liveModifier = flag.isLive ? ' popover__flag--live' : '';
+  return `<div class="popover__flag${liveModifier}">${flag.text}</div>`;
 }
 
 /**
@@ -97,14 +100,12 @@ export function closePopover() {
 
 export function openPopover(o, card) {
   closePopover();
-  const sl = slotOf(o.slot);
   const catcher = document.createElement('div');
   catcher.className = 'popover-catcher'; // ловит тап мимо подсказки
   const el = document.createElement('section');
   el.className = 'popover';
   el.setAttribute('role', 'dialog');
   el.setAttribute('aria-label', `Группа ${o.group}`);
-  const day = WEEKDAYS[weekday(o.date)].replace(/^./, (c) => c.toUpperCase());
   const now = new Date(),
     ph = lessonPhase(o, now),
     holiday = isHoliday(o.date, HOLIDAYS);
@@ -125,12 +126,12 @@ export function openPopover(o, card) {
       state: getState(),
       holidays: HOLIDAYS,
     }).ok;
-  el.innerHTML = `<div class="popover__head"><span class="chip popover__chip ${colorClass(o)}">${esc(o.group)}</span><span class="popover__meta">${o.course} курс · ${esc(o.lessonType)}</span></div>
+  el.innerHTML = `<div class="popover__head"><span class="chip popover__chip ${colorClass(o)}">${esc(o.group)}</span><span class="popover__meta">${esc(formatCourseAndType(o))}</span></div>
     <div class="popover__details">
-      <div class="popover__date">${day}, ${humanDate(o.date)}</div>
-      <div class="popover__time">${sl.start}–${sl.end}</div>
+      <div class="popover__date">${formatLongDate(o.date)}</div>
+      <div class="popover__time">${formatTimeRange(o.slot)}</div>
       <div class="popover__subject">${esc(o.subject)}</div>
-      ${flagHtml(o, ph, holiday)}${o.moved ? `<div class="popover__moved">${movedFrom(o)}</div>` : ''}
+      ${flagHtml(formatLessonFlag(lessonState(o, now, HOLIDAYS), o))}${o.moved ? `<div class="popover__moved">${movedFrom(o)}</div>` : ''}
     </div>
     <div class="popover__room" id="pRoom"></div>
     ${actionsHtml(o, allow, ph, holiday)}`;
@@ -158,7 +159,7 @@ export function openPopover(o, card) {
     const link = allow(OPERATION.ROOM)
       ? `<button class="popover__room-link">${o.room ? 'Изменить' : 'Указать'}</button>`
       : '';
-    roomRow.innerHTML = `${iconMapPin('popover__room-icon')}<span class="popover__room-label">${o.room ? 'Аудитория ' + esc(o.room) : 'Аудитория не указана'}</span>${link}`;
+    roomRow.innerHTML = `${iconMapPin('popover__room-icon')}<span class="popover__room-label">${esc(formatRoomLabel(o.room))}</span>${link}`;
     const b = roomRow.querySelector('button');
     if (b) b.onclick = editRoom;
   };
@@ -172,20 +173,10 @@ export function openPopover(o, card) {
         return;
       }
       if (!guard(OPERATION.ROOM)) return;
-      dispatch({
-        type: ACTION.EDIT,
-        lesson: o,
-        changes: { room },
-        scope: o.type === LESSON_KIND.RULE ? 'future' : 'one',
-      });
-      toast(
-        !room
-          ? 'Аудитория убрана'
-          : o.type === LESSON_KIND.RULE
-            ? `Аудитория ${room}: с ${humanDate(o.ruleDate)} и дальше`
-            : `Аудитория ${room}`,
-        'success',
-      );
+      const scope =
+        o.type === LESSON_KIND.RULE ? SCOPE.FUTURE : SCOPE.THIS_DATE;
+      dispatch({ type: ACTION.EDIT, lesson: o, changes: { room }, scope });
+      toast(formatRoomSaved(room, o, scope), 'success');
       const again = findLessonAt(getState(), o.date, o.slot),
         c =
           again &&
@@ -208,7 +199,7 @@ export function openPopover(o, card) {
     if (!guard(OPERATION.CANCEL)) return;
     closePopover();
     dispatch({ type: ACTION.SET_CANCELLED, lesson: o, isCancelled: true });
-    toast(`Отменена: ${humanDate(o.ruleDate)}`, 'success');
+    toast(formatCancelledToast(o), 'success');
   });
   onClick('pRestore', () => {
     if (!guard(OPERATION.RESTORE)) return;
@@ -221,7 +212,7 @@ export function openPopover(o, card) {
     if (!guard(OPERATION.NOT_HELD)) return;
     closePopover();
     dispatch({ type: ACTION.SET_CANCELLED, lesson: o, isCancelled: true });
-    toast(`Отмечено: не состоялась, ${humanDate(o.date)}`, 'success');
+    toast(formatNotHeldToast(o), 'success');
   });
   onClick('pHeld', () => {
     if (!guard(OPERATION.HELD)) return;

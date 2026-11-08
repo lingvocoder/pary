@@ -1,7 +1,7 @@
 /* Шторки снизу и вопрос «только эта дата или дальше». */
 import { SHEET_CLOSE_MS } from '../config/interface.js';
 import { esc, hideToast } from './helpers.js';
-import { humanDate } from '../domain/dates.js';
+import { formatThisDateOption, formatFromDateOption } from '../domain/texts.js';
 import { LESSON_KIND } from '../domain/lessons.js';
 import { addLayer, removeLayer } from './layers.js';
 
@@ -63,8 +63,8 @@ export function askScope(o, title, note) {
   return new Promise((resolve) => {
     const { root, close } = openSheet(
       `<div class="sheet__header"><h2 class="sheet__title">${esc(title)}</h2>${note ? `<p class="sheet__note">${esc(note)}</p>` : ''}</div>
-      <button class="scope-option" data-v="one"><b class="scope-option__title">Только ${humanDate(o.ruleDate)}</b><small class="scope-option__hint">Остальные недели не меняются</small></button>
-      <button class="scope-option" data-v="future"><b class="scope-option__title">${humanDate(o.ruleDate)} и все следующие недели</b><small class="scope-option__hint">Прошлые недели останутся как были</small></button>
+      <button class="scope-option" data-v="one"><b class="scope-option__title">${formatThisDateOption(o.ruleDate)}</b><small class="scope-option__hint">Остальные недели не меняются</small></button>
+      <button class="scope-option" data-v="future"><b class="scope-option__title">${formatFromDateOption(o.ruleDate)}</b><small class="scope-option__hint">Прошлые недели останутся как были</small></button>
       <button class="btn btn--plain" data-v="">Отмена</button>`,
       title,
       () => finish(''),
