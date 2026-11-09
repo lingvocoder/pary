@@ -61,8 +61,15 @@ function dropEmptyRuleException(state, key) {
   if (!Object.keys(ruleException).length) delete state.exceptions[key];
 }
 
-/** Только эта дата: правка пишется в исключение правила. */
-function editThisDate(state, rule, lesson, changes) {
+/**
+ * Только эта дата: правка пишется в исключение правила.
+ * @param {Object} edit
+ * @param {State} edit.state      копия, которую меняем
+ * @param {Rule} edit.rule
+ * @param {Lesson} edit.lesson
+ * @param {Object} edit.changes   новые значения полей
+ */
+function editThisDate({ state, rule, lesson, changes }) {
   const key = ruleExceptionKey(rule.id, lesson.ruleDate);
   const ruleException = state.exceptions[key] || (state.exceptions[key] = {});
   const patch = { ...(ruleException.patch || {}) };
@@ -83,8 +90,17 @@ function editThisDate(state, rule, lesson, changes) {
   dropEmptyRuleException(state, key);
 }
 
-/** Правило начинается с этой даты — меняем его целиком, без деления. */
-function rewriteRule(state, rule, lesson, { fields, newDate, newSlot }) {
+/**
+ * Правило начинается с этой даты — меняем его целиком, без деления.
+ * @param {Object} edit
+ * @param {State} edit.state
+ * @param {Rule} edit.rule
+ * @param {Lesson} edit.lesson
+ * @param {Object} edit.fields    новые значения полей, кроме даты и пары
+ * @param {string} edit.newDate
+ * @param {number} edit.newSlot
+ */
+function rewriteRule({ state, rule, lesson, fields, newDate, newSlot }) {
   const key = ruleExceptionKey(rule.id, lesson.ruleDate);
   const wasCancelled = state.exceptions[key] && state.exceptions[key].cancelled;
   delete state.exceptions[key];
@@ -103,8 +119,9 @@ function rewriteRule(state, rule, lesson, { fields, newDate, newSlot }) {
     state.exceptions[ruleExceptionKey(rule.id, newDate)] = { cancelled: true };
 }
 
-/** Правило делится: старое заканчивается накануне, новое начинается с этой даты. */
-function splitRule(state, rule, lesson, { fields, newDate, newSlot }) {
+/** Правило делится: старое заканчивается накануне, новое начинается с этой даты.
+    Поля edit — как у rewriteRule. */
+function splitRule({ state, rule, lesson, fields, newDate, newSlot }) {
   const newWeekday = weekday(newDate);
   const newRule = {
     ...rule,
@@ -129,28 +146,34 @@ function splitRule(state, rule, lesson, { fields, newDate, newSlot }) {
   state.rules.push(newRule);
 }
 
-/** Эта и все следующие недели: правило меняется целиком или делится на «до» и «после». */
-function editFromThisDate(state, rule, lesson, changes) {
+/** Эта и все следующие недели: правило меняется целиком или делится на «до» и «после».
+    Поля edit — как у editThisDate. */
+function editFromThisDate({ state, rule, lesson, changes }) {
   const fields = {};
   for (const field of EDITABLE_FIELDS)
     if (field in changes) fields[field] = changes[field];
-  const change = {
+  const edit = {
+    state,
+    rule,
+    lesson,
     fields,
     newDate: changes.date ?? lesson.ruleDate,
     newSlot: changes.slot ?? rule.slot,
   };
-  if (rule.from >= lesson.ruleDate) rewriteRule(state, rule, lesson, change);
-  else splitRule(state, rule, lesson, change);
+  if (rule.from >= lesson.ruleDate) rewriteRule(edit);
+  else splitRule(edit);
 }
 
-function editLesson(state, lesson, changes, scope) {
+/** Правка занятия: разовое меняется на месте, повторяющееся — по scope. */
+function editLesson(state, { lesson, changes, scope }) {
   if (lesson.type === LESSON_KIND.ONE_OFF) {
     Object.assign(findOneOff(state, lesson.id), changes);
     return;
   }
   const rule = findRule(state, lesson.ruleId);
-  if (scope === SCOPE.THIS_DATE) editThisDate(state, rule, lesson, changes);
-  else editFromThisDate(state, rule, lesson, changes);
+  const edit = { state, rule, lesson, changes };
+  if (scope === SCOPE.THIS_DATE) editThisDate(edit);
+  else editFromThisDate(edit);
 }
 
 function deleteLesson(state, lesson, scope) {
@@ -249,7 +272,7 @@ export function reduce(state, action) {
       addLesson(nextState, action.newLesson);
       break;
     case ACTION.EDIT:
-      editLesson(nextState, action.lesson, action.changes, action.scope);
+      editLesson(nextState, action);
       break;
     case ACTION.DELETE:
       deleteLesson(nextState, action.lesson, action.scope);

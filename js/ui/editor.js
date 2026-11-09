@@ -214,14 +214,26 @@ function isCancelSwitchAllowed(lesson, isCancelled, isPlaceChanged) {
   return answer.ok;
 }
 
-/** Правка существующего занятия. Порядок шагов — как в 0.4.0. */
-async function saveLessonChanges({
-  lesson,
-  form,
-  isCancelled,
-  stillAllowed,
-  close,
-}) {
+/**
+ * Записать правку. Если и переключатель «Отменена» меняли — отметить занятие
+ * на новом месте: после переноса старого места у него уже нет.
+ */
+function dispatchEdit({ lesson, changes, scope, form, isCancelled }) {
+  dispatch({ type: ACTION.EDIT, lesson, changes, scope });
+  if (isCancelled === lesson.cancelled) return;
+  const movedLesson = findLessonAt(getState(), form.date, form.slot);
+  if (movedLesson)
+    dispatch({ type: ACTION.SET_CANCELLED, lesson: movedLesson, isCancelled });
+}
+
+/**
+ * Правка существующего занятия. Порядок шагов — как в 0.4.0.
+ * @param {OpenedEditor} editor
+ * @param {Object} form          поля формы
+ * @param {boolean} isCancelled  положение переключателя «Отменена»
+ */
+async function saveLessonChanges(editor, form, isCancelled) {
+  const { lesson, stillAllowed, close } = editor;
   const changes = diffLessonChanges(lesson, form);
   if (!stillAllowed(OPERATION.EDIT)) return;
   // праздник, прошлое и занятость — только если занятие ставят на новое место
@@ -240,17 +252,7 @@ async function saveLessonChanges({
     const scope = await askScope(lesson, 'Сохранить изменения?');
     if (!scope || !stillAllowed(OPERATION.EDIT)) return;
     close();
-    dispatch({ type: ACTION.EDIT, lesson, changes, scope });
-    if (isCancelChanged) {
-      // после переноса отметку ставим занятию на новом месте
-      const movedLesson = findLessonAt(getState(), form.date, form.slot);
-      if (movedLesson)
-        dispatch({
-          type: ACTION.SET_CANCELLED,
-          lesson: movedLesson,
-          isCancelled,
-        });
-    }
+    dispatchEdit({ lesson, changes, scope, form, isCancelled });
   } else {
     close();
     dispatch({ type: ACTION.SET_CANCELLED, lesson, isCancelled });
@@ -259,7 +261,8 @@ async function saveLessonChanges({
 }
 
 /** Кнопки существующего занятия: «Удалить пару» и «В календарь». */
-function setupLessonButtons(root, lesson, rule, stillAllowed, close) {
+function setupLessonButtons(editor) {
+  const { root, lesson, rule, stillAllowed, close } = editor;
   root.querySelector('#editor-delete').onclick = async () => {
     if (!stillAllowed(OPERATION.DELETE)) return;
     const scope = await askDeleteScope(lesson);
@@ -273,6 +276,87 @@ function setupLessonButtons(root, lesson, rule, stillAllowed, close) {
     calendarButton.onclick = () =>
       window.open(calendarLink(lesson, rule), '_blank', 'noopener');
 }
+
+/**
+ * Поля формы: курс, цвет, дата, «Другой…», «Каждую неделю».
+ * @returns {function(): Object} чтение формы
+ */
+function setupForm(root, values, isNew) {
+  const readCourse = setupChoiceGroup(
+    root.querySelector('#editor-course'),
+    'course',
+    +values.course,
+  );
+  const readColor = setupChoiceGroup(
+    root.querySelector('#editor-color'),
+    'color',
+    values.color || '',
+  );
+  const dateInput = root.querySelector('#editor-date');
+  setupDatePicker(dateInput);
+  const readSubject = setupOtherSubject(root);
+  if (isNew) setupWeeklyToggle(root, dateInput);
+  return () => ({
+    group: root.querySelector('#editor-group').value.trim(),
+    course: +readCourse(),
+    subject: readSubject(),
+    room: root.querySelector('#editor-room').value.trim(),
+    color: readColor(),
+    date: dateInput.value,
+    slot: +root.querySelector('#editor-slot').value,
+  });
+}
+
+/** Неверное поле: тост с причиной и фокус в это поле. */
+function showValidationError(root, validation) {
+  toast(validation.reason, TOAST_KIND.ERROR);
+  if (validation.field === FORM_FIELD.GROUP)
+    root.querySelector('#editor-group').focus();
+  if (validation.field === FORM_FIELD.SUBJECT)
+    root.querySelector('#editor-other-subject').focus();
+}
+
+/** «Добавить» / «Сохранить»: проверить форму и сохранить новое или изменённое занятие. */
+function setupSaveButton(editor, readForm) {
+  const { root, lesson, close } = editor;
+  root.querySelector('#editor-save').onclick = () => {
+    const form = readForm();
+    const validation = validateLessonForm(form);
+    if (!validation.ok) {
+      showValidationError(root, validation);
+      return;
+    }
+    if (!lesson) {
+      form.isWeekly = root.querySelector('#editor-weekly').checked;
+      saveNewLesson(form, close);
+      return;
+    }
+    const isCancelled = root.querySelector('#editor-cancelled').checked;
+    saveLessonChanges(editor, form, isCancelled);
+  };
+}
+
+/**
+ * Перед сохранением и удалением — проверка заново: занятие могло начаться,
+ * пока шторка была открыта. Нельзя — тост, шторка закрывается, данные не меняются.
+ */
+const createStillAllowed = (lesson, close) => (operation) => {
+  const answer = askRules(operation, lesson);
+  if (answer.ok) return true;
+  close();
+  toast(answer.reason, TOAST_KIND.ERROR);
+  return false;
+};
+
+/**
+ * Открытый редактор — его получают все шаги сохранения и удаления.
+ * @typedef {Object} OpenedEditor
+ * @property {Element} root               панель шторки
+ * @property {function(): void} close
+ * @property {Lesson|null} lesson         null — новое занятие
+ * @property {Rule|null} rule             правило повторяющегося занятия
+ * @property {function(string): boolean} stillAllowed  можно ли операцию прямо сейчас
+ */
 
 /**
  * @param {Lesson|null} lesson  занятие или null — новое
@@ -292,61 +376,8 @@ export function openEditor(lesson, place) {
   const { root, close } = openSheet(editorView(model), model.title);
   // «Сохранить» закреплена внизу панели: нижний отступ даёт сама полоса с кнопкой
   root.classList.add('sheet__panel--with-footer');
-
-  const readCourse = setupChoiceGroup(
-    root.querySelector('#editor-course'),
-    'course',
-    +values.course,
-  );
-  const readColor = setupChoiceGroup(
-    root.querySelector('#editor-color'),
-    'color',
-    values.color || '',
-  );
-  const dateInput = root.querySelector('#editor-date');
-  setupDatePicker(dateInput);
-  const readSubject = setupOtherSubject(root);
-  if (model.isNew) setupWeeklyToggle(root, dateInput);
-
-  /** Перед сохранением и удалением — проверка заново: занятие могло начаться,
-      пока шторка была открыта. Нельзя — тост, шторка закрывается, данные не меняются. */
-  const stillAllowed = (operation) => {
-    const answer = askRules(operation, lesson);
-    if (answer.ok) return true;
-    close();
-    toast(answer.reason, TOAST_KIND.ERROR);
-    return false;
-  };
-
-  const readForm = () => ({
-    group: root.querySelector('#editor-group').value.trim(),
-    course: +readCourse(),
-    subject: readSubject(),
-    room: root.querySelector('#editor-room').value.trim(),
-    color: readColor(),
-    date: dateInput.value,
-    slot: +root.querySelector('#editor-slot').value,
-  });
-
-  root.querySelector('#editor-save').onclick = () => {
-    const form = readForm();
-    const validation = validateLessonForm(form);
-    if (!validation.ok) {
-      toast(validation.reason, TOAST_KIND.ERROR);
-      if (validation.field === FORM_FIELD.GROUP)
-        root.querySelector('#editor-group').focus();
-      if (validation.field === FORM_FIELD.SUBJECT)
-        root.querySelector('#editor-other-subject').focus();
-      return;
-    }
-    if (model.isNew) {
-      form.isWeekly = root.querySelector('#editor-weekly').checked;
-      saveNewLesson(form, close);
-      return;
-    }
-    const isCancelled = root.querySelector('#editor-cancelled').checked;
-    saveLessonChanges({ lesson, form, isCancelled, stillAllowed, close });
-  };
-  if (!model.isNew)
-    setupLessonButtons(root, lesson, model.rule, stillAllowed, close);
+  const stillAllowed = createStillAllowed(lesson, close);
+  const editor = { root, close, lesson, rule: model.rule, stillAllowed };
+  setupSaveButton(editor, setupForm(root, values, model.isNew));
+  if (!model.isNew) setupLessonButtons(editor);
 }

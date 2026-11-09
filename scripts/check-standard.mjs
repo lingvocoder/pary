@@ -49,7 +49,7 @@ const TRUNCATED_NAMES = new Set([
 ]);
 // Числа, которым имя не нужно.
 const PLAIN_NUMBERS = new Set(['0', '1']);
-// Пометка, которая гасит ложное срабатывание по числу в этой строке.
+// Пометка, которая гасит ложное срабатывание в этой строке: по числу или по параметрам и длине функции.
 const NUMBER_WAIVER = '// standard:';
 
 const ROOT = resolve(dirname(new URL(import.meta.url).pathname), '..');
@@ -314,6 +314,104 @@ for (const file of listJsFiles(JS_DIR)) {
         file,
         lineNumber,
         `импорт против слоёв: ${layer} → ${targetLayer} (${target})`,
+      );
+  }
+}
+
+// Функции: не больше трёх параметров и не длиннее 40 строк (docs/architecture.md, «Функции»).
+const MAX_PARAMS = 3;
+const MAX_FUNCTION_LINES = 40;
+
+/** Позиция парной скобки: идём от open в сторону step (+1 вперёд, −1 назад). */
+function matchingBracket(code, open, step) {
+  const [opening, closing] =
+    step > 0
+      ? [code[open], { '(': ')', '{': '}' }[code[open]]]
+      : [code[open], { ')': '(' }[code[open]]];
+  let depth = 0;
+  for (
+    let position = open;
+    position >= 0 && position < code.length;
+    position += step
+  ) {
+    if (code[position] === opening) depth += 1;
+    else if (code[position] === closing) depth -= 1;
+    if (depth === 0) return position;
+  }
+  return -1;
+}
+
+/** Сколько параметров в списке: запятые верхнего уровня (деструктуризация — один параметр). */
+function countParams(list) {
+  if (!list.trim()) return 0;
+  let depth = 0;
+  let count = 1;
+  for (const char of list) {
+    if ('([{'.includes(char)) depth += 1;
+    else if (')]}'.includes(char)) depth -= 1;
+    else if (char === ',' && depth === 0) count += 1;
+  }
+  // запятая после последнего параметра (Prettier её ставит) — не параметр
+  return list.trim().endsWith(',') ? count - 1 : count;
+}
+
+/** Все функции файла: строка начала, число параметров, число строк (тело в фигурных скобках). */
+function listFunctions(code) {
+  const functions = [];
+  const lineOf = (position) => code.slice(0, position).split('\n').length;
+  const addFunction = (start, paramsOpen, paramsClose, afterParams) => {
+    const params = countParams(code.slice(paramsOpen + 1, paramsClose));
+    const bodyOpen = code.slice(afterParams).search(/\S/) + afterParams;
+    const lines =
+      code[bodyOpen] === '{'
+        ? lineOf(matchingBracket(code, bodyOpen, 1)) - lineOf(start) + 1
+        : 0;
+    functions.push({ line: lineOf(start), params, lines });
+  };
+  for (const match of code.matchAll(/\bfunction\b[\s*]*[\w$]*\s*\(/g)) {
+    const paramsOpen = match.index + match[0].length - 1;
+    const paramsClose = matchingBracket(code, paramsOpen, 1);
+    addFunction(match.index, paramsOpen, paramsClose, paramsClose + 1);
+  }
+  for (const match of code.matchAll(/=>/g)) {
+    const before = code.slice(0, match.index).trimEnd();
+    const afterArrow = match.index + 2;
+    if (before.endsWith(')')) {
+      const paramsClose = before.length - 1;
+      const paramsOpen = matchingBracket(code, paramsClose, -1);
+      addFunction(paramsOpen, paramsOpen, paramsClose, afterArrow);
+    } else {
+      // один параметр без скобок: x => …
+      functions.push({ line: lineOf(match.index), params: 1, lines: 0 });
+      const bodyOpen = code.slice(afterArrow).search(/\S/) + afterArrow;
+      if (code[bodyOpen] === '{')
+        functions.at(-1).lines =
+          lineOf(matchingBracket(code, bodyOpen, 1)) - lineOf(match.index) + 1;
+    }
+  }
+  return functions;
+}
+
+for (const file of listJsFiles(JS_DIR)) {
+  const source = readFileSync(file, 'utf8');
+  const sourceLines = source.split('\n');
+  for (const { line, params, lines } of listFunctions(stripNonCode(source))) {
+    // пометка — в строке объявления или строкой выше
+    const isWaived = [line - 1, line - 2].some((index) =>
+      (sourceLines[index] || '').includes(NUMBER_WAIVER),
+    );
+    if (isWaived) continue;
+    if (params > MAX_PARAMS)
+      report(
+        file,
+        line,
+        `параметров ${params}, больше ${MAX_PARAMS} — передай объект`,
+      );
+    if (lines > MAX_FUNCTION_LINES)
+      report(
+        file,
+        line,
+        `функция в ${lines} строк, длиннее ${MAX_FUNCTION_LINES} — разбей`,
       );
   }
 }

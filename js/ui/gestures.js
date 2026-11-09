@@ -67,8 +67,15 @@ const cancelPress = () => {
   press = null;
 };
 
-/** Нажатие на карточку: через LONG_PRESS_MS без сдвига начинается перенос. Палец и мышь — одинаково. */
-function startPress(card, pointerX, pointerY, isMouse) {
+/**
+ * Нажатие на карточку: через LONG_PRESS_MS без сдвига начинается перенос. Палец и мышь — одинаково.
+ * @param {Object} pressStart
+ * @param {Element} pressStart.card
+ * @param {number} pressStart.pointerX
+ * @param {number} pressStart.pointerY
+ * @param {boolean} pressStart.isMouse
+ */
+function startPress({ card, pointerX, pointerY, isMouse }) {
   press = {
     card,
     pointerX,
@@ -199,62 +206,66 @@ async function endDrag() {
   toast(formatMovedToast(date, slot), TOAST_KIND.SUCCESS);
 }
 
+/** Палец лёг на карточку: ждём удержания. Двумя пальцами — это масштаб, не нажатие. */
+function onTouchStart(event) {
+  lastTouchTime = Date.now();
+  const card = event.target.closest('.card');
+  if (!card || event.touches.length > 1) return;
+  const touch = event.touches[0];
+  startPress({
+    card,
+    pointerX: touch.clientX,
+    pointerY: touch.clientY,
+    isMouse: false,
+  });
+}
+
+/** Палец едет: во время переноса страница не прокручивается; до переноса сдвиг — это прокрутка. */
+function onTouchMove(event) {
+  lastTouchTime = Date.now();
+  const touch = event.touches[0];
+  if (drag) {
+    event.preventDefault();
+    moveDrag(touch.clientX, touch.clientY);
+    return;
+  }
+  if (!press) return;
+  const distance = Math.hypot(
+    touch.clientX - press.pointerX,
+    touch.clientY - press.pointerY,
+  );
+  if (distance > SCROLL_SLOP_PX) cancelPress();
+}
+
+/** Палец поднят: конец переноса или тап по карточке. */
+function onTouchEnd(event) {
+  lastTouchTime = Date.now();
+  if (drag) {
+    event.preventDefault();
+    endDrag();
+    return;
+  }
+  if (!press) return;
+  const card = press.card;
+  cancelPress();
+  event.preventDefault();
+  openCard(card);
+}
+
+/** Система прервала касание: перенос отменяется, карточка остаётся на месте. */
+function onTouchCancel() {
+  cancelPress();
+  if (!drag) return;
+  drag.target = null;
+  endDrag();
+}
+
 /** Палец: удержание, сдвиг (прокрутка или перенос), отпускание. */
 function initTouch(week) {
-  week.addEventListener(
-    'touchstart',
-    (event) => {
-      lastTouchTime = Date.now();
-      const card = event.target.closest('.card');
-      if (!card || event.touches.length > 1) return;
-      const touch = event.touches[0];
-      startPress(card, touch.clientX, touch.clientY, false);
-    },
-    { passive: true },
-  );
-  document.addEventListener(
-    'touchmove',
-    (event) => {
-      lastTouchTime = Date.now();
-      const touch = event.touches[0];
-      // во время переноса страница не прокручивается
-      if (drag) {
-        event.preventDefault();
-        moveDrag(touch.clientX, touch.clientY);
-        return;
-      }
-      if (!press) return;
-      const distance = Math.hypot(
-        touch.clientX - press.pointerX,
-        touch.clientY - press.pointerY,
-      );
-      if (distance > SCROLL_SLOP_PX) cancelPress();
-    },
-    { passive: false },
-  );
-  document.addEventListener(
-    'touchend',
-    (event) => {
-      lastTouchTime = Date.now();
-      if (drag) {
-        event.preventDefault();
-        endDrag();
-        return;
-      }
-      if (!press) return;
-      const card = press.card;
-      cancelPress();
-      event.preventDefault();
-      openCard(card);
-    },
-    { passive: false },
-  );
-  document.addEventListener('touchcancel', () => {
-    cancelPress();
-    if (!drag) return;
-    drag.target = null;
-    endDrag();
-  });
+  week.addEventListener('touchstart', onTouchStart, { passive: true });
+  document.addEventListener('touchmove', onTouchMove, { passive: false });
+  document.addEventListener('touchend', onTouchEnd, { passive: false });
+  document.addEventListener('touchcancel', onTouchCancel);
   week.addEventListener('contextmenu', (event) => {
     if (event.target.closest('.card')) event.preventDefault();
   });
@@ -265,7 +276,13 @@ function initMouse(week) {
   week.addEventListener('mousedown', (event) => {
     if (isEchoOfTouch() || event.button !== 0) return;
     const card = event.target.closest('.card');
-    if (card) startPress(card, event.clientX, event.clientY, true);
+    if (!card) return;
+    startPress({
+      card,
+      pointerX: event.clientX,
+      pointerY: event.clientY,
+      isMouse: true,
+    });
   });
   document.addEventListener('mousemove', (event) => {
     if (isEchoOfTouch()) return;

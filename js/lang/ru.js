@@ -82,6 +82,7 @@ const FEW_LAST = 4;
  * @param {string} many
  * @returns {string}
  */
+// standard: три формы слова подряд, как в словаре, — объект здесь читается хуже
 export function plural(count, one, few, many) {
   const lastDigit = count % DECIMAL_BASE,
     lastTwoDigits = count % LAST_TWO_DIGITS_BASE;
