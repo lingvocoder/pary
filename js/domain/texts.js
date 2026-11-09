@@ -27,7 +27,7 @@ import {
   MS_PER_MINUTE,
 } from './dates.js';
 import { LESSON_KIND, SOURCE } from './lessons.js';
-import { LESSON_STATE } from './rules.js';
+import { LESSON_STATE, isCancelledState, isHolidayState } from './rules.js';
 import { SCOPE } from './changes.js';
 
 /** Начало пары с этим номером: «08:00». */
@@ -98,12 +98,12 @@ export const formatWeekSummary = (count) =>
  * @param {Lesson} lesson
  * @param {{isHoliday: boolean, isLive: boolean}} marks
  */
-export function formatCardLabel(lesson, { isHoliday, isLive }) {
+export function formatCardLabel(lesson, state) {
   const parts = [`Группа ${lesson.group}`, lesson.subject];
-  if (isHoliday) parts.push('праздник');
-  else if (lesson.cancelled) parts.push('отменена');
+  if (isHolidayState(state)) parts.push('праздник');
+  else if (isCancelledState(state)) parts.push('отменена');
   if (lesson.moved) parts.push('перенесена');
-  if (isLive) parts.push('идёт сейчас');
+  if (state === LESSON_STATE.ONGOING) parts.push('идёт сейчас');
   return parts.join(', ');
 }
 

@@ -72,6 +72,14 @@ export function lessonState(lesson, now, holidays) {
   return phase === PHASE.ONGOING ? LESSON_STATE.ONGOING : LESSON_STATE.PAST;
 }
 
+/** Занятие размыто с крестиком: отменено заранее или не состоялось. В праздник — своё. */
+export const isCancelledState = (state) =>
+  state === LESSON_STATE.CANCELLED || state === LESSON_STATE.NOT_HELD;
+
+/** Занятие в праздник: размыто, но без крестика. */
+export const isHolidayState = (state) =>
+  state === LESSON_STATE.HOLIDAY || state === LESSON_STATE.HOLIDAY_DONE;
+
 /** Строка таблицы правил: одна операция во всех состояниях. */
 const row = (cells) => Object.freeze(cells);
 
@@ -208,6 +216,19 @@ export function can({ operation, lesson, now, state, holidays }) {
   }
   return ALLOWED;
 }
+
+/**
+ * Клетка закрыта для переноса по времени или празднику — занятость не в счёт.
+ * Пока идёт перенос, такие клетки заштрихованы; причину отказа скажет canPlace().
+ * @param {Object} cell
+ * @param {string} cell.date
+ * @param {number} cell.slot
+ * @param {Date} cell.now
+ * @param {string[]} cell.holidays
+ * @returns {boolean}
+ */
+export const isClosedForMove = ({ date, slot, now, holidays }) =>
+  isHoliday(date, holidays) || isPastSlot(date, slot, now);
 
 /**
  * Можно ли поставить занятие в клетку. Порядок проверок: праздник → прошлое → занято.

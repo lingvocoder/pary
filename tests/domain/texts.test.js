@@ -97,21 +97,18 @@ test('неделя: диапазон в одном месяце и на стык
 
 test('карточка: подпись для диктора — праздник важнее отмены', () => {
   assert.equal(
-    formatCardLabel(PAIR, { isHoliday: false, isLive: true }),
+    formatCardLabel(PAIR, LESSON_STATE.ONGOING),
     'Группа 323, ПК первого ин. яз., идёт сейчас',
   );
   assert.equal(
     formatCardLabel(
       { ...PAIR, cancelled: true, moved: true },
-      { isHoliday: false, isLive: false },
+      LESSON_STATE.CANCELLED,
     ),
     'Группа 323, ПК первого ин. яз., отменена, перенесена',
   );
   assert.equal(
-    formatCardLabel(
-      { ...PAIR, cancelled: true },
-      { isHoliday: true, isLive: false },
-    ),
+    formatCardLabel({ ...PAIR, cancelled: true }, LESSON_STATE.HOLIDAY),
     'Группа 323, ПК первого ин. яз., праздник',
   );
 });

@@ -217,13 +217,6 @@ export function slotTimes(date, slot) {
   return { start: atTime(date, bell.start), end: atTime(date, bell.end) };
 }
 
-/** Идёт ли занятие прямо сейчас: не отменено, не в праздник и начало ≤ now < конец. */
-export function isOngoing(lesson, now, holidays = []) {
-  if (lesson.cancelled || isHoliday(lesson.date, holidays)) return false;
-  const { start, end } = slotTimes(lesson.date, lesson.slot);
-  return start <= now && now < end;
-}
-
 /** Слот уже в прошлом: его начало ≤ now. Значит, и занятие, которое идёт сейчас, — прошлое. */
 export function isPastSlot(date, slot, now) {
   return slotTimes(date, slot).start <= now;

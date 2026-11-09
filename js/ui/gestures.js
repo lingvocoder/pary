@@ -14,8 +14,14 @@ import {
   formatMoveNote,
   formatMovedToast,
 } from '../domain/texts.js';
-import { isPastSlot, isHoliday, findRule } from '../domain/lessons.js';
-import { OPERATION, PLACE_KIND, can, canPlace } from '../domain/rules.js';
+import { findRule } from '../domain/lessons.js';
+import {
+  OPERATION,
+  PLACE_KIND,
+  can,
+  canPlace,
+  isClosedForMove,
+} from '../domain/rules.js';
 import { ACTION } from '../domain/changes.js';
 import { getState, dispatch } from '../store/store.js';
 import { toast, stickyToast, hideToast, TOAST_KIND } from './toast.js';
@@ -93,12 +99,16 @@ const checkPlace = (date, slot, lesson) =>
     exceptLessonId: lesson.id,
   });
 
-/** Прошедшие клетки и дни-праздники заштрихованы, пока идёт перенос. */
+/** Пока идёт перенос, закрытые клетки заштрихованы: какие закрыты, решает модель. */
 function markUnavailableCells(now) {
   document.querySelectorAll(CELL).forEach((cell) => {
-    const date = cell.dataset.date;
-    if (isPastSlot(date, +cell.dataset.slot, now) || isHoliday(date, HOLIDAYS))
-      cell.classList.add(CELL_PAST);
+    const isClosed = isClosedForMove({
+      date: cell.dataset.date,
+      slot: +cell.dataset.slot,
+      now,
+      holidays: HOLIDAYS,
+    });
+    if (isClosed) cell.classList.add(CELL_PAST);
   });
 }
 

@@ -14,10 +14,15 @@ import { toIso, fromIso, addDays, weekStart } from '../domain/dates.js';
 import {
   weekLessons,
   nextLesson,
-  isOngoing,
   isHoliday,
   currentSlot,
 } from '../domain/lessons.js';
+import {
+  LESSON_STATE,
+  lessonState,
+  isCancelledState,
+  isHolidayState,
+} from '../domain/rules.js';
 import { countLessons } from '../domain/hours.js';
 import { getState } from '../store/store.js';
 import { getPref, setPref } from '../store/prefs.js';
@@ -110,26 +115,20 @@ function isNowSlot(slot, now) {
   );
 }
 
-const cardLabel = (lesson, isLive) =>
-  formatCardLabel(lesson, {
-    isHoliday: isHoliday(lesson.date, HOLIDAYS),
-    isLive,
-  });
-
-/** Данные карточки. Занятие в праздник размыто, как отменённое, но без крестика. */
+/** Данные карточки. Как она выглядит, решает состояние занятия из domain/rules.js:
+    в праздник размыта без крестика, отменённая — с крестиком, идущая — с точкой. */
 function cardModel(lesson, now) {
-  const isLive = isOngoing(lesson, now, HOLIDAYS);
-  const isHolidayLesson = isHoliday(lesson.date, HOLIDAYS);
+  const state = lessonState(lesson, now, HOLIDAYS);
   return {
     id: lesson.id,
     group: lesson.group,
     room: lesson.room,
     colorClass: lessonColorClass(lesson),
-    isHoliday: isHolidayLesson,
-    isCancelled: lesson.cancelled && !isHolidayLesson,
+    isHoliday: isHolidayState(state),
+    isCancelled: isCancelledState(state),
     isMoved: lesson.moved,
-    isLive,
-    label: cardLabel(lesson, isLive),
+    isLive: state === LESSON_STATE.ONGOING,
+    label: formatCardLabel(lesson, state),
   };
 }
 
@@ -206,11 +205,12 @@ export function refreshNow() {
       (candidate) => candidate.id === card.dataset.id,
     );
     if (!lesson) return;
-    const isLive = isOngoing(lesson, now, HOLIDAYS);
+    const state = lessonState(lesson, now, HOLIDAYS);
+    const isLive = state === LESSON_STATE.ONGOING;
     const dot = card.querySelector('.card__live');
     if (isLive && !dot) card.insertAdjacentHTML('beforeend', liveDotView());
     if (!isLive && dot) dot.remove();
-    card.setAttribute('aria-label', cardLabel(lesson, isLive));
+    card.setAttribute('aria-label', formatCardLabel(lesson, state));
   });
   refreshPopover(now);
 }

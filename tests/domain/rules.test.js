@@ -6,6 +6,9 @@ import {
   canPlace,
   lessonState,
   isApplicable,
+  isCancelledState,
+  isHolidayState,
+  isClosedForMove,
   LESSON_STATE,
   OPERATION,
 } from '../../js/domain/rules.js';
@@ -360,6 +363,48 @@ test('состояние занятия: шесть столбцов табли�
     lessonState(PAIR, AFTER, ['2026-10-28']),
     LESSON_STATE.HOLIDAY_DONE,
   );
+});
+
+test('идёт сейчас: начало ≤ now < конец, отменённая — нет', () => {
+  // 323, среда 28.10, 6-я пара: 15:40–17:00
+  const isLive = (lesson, now, holidays = []) =>
+    lessonState(lesson, new Date(now), holidays) === LESSON_STATE.ONGOING;
+  assert.equal(isLive(PAIR, '2026-10-28T15:39:59'), false);
+  assert.equal(isLive(PAIR, '2026-10-28T15:40:00'), true);
+  assert.equal(isLive(PAIR, '2026-10-28T16:30:00'), true);
+  assert.equal(isLive(PAIR, '2026-10-28T17:00:00'), false);
+  assert.equal(isLive(PAIR, '2026-10-29T15:50:00'), false); // другой день
+  assert.equal(
+    isLive({ ...PAIR, cancelled: true }, '2026-10-28T15:50:00'),
+    false,
+  );
+});
+
+test('идёт сейчас: в праздник — нет', () => {
+  const now = new Date('2026-10-28T16:00:00');
+  assert.equal(
+    lessonState(PAIR, now, ['2026-10-28']),
+    LESSON_STATE.HOLIDAY_DONE,
+  );
+  assert.equal(lessonState(PAIR, now, ['2026-10-29']), LESSON_STATE.ONGOING);
+});
+
+test('вид карточки по состоянию: крестик у отменённой и несостоявшейся, в праздник — без него', () => {
+  const cancelled = Object.values(LESSON_STATE).filter(isCancelledState);
+  const holiday = Object.values(LESSON_STATE).filter(isHolidayState);
+  assert.deepEqual(cancelled, [LESSON_STATE.CANCELLED, LESSON_STATE.NOT_HELD]);
+  assert.deepEqual(holiday, [LESSON_STATE.HOLIDAY, LESSON_STATE.HOLIDAY_DONE]);
+});
+
+test('клетка закрыта для переноса: прошла, началась или праздник; будущая свободна', () => {
+  const cell = (date, slot, holidays = []) =>
+    isClosedForMove({ date, slot, now: DURING, holidays });
+  // DURING — среда 28.10, 16:00, идёт 6-я пара
+  assert.equal(cell('2026-10-27', 9), true); // вчера
+  assert.equal(cell('2026-10-28', 6), true); // началась
+  assert.equal(cell('2026-10-28', 7), false); // впереди
+  assert.equal(cell('2026-10-29', 1), false); // завтра
+  assert.equal(cell('2026-10-29', 1, ['2026-10-29']), true); // праздник
 });
 
 test('применимость: «Вернуть» видна и при занятом слоте — почему нельзя, скажет can()', () => {

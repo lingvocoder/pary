@@ -3,7 +3,6 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   nextLesson,
-  isOngoing,
   isPastSlot,
   findOccupant,
   lessonPhase,
@@ -34,27 +33,6 @@ test('следующая пара в четверг вечером — субб�
   assert.equal(next.date, '2026-10-31');
   assert.equal(next.slot, 1);
   assert.equal(next.group, '326');
-});
-
-test('идёт сейчас: начало ≤ now < конец, отменённая — нет', () => {
-  // 323, среда 28.10, 6-я пара: 15:40–17:00
-  const lesson = lessonAt(seed(), WEEK, '2026-10-28', 6);
-  assert.equal(isOngoing(lesson, new Date('2026-10-28T15:39:59')), false);
-  assert.equal(isOngoing(lesson, new Date('2026-10-28T15:40:00')), true);
-  assert.equal(isOngoing(lesson, new Date('2026-10-28T16:30:00')), true);
-  assert.equal(isOngoing(lesson, new Date('2026-10-28T17:00:00')), false);
-  assert.equal(isOngoing(lesson, new Date('2026-10-29T15:50:00')), false); // другой день
-  assert.equal(
-    isOngoing({ ...lesson, cancelled: true }, new Date('2026-10-28T15:50:00')),
-    false,
-  );
-});
-
-test('идёт сейчас: в праздник — нет', () => {
-  const lesson = lessonAt(seed(), WEEK, '2026-10-28', 6);
-  const now = new Date('2026-10-28T16:00:00');
-  assert.equal(isOngoing(lesson, now, ['2026-10-28']), false);
-  assert.equal(isOngoing(lesson, now, ['2026-10-29']), true);
 });
 
 test('прошедший слот: вчера, сегодня уже началась, сегодня впереди, идёт сейчас', () => {
