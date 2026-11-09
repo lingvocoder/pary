@@ -41,15 +41,17 @@ PWA-расписание преподавателя КубГУ (факульте
   Показать ли кнопку — `isApplicable(operation, lessonState(…))`; можно ли нажать прямо сейчас — `can({…})`.
 - `js/config/` — настройки: `university.js` (звонки, курсы, палитра, предметы, семестр, праздники),
   `interface.js` (времена и отступы), `app.js` (версия, ключи хранилища, схема). Слова языка — `js/lang/ru.js`.
-- Действия — простые объекты (`{type:'edit', occ, changes, scope}`): в v2 они станут очередью синхронизации.
+- Действия — простые объекты (`{ type: ACTION.EDIT, lesson, changes, scope }`): в v2 они станут очередью синхронизации.
 
 Модель расписания (как в iCalendar):
 
 - **Rule** — повторяющаяся пара «каждую среду, 5-я пара» с `from`/`until`.
-- **Exception** — правка одной даты правила, ключ `ruleId|YYYY-MM-DD`: `cancelled`, `deleted`, `moveTo`, `patch`.
+- **RuleException** — правка одной даты правила, ключ `ruleId|YYYY-MM-DD` (`ruleExceptionKey`): `cancelled`,
+  `deleted`, `moveTo`, `patch`. В данных лежат в `exceptions` — имя ключа не меняется.
 - **OneOff** — разовая пара.
-- **Occurrence** — вычисленное занятие недели (`weekOccurrences`), в данных не хранится.
-- `scope: 'one'` пишет исключение; `scope: 'future'` делит правило на «до» и «после» (`applyChange`).
+- **Lesson** — вычисленное занятие недели (`weekLessons`), в данных не хранится. `lesson.ruleDate` — дата по правилу до переноса.
+- `SCOPE.THIS_DATE` пишет исключение; `SCOPE.FUTURE` меняет правило с этой даты или делит его на «до» и «после»
+  (`editLesson` в `domain/changes.js`). Значения `SCOPE` и `PLACE_KIND` в данных не хранятся.
 
 ## Обязательные правила при изменениях
 
