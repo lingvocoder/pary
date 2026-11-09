@@ -24,7 +24,7 @@ export const ACTION = Object.freeze({
 });
 
 /** Что меняет правка повторяющегося занятия: только эту дату или эту и все следующие. */
-export const SCOPE = Object.freeze({ THIS_DATE: 'one', FUTURE: 'future' });
+export const SCOPE = Object.freeze({ THIS_DATE: 'thisDate', FUTURE: 'future' });
 
 /**
  * Аудитория повторяющегося занятия меняется с этой даты и дальше: аудитория обычно

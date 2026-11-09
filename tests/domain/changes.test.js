@@ -27,7 +27,7 @@ test('перенос «только эта дата»: на следующей �
     type: ACTION.EDIT,
     lesson: lessonAt(state, WEEK, '2026-10-27', 2),
     changes: { date: '2026-10-29', slot: 3 },
-    scope: 'one',
+    scope: SCOPE.THIS_DATE,
   });
   assert.equal(lessonAt(state, WEEK, '2026-10-29', 3).group, '124');
   assert.equal(lessonAt(state, WEEK, '2026-10-29', 3).moved, true);
@@ -41,7 +41,7 @@ test('перенос «дальше»: правило делится, прошл
     type: ACTION.EDIT,
     lesson: lessonAt(state, WEEK, '2026-10-27', 1),
     changes: { date: '2026-10-29', slot: 3 },
-    scope: 'future',
+    scope: SCOPE.FUTURE,
   });
   assert.equal(lessonAt(state, WEEK, '2026-10-29', 3).group, '221');
   assert.equal(lessonAt(state, NEXT, '2026-11-05', 3).group, '221');
@@ -57,7 +57,7 @@ test('«дальше» для правила, которое начинаетс�
     type: ACTION.EDIT,
     lesson: lessonAt(state, WEEK, '2026-10-28', 5),
     changes: { slot: 4 },
-    scope: 'future',
+    scope: SCOPE.FUTURE,
   });
   assert.equal(state.rules.length, before);
   assert.equal(lessonAt(state, NEXT, '2026-11-04', 4).group, '326');
@@ -69,7 +69,7 @@ test('аудитория «дальше» видна на следующих н�
     type: ACTION.EDIT,
     lesson: lessonAt(state, NEXT, '2026-11-03', 1),
     changes: { room: '301' },
-    scope: 'future',
+    scope: SCOPE.FUTURE,
   });
   assert.equal(lessonAt(state, NEXT, '2026-11-03', 1).room, '301');
   assert.equal(lessonAt(state, '2026-11-09', '2026-11-10', 1).room, '301');
@@ -81,14 +81,14 @@ test('удаление «только эта дата» и «дальше»', ()
   state = reduce(state, {
     type: ACTION.DELETE,
     lesson: lessonAt(state, WEEK, '2026-10-31', 1),
-    scope: 'one',
+    scope: SCOPE.THIS_DATE,
   });
   assert.equal(lessonsAt(state, WEEK, '2026-10-31', 1).length, 0);
   assert.equal(lessonsAt(state, NEXT, '2026-11-07', 1).length, 1);
   state = reduce(state, {
     type: ACTION.DELETE,
     lesson: lessonAt(state, NEXT, '2026-11-07', 1),
-    scope: 'future',
+    scope: SCOPE.FUTURE,
   });
   assert.equal(lessonsAt(state, NEXT, '2026-11-07', 1).length, 0);
   assert.equal(lessonsAt(state, '2026-10-19', '2026-10-24', 1).length, 1);

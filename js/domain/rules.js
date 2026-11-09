@@ -26,8 +26,8 @@ export const OPERATION = Object.freeze({
 /** Что ставят в клетку: переносят занятие или добавляют новое. */
 export const PLACE_KIND = Object.freeze({
   MOVE: 'move',
-  ADD_ONE_OFF: 'addOnce',
-  ADD_RULE: 'addRepeat',
+  ADD_ONE_OFF: 'addOneOff',
+  ADD_RULE: 'addRule',
 });
 
 /**

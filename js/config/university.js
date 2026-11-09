@@ -21,8 +21,9 @@ export const COURSES = [1, 2, 3, 4];
 export const DEFAULT_COURSE = 3;
 
 export const SUBJECTS = ['ПК первого ин. яз.', 'ИКТ в лингвистике'];
-/** Предмет пар исходного расписания (кнопка «Вернуть исходное расписание»). */
-export const SEED_SUBJECT = SUBJECTS[0];
+/** Предмет пар исходного расписания (кнопка «Вернуть исходное расписание»).
+    Строкой, а не SUBJECTS[0]: исходное расписание не зависит от порядка предметов в списке. */
+export const SEED_SUBJECT = 'ПК первого ин. яз.';
 /** Вид занятия новой пары. */
 export const DEFAULT_LESSON_TYPE = 'ЛР';
 

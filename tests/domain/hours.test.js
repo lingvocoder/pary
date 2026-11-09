@@ -1,7 +1,7 @@
 // Тесты подсчёта часов: js/domain/hours.js. Запуск: npm test.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { ACTION, reduce } from '../../js/domain/changes.js';
+import { ACTION, SCOPE, reduce } from '../../js/domain/changes.js';
 import { countLessons } from '../../js/domain/hours.js';
 import { seed } from '../../js/domain/seed.js';
 import { WEEK, NEXT, lessonAt } from './fixtures.js';
@@ -57,7 +57,7 @@ test('часы: перенесённая считается в новый ден
     type: ACTION.EDIT,
     lesson: lessonAt(s0, WEEK, '2026-10-28', 7),
     changes: { date: '2026-11-02', slot: 1 },
-    scope: 'one',
+    scope: SCOPE.THIS_DATE,
   });
   assert.equal(
     countLessons({ state, from: WEEK, to: '2026-10-31', now: LATER }).total,
